@@ -19,7 +19,11 @@ export
     load_iris,
     load_line,
     load_sin,
-    load_poly
+    load_poly,
+
+    fit,
+    predict,
+    predict!
 
 include("feature_scaling.jl")
 include("basis_expansion.jl")

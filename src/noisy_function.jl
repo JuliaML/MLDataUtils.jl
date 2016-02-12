@@ -1,7 +1,7 @@
 """
-`x, y = DataGenerators.noisy_function(fun, x; noise = 0.01, f_rand = randn)`
+`x, y = noisy_function(fun, x; noise = 0.01, f_rand = randn)`
 
-Generates a noisy response for the given function `fun`
+Generates a noisy response `y` for the given function `fun`
 by adding `noise .* f_randn(length(x))` to the result of `fun(x)`.
 """
 function noisy_function{T<:Real}(fun::Function, x::AbstractVector{T}; noise::Real = 0.01, f_rand::Function = randn)
@@ -12,7 +12,7 @@ function noisy_function{T<:Real}(fun::Function, x::AbstractVector{T}; noise::Rea
 end
 
 """
-`x, y = DataGenerators.noisy_sin(n, start, stop; noise = 0.3, f_rand = randn)`
+`x, y = noisy_sin(n, start, stop; noise = 0.3, f_rand = randn)`
 
 Generates `n` noisy equally spaces samples of a sinus from `start` to `stop`
 by adding `noise .* f_randn(length(x))` to the result of `fun(x)`.
@@ -22,7 +22,7 @@ function noisy_sin(n::Int = 50, start::Real = 0, stop::Real = 2π; noise::Real =
 end
 
 """
-`x, y = DataGenerators.noisy_poly(coef, x; noise = 0.01, f_rand = randn)`
+`x, y = noisy_poly(coef, x; noise = 0.01, f_rand = randn)`
 
 Generates a noisy response for a polynomial of degree `length(coef)`
 using the vector `x` as input and adding `noise .* f_randn(length(x))` to the result.
