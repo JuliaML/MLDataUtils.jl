@@ -23,9 +23,9 @@ using MLDataUtils
     - [Noisy Polynome](#noisy-polynome)
 - [Datasets](#datasets)
     - [The Iris Dataset](#the-iris-dataset)
-    - [Noisy Line](#noisy-line)
-    - [Noisy Sin](#noisy-sin)
-    - [Noisy Polynome](#noisy-polynome)
+    - [Noisy Line](#noisy-line-example)
+    - [Noisy Sin](#noisy-sin-example)
+    - [Noisy Polynome](#noisy-polynome-example)
 
 ### Feature Normalization
 
@@ -83,21 +83,21 @@ _Note_: all the features of `X` are centered and rescaled.
 
 ### Data Generators
 
-#### Noisy function
+#### Noisy Function
 
 `x, y = noisy_function(fun, x; noise = 0.01, f_rand = randn)`
 
 Generates a noisy response `y` for the given function `fun`
 by adding `noise .* f_randn(length(x))` to the result of `fun(x)`.
 
-#### Noisy sin
+#### Noisy Sin
 
 `x, y = noisy_sin(n, start, stop; noise = 0.3, f_rand = randn)`
 
 Generates `n` noisy equally spaces samples of a sinus from `start` to `stop`
 by adding `noise .* f_randn(length(x))` to the result of `fun(x)`.
 
-#### Noisy polynome
+#### Noisy Polynome
 
 `x, y = noisy_poly(coef, x; noise = 0.01, f_rand = randn)`
 
@@ -125,7 +125,7 @@ The optional vector `vars` contains the names of the features (i.e. rows of `X`)
 Check out [the wikipedia entry](https://en.wikipedia.org/wiki/Iris_flower_data_set)
 for more information about the dataset.
 
-#### Noisy line
+#### Noisy Line Example
 
 `x, y, vars = load_line()`
 
@@ -137,7 +137,7 @@ The optional vector `vars` contains descriptive names for `x` and `y`
 
 ![noisy_line](https://cloud.githubusercontent.com/assets/10854026/13020766/75b321d4-d1d7-11e5-940d-25974efa0710.png)
 
-#### Noisy sin
+#### Noisy Sin Example
 
 `x, y, vars = load_sin()`
 
@@ -149,7 +149,7 @@ The optional vector `vars` contains descriptive names for `x` and `y`
 
 ![noisy_sin](https://cloud.githubusercontent.com/assets/10854026/13020842/eb6f2f30-d1d7-11e5-8a2c-a264fc14c861.png)
 
-#### Noisy polynome
+#### Noisy Polynome Example
 
 `x, y, vars = load_poly()`
 
