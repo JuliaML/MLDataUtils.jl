@@ -9,7 +9,7 @@ X = expand_poly(x, degree = 5)
 
 # ===============================================================
 
-msg("Test center!, normalize!, and rescale!")
+msg("Test center! and rescale!")
 
 X1 = copy(X)
 center!(X1)
@@ -20,28 +20,16 @@ x1 = copy(x)
 @test mean(x1) <= 10e-10
 
 X2 = copy(X)
-normalize!(X2)
+rescale!(X2)
 @test sum(mean(X2, 2)) <= 10e-10
 @test_approx_eq std(X2, 2) [1, 1, 1, 1, 1]
 
 x2 = copy(x)
-mu, sigma = normalize!(x2)
+mu, sigma = rescale!(x2)
 @test_approx_eq mu mean(x)
 @test_approx_eq sigma std(x)
 @test mean(x2) <= 10e-10
 @test_approx_eq std(x2) 1
-
-X3 = copy(X)
-rescale!(X3)
-@test sum(mean(X3, 2)) <= 10e-10
-@test all(std(X3, 2) .< [1, 1, 1, 1, 1])
-
-x3 = copy(x)
-mu, sigma = rescale!(x3)
-@test_approx_eq mu mean(x)
-@test_approx_eq sigma ((maximum(x) - minimum(x)) / 2)
-@test mean(x3) <= 10e-10
-@test std(x3) < 1
 
 # ===============================================================
 

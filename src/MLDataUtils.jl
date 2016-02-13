@@ -10,7 +10,6 @@ export
 
     center!,
     rescale!,
-    normalize!,
 
     FeatureNormalizer,
 

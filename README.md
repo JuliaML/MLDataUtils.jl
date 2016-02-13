@@ -11,7 +11,23 @@ Pkg.add("MLDataUtils")
 using MLDataUtils
 ```
 
-## Feature Normalization
+## Usage
+
+- [Feature Normalization](#feature-normalization)
+    - [Centering](#centering)
+    - [Rescaling](#rescaling)
+- [Basis Expansion](#basis-expansion)
+- [Data Generators](#data-generators)
+    - [Noisy Function](#noisy-function)
+    - [Noisy Sin](#noisy-sin)
+    - [Noisy Polynome](#noisy-polynome)
+- [Datasets](#datasets)
+    - [The Iris Dataset](#the-iris-dataset)
+    - [Noisy Line](#noisy-line)
+    - [Noisy Sin](#noisy-sin)
+    - [Noisy Polynome](#noisy-polynome)
+
+### Feature Normalization
 
 This package contains a simple model called `FeatureNormalizer`, that can
 be used to normalize training and test data with the parameters computed
@@ -37,24 +53,16 @@ X_norm = predict(cs, X)
 
 The underlying functions can also be used directly
 
-### Center data
+#### Centering
 
 `μ = center!(X[, μ])`
 
 Centers each row of `X` around the corresponding entry in the vector `μ`.
 If `μ` is not specified then it defaults to `mean(X, 2)`.
 
-### Rescale data
+#### Rescaling
 
-`μ, σ = rescale!(X[, μ])`
-
-Centers each row of `X` around the corresponding entry in the vector `μ`
-and then rescaled to be between -1 and 1.
-If `μ` is not specified then it defaults to `mean(X, 2)`.
-
-### Normalize data
-
-`μ, σ = normalize!(X[, μ, σ])`
+`μ, σ = rescale!(X[, μ, σ])`
 
 Centers each row of `X` around the corresponding entry in the vector `μ`
 and then rescaled using the corresponding entry in the vector `σ`.
@@ -62,9 +70,9 @@ If `μ` is not specified then it defaults to `mean(X, 2)`.
 If `σ` is not specified then it defaults to `std(X, 2)`.
 
 
-## Basis Expansion
+### Basis Expansion
 
-`X = DataUtils.expand_poly(x; degree = 5)`
+`X = expand_poly(x; degree = 5)`
 
 Performs a polynomial basis expansion of the given `degree`
 for the vector `x`.
@@ -73,23 +81,23 @@ The return value `X` is a matrix of size `(degree, length(x))`.
 _Note_: all the features of `X` are centered and rescaled.
 
 
-## Data Generators
+### Data Generators
 
-### Noisy function
+#### Noisy function
 
 `x, y = noisy_function(fun, x; noise = 0.01, f_rand = randn)`
 
 Generates a noisy response `y` for the given function `fun`
 by adding `noise .* f_randn(length(x))` to the result of `fun(x)`.
 
-### Noisy sin
+#### Noisy sin
 
 `x, y = noisy_sin(n, start, stop; noise = 0.3, f_rand = randn)`
 
 Generates `n` noisy equally spaces samples of a sinus from `start` to `stop`
 by adding `noise .* f_randn(length(x))` to the result of `fun(x)`.
 
-### Noisy polynomial
+#### Noisy polynome
 
 `x, y = noisy_poly(coef, x; noise = 0.01, f_rand = randn)`
 
@@ -99,11 +107,11 @@ The vector `coef` contains the coefficients for the terms of the polynome.
 The first element of `coef` denotes the coefficient for the term with
 the highest degree, while the last element of `coef` denotes the intercept.
 
-## Datasets
+### Datasets
 
 The package contains a few static datasets to serve as toy examples.
 
-### The Iris Dataset
+#### The Iris Dataset
 
 `X, y, vars = load_iris(n)`
 
@@ -117,7 +125,7 @@ The optional vector `vars` contains the names of the features (i.e. rows of `X`)
 Check out [the wikipedia entry](https://en.wikipedia.org/wiki/Iris_flower_data_set)
 for more information about the dataset.
 
-### Example: noisy line
+#### Noisy line
 
 `x, y, vars = load_line()`
 
@@ -129,7 +137,7 @@ The optional vector `vars` contains descriptive names for `x` and `y`
 
 ![noisy_line](https://cloud.githubusercontent.com/assets/10854026/13020766/75b321d4-d1d7-11e5-940d-25974efa0710.png)
 
-### Example: noisy sin
+#### Noisy sin
 
 `x, y, vars = load_sin()`
 
@@ -141,7 +149,7 @@ The optional vector `vars` contains descriptive names for `x` and `y`
 
 ![noisy_sin](https://cloud.githubusercontent.com/assets/10854026/13020842/eb6f2f30-d1d7-11e5-8a2c-a264fc14c861.png)
 
-### Example: noisy polynomial
+#### Noisy polynome
 
 `x, y, vars = load_poly()`
 
