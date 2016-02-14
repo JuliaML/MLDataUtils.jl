@@ -74,8 +74,7 @@ If `σ` is not specified then it defaults to `std(X, 2)`.
 
 `X = expand_poly(x; degree = 5)`
 
-Performs a polynomial basis expansion of the given `degree`
-for the vector `x`.
+Performs a polynomial basis expansion of the given `degree` for the vector `x`.
 The return value `X` is a matrix of size `(degree, length(x))`.
 
 _Note_: all the features of `X` are centered and rescaled.
@@ -131,9 +130,9 @@ for more information about the dataset.
 
 Loads an artificial example dataset for a noisy line.
 It is particularly useful to explain under- and overfitting.
-The vector `x` contains 11 equally spaced points between 0 and 1
-The vector `y` contains `x ./ 2 + 1` plus some gaussian noise
-The optional vector `vars` contains descriptive names for `x` and `y`
+The vector `x` contains 11 equally spaced points between 0 and 1.
+The vector `y` contains `x ./ 2 + 1` plus some gaussian noise.
+The optional vector `vars` contains descriptive names for `x` and `y`.
 
 ![noisy_line](https://cloud.githubusercontent.com/assets/10854026/13020766/75b321d4-d1d7-11e5-940d-25974efa0710.png)
 
@@ -143,9 +142,9 @@ The optional vector `vars` contains descriptive names for `x` and `y`
 
 Loads an artificial example dataset for a noisy sin.
 It is particularly useful to explain under- and overfitting.
-The vector `x` contains equally spaced points between 0 and 2π
-The vector `y` contains `sin(x)` plus some gaussian noise
-The optional vector `vars` contains descriptive names for `x` and `y`
+The vector `x` contains equally spaced points between 0 and 2π.
+The vector `y` contains `sin(x)` plus some gaussian noise.
+The optional vector `vars` contains descriptive names for `x` and `y`.
 
 ![noisy_sin](https://cloud.githubusercontent.com/assets/10854026/13020842/eb6f2f30-d1d7-11e5-8a2c-a264fc14c861.png)
 
@@ -155,9 +154,9 @@ The optional vector `vars` contains descriptive names for `x` and `y`
 
 Loads an artificial example dataset for a noisy quadratic function.
 It is particularly useful to explain under- and overfitting.
-The vector `x` contains 50 points between 0 and 4
-The vector `y` contains `2.6 * x^2 + .8 * x` plus some gaussian noise
-The optional vector `vars` contains descriptive names for `x` and `y`
+The vector `x` contains 50 points between 0 and 4.
+The vector `y` contains `2.6 * x^2 + .8 * x` plus some gaussian noise.
+The optional vector `vars` contains descriptive names for `x` and `y`.
 
 ![noisy_poly](https://cloud.githubusercontent.com/assets/10854026/13020955/9628c120-d1d8-11e5-91f3-c16367de5aad.png)
 
