@@ -8,7 +8,7 @@
     for i = 1:length(x)
         @test_approx_eq sin(x[i]) y[i]
     end
-    #print(scatterplot(x, y, color = :blue, height = 5))
+    print(scatterplot(x, y; color = :blue, height = 5))
 end
 
 # ==============================================================
@@ -21,6 +21,6 @@ end
     for i = 1:length(x)
         @test_approx_eq (coef[1] * x[i]^2 + coef[2] * x[i]^1 + coef[3]) y[i]
     end
-    #print(scatterplot(x, y, color = :blue, height = 5))
+    print(scatterplot(x, y; color = :blue, height = 5))
 end
 

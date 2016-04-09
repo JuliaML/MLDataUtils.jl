@@ -22,11 +22,15 @@ export
 
     fit,
     predict,
-    predict!
+    predict!,
+
+    MiniBatches,
+    LabeledMiniBatches
 
 include("feature_scaling.jl")
 include("basis_expansion.jl")
 include("noisy_function.jl")
 include("datasets.jl")
+include("samplers.jl")
 
 end
