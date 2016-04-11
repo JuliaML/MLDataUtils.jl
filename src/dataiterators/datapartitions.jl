@@ -209,22 +209,33 @@ Base.length(sampler::Union{DataPartitions,LabeledDataPartitions}) = sampler.coun
 # Generic fallbacks for (Labeled)DataPartitions
 # - requires getobs(data, range)
 
+function Base.getindex(sampler::DataPartitions, batchindex)
+    offset = Int((batchindex-1) * sampler.size + 1)
+    getobs(sampler.features, offset:(offset + sampler.size - 1))
+end
+
+function Base.getindex(sampler::LabeledDataPartitions, batchindex)
+    offset = Int((batchindex-1) * sampler.size + 1)
+    range = offset:(offset + sampler.size - 1)
+    X = getobs(sampler.features, range)
+    y = getobs(sampler.targets, range)
+    X, y
+end
+
+# ==============================================================
+# Generic fallbacks for (Labeled)DataPartitions
+# - requires getindex(::DataPartition, batchindex)
+
 function Base.next(sampler::DataPartitions, state)
     order, idx = state
     batchindex = order[idx]
-    offset = Int((batchindex-1) * sampler.size + 1)
-    X = getobs(sampler.features, offset:(offset + sampler.size - 1))
-    X, (order, idx + 1)
+    sampler[batchindex], (order, idx + 1)
 end
 
 function Base.next(sampler::LabeledDataPartitions, state)
     order, idx = state
     batchindex = order[idx]
-    offset = Int((batchindex-1) * sampler.size + 1)
-    range = offset:(offset + sampler.size - 1)
-    X = getobs(sampler.features, range)
-    y = getobs(sampler.targets, range)
-    ((X, y), (order, idx + 1))
+    (sampler[batchindex], (order, idx + 1))
 end
 
 # ==============================================================
