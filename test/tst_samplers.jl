@@ -5,26 +5,30 @@ Y = vcat(y', y')
     sampler = MiniBatches(X)
     @test typeof(sampler) <: MiniBatches{Matrix{Float64}}
     @test sampler.batchsize == MLDataUtils.default_batchsize(X) == 20
-    @test sampler.batchcount == 7
+    @test sampler.count == 7
     @test sampler.features == X
+    @test sampler.random_order == true
 
     sampler = MiniBatches(X, batchsize = 10)
     @test typeof(sampler) <: MiniBatches{Matrix{Float64}}
     @test sampler.batchsize == 10
-    @test sampler.batchcount == 15
+    @test sampler.count == 15
     @test sampler.features == X
+    @test sampler.random_order == true
 
-    sampler = MiniBatches(X, batchsize = 10, batchcount = 10)
+    sampler = MiniBatches(X, batchsize = 10, count = 10)
     @test typeof(sampler) <: MiniBatches{Matrix{Float64}}
     @test sampler.batchsize == 10
-    @test sampler.batchcount == 10
+    @test sampler.count == 10
     @test sampler.features == X
+    @test sampler.random_order == true
 
-    sampler = MiniBatches(X, batchcount = 10)
+    sampler = MiniBatches(X, count = 10, random_order = false)
     @test typeof(sampler) <: MiniBatches{Matrix{Float64}}
     @test sampler.batchsize == 15
-    @test sampler.batchcount == 10
+    @test sampler.count == 10
     @test sampler.features == X
+    @test sampler.random_order == false
 end
 
 @testset "LabeledMiniBatches constructor" begin
@@ -34,30 +38,34 @@ end
     sampler = LabeledMiniBatches(X, y)
     @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64}}
     @test sampler.batchsize == MLDataUtils.default_batchsize(X) == 20
-    @test sampler.batchcount == 7
+    @test sampler.count == 7
     @test sampler.features == X
     @test sampler.targets == y
+    @test sampler.random_order == true
 
-    sampler = LabeledMiniBatches(X, y, batchsize = 10)
+    sampler = LabeledMiniBatches(X, y, batchsize = 10, random_order = false)
     @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64}}
     @test sampler.batchsize == 10
-    @test sampler.batchcount == 15
+    @test sampler.count == 15
     @test sampler.features == X
     @test sampler.targets == y
+    @test sampler.random_order == false
 
-    sampler = LabeledMiniBatches(X, y, batchsize = 10, batchcount = 10)
+    sampler = LabeledMiniBatches(X, y, batchsize = 10, count = 10)
     @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64}}
     @test sampler.batchsize == 10
-    @test sampler.batchcount == 10
+    @test sampler.count == 10
     @test sampler.features == X
     @test sampler.targets == y
+    @test sampler.random_order == true
 
-    sampler = LabeledMiniBatches(X, y, batchcount = 10)
+    sampler = LabeledMiniBatches(X, y, count = 10)
     @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64}}
     @test sampler.batchsize == 15
-    @test sampler.batchcount == 10
+    @test sampler.count == 10
     @test sampler.features == X
     @test sampler.targets == y
+    @test sampler.random_order == true
 end
 
 @testset "MiniBatches iterator for Vector" begin
@@ -71,7 +79,7 @@ end
             @test eltype(features) == eltype(X)
             count += 1
         end
-        @test count == sampler.batchcount
+        @test count == sampler.count
     end
 end
 
@@ -86,7 +94,7 @@ end
             @test eltype(features) == eltype(X)
             count += 1
         end
-        @test count == sampler.batchcount
+        @test count == sampler.count
     end
 end
 
@@ -107,7 +115,7 @@ end
             @test eltype(targets)  == eltype(y)
             count += 1
         end
-        @test count == sampler.batchcount
+        @test count == sampler.count
     end
 end
 
@@ -128,7 +136,7 @@ end
             @test eltype(targets)  == eltype(y)
             count += 1
         end
-        @test count == sampler.batchcount
+        @test count == sampler.count
     end
 end
 
@@ -149,7 +157,7 @@ end
             @test eltype(targets)  == eltype(Y)
             count += 1
         end
-        @test count == sampler.batchcount
+        @test count == sampler.count
     end
 end
 
@@ -170,7 +178,7 @@ end
             @test eltype(targets)  == eltype(Y)
             count += 1
         end
-        @test count == sampler.batchcount
+        @test count == sampler.count
     end
 end
 
@@ -184,7 +192,7 @@ end
             @test eltype(features) == eltype(X)
             count += 1
         end
-        @test count == sampler.batchcount
+        @test count == sampler.count
     end
 end
 
