@@ -34,40 +34,45 @@ function _compute_partitionsettings(features::AbstractArray, size::Int, count::I
 end
 
 """
-`DataPartitions(features; nargs...)` → `DataPartitions`
+`DataPartition(features; nargs...)` → `DataPartition`
 
-`DataPartitions(features, targets; nargs...)` → `LabeledDataPartitions`
+`DataPartition(features, targets; nargs...)` → `LabeledDataPartition`
 
 Description
 ============
 
-The purpose of `DataPartitions` is to provide a generic `DataIterator`
+The purpose of `DataPartition` is to provide a generic `DataIterator`
 specification for labeled and unlabeled mini-batches that can be
-used as an iterator. In contrast to `RandomSampler`, `DataPartitions`
-tries to avoid copying data.
+used as an iterator, while also being able to be queried using
+`getindex`. In contrast to `RandomSampler`, `DataPartition` tries
+to avoid copying data.
 
-The resulting iterator will loop over the dataset once, effectively
-denoting an epoch. Each iteration will return a minibatch of constant
-size, which can be specified using keyword parameters. In other words
-the purpose of `DataPartitions` is to conveniently iterate over some
-dataset using equally-sized blocks, where the order in which those
-blocks are returned can be randomized by setting `random_order = true`.
+If used as an iterator the object will iterate over the dataset once,
+effectively denoting an epoch. Each iteration will return a minibatch
+of constant size, which can be specified using keyword parameters.
+In other words the purpose of `DataPartition` is to conveniently
+iterate over some dataset using equally-sized blocks, where the
+order in which those blocks are returned can be randomized by setting
+`random_order = true`.
 
 Note: In the case that the size of the dataset is not divideable by
 the specified (or inferred) size, the remaining observations will
 be ignored.
 
-Note: `DataPartitions` itself will not shuffle the data, thus
-the observations within each batch will in general be adjacent to
-each other. However, one can choose to process the batches in random
-order by setting `random_order = true`.
+Note: `DataPartition` itself will not shuffle the data, thus the
+observations within each batch/partition will in general be adjacent
+to each other. However, one can choose to process the batches in
+random order by setting `random_order = true`. The order will be
+randomized each time the object is iterated over. Be aware that his
+parameter will only take affect if the object is used as an iterator,
+and thus won't influence `getindex`.
 
 Usage
 ======
 
-    DataPartitions(features; size = -1, count = -1, random_order = true)
+    DataPartition(features; size = -1, count = -1, random_order = true)
 
-    DataPartitions(features, targets; size = -1, count = -1, random_order = true)
+    DataPartition(features, targets; size = -1, count = -1, random_order = true)
 
 Arguments
 ==========
@@ -86,17 +91,20 @@ divided into. If not specified the count will be inferred using
 the `size` and the total number of observations in `features`
 
 - **`random_order`** : If true, the batches will be processed in a
-random order. (default: true)
+random order if the `DataPartition` is used as an iterator.
+(default: true)
 
 Methods
 ========
 
+- **`getindex`** : Returns the minibatch/partition of the given index
+
 - **`start`** : From the iterator interface. Returns the initial
 state of the iterator. For Minibatches this is a Tuple{Vector,Int}
 and in which the first element contains the order in which the
-batches will be processed and the second element denotes the
-current index into the order vector. This index will be incremented
-each iteration by `next`.
+batches will be processed and the second element denotes the current
+index into the order vector. This index will be incremented each
+iteration by `next`.
 
 - **`done`** : From the iterator interface. Returns true if all
 batches have been processed.
@@ -117,13 +125,16 @@ Out-of-the-box it provides support efficient support for datasets
 that are of type `Matrix` and/or `Vector`, as well as a general
 fallback implementation for `AbstractVector`s and `AbstractMatrix`.
 
-There are two ways to add support for custom dataset-container-types.
+There are three ways to add support for custom dataset-container-types.
 
 1. implement the `getobs` method for your custom type to return
 the specified observations, or
 
-2. implement the `Base.next` for `DataPartitions{YourType}` to have
-complete control over how the batches are created.
+2. implement the `Base.getindex` method for `DataPartition{YourType}`,
+to define how a batch of a specified index is returned.
+
+2. implement the `Base.next` method for `DataPartition{YourType}` to
+have complete control over how your data container is iterated over.
 
 Author(s)
 ==========
@@ -136,7 +147,7 @@ Examples
     # batch_X contains 10 adjacent observations in each iteration.
     # Consequent batches are also adjacent, because the order of
     # batches is sequential. This is specified using random_order.
-    for batch_X in DataPartitions(X; size = 10, random_order = false)
+    for batch_X in DataPartition(X; size = 10, random_order = false)
         # ... train unsupervised model on batch here ...
     end
 
@@ -144,7 +155,7 @@ Examples
     # as well as the dataset size. Observations in batch_x and batch_y
     # are still adjacent, however, consequent batches are generally not,
     # because the order in which they are processed is randomized.
-    for (batch_X, batch_y) in DataPartitions(X, y; count = 20, random_order = true)
+    for (batch_X, batch_y) in DataPartition(X, y; count = 20, random_order = true)
         # ... train supervised model on batch here ...
     end
 
@@ -153,26 +164,26 @@ see also
 
 `DataIterator`
 """
-immutable DataPartitions{TFeatures} <: DataIterator
+immutable DataPartition{TFeatures} <: DataIterator
     features::TFeatures
     size::Int
     count::Int
     random_order::Bool
 end
 
-function DataPartitions{TFeatures}(features::TFeatures; size = -1, count = -1, random_order = true)
+function DataPartition{TFeatures}(features::TFeatures; size = -1, count = -1, random_order = true)
     size, count = _compute_partitionsettings(features, size, count)
-    DataPartitions{TFeatures}(features, size, count, random_order)
+    DataPartition{TFeatures}(features, size, count, random_order)
 end
 
-typealias MiniBatches DataPartitions
+typealias MiniBatches DataPartition
 
 """
-`LabeledDataPartitions(features, targets; nargs...)` → `LabeledDataPartitions`
+`LabeledDataPartition(features, targets; nargs...)` → `LabeledDataPartition`
 
-see `DataPartitions` for documentation and usage
+see `DataPartition` for documentation and usage
 """
-immutable LabeledDataPartitions{TFeatures, TTargets} <: DataIterator
+immutable LabeledDataPartition{TFeatures, TTargets} <: DataIterator
     features::TFeatures
     targets::TTargets
     size::Int
@@ -180,41 +191,41 @@ immutable LabeledDataPartitions{TFeatures, TTargets} <: DataIterator
     random_order::Bool
 end
 
-function LabeledDataPartitions{TFeatures, TTargets}(features::TFeatures, targets::TTargets; size = -1, count = -1, random_order = true)
+function LabeledDataPartition{TFeatures, TTargets}(features::TFeatures, targets::TTargets; size = -1, count = -1, random_order = true)
     @assert nobs(features) == nobs(targets)
     size, count = _compute_partitionsettings(features, size, count)
-    LabeledDataPartitions{TFeatures, TTargets}(features, targets, size, count, random_order)
+    LabeledDataPartition{TFeatures, TTargets}(features, targets, size, count, random_order)
 end
 
-function DataPartitions{TFeatures, TTargets}(features::TFeatures, targets::TTargets; size = -1, count = -1, random_order = true)
-    LabeledDataPartitions(features, targets; size = size, count = count, random_order = random_order)
+function DataPartition{TFeatures, TTargets}(features::TFeatures, targets::TTargets; size = -1, count = -1, random_order = true)
+    LabeledDataPartition(features, targets; size = size, count = count, random_order = random_order)
 end
 
-typealias LabeledMiniBatches LabeledDataPartitions
+typealias LabeledMiniBatches LabeledDataPartition
 
 # ==============================================================
-# Generic for all (Labeled)DataPartitions subtypes
+# Generic for all (Labeled)DataPartition subtypes
 
-function Base.start(sampler::Union{DataPartitions,LabeledDataPartitions})
+function Base.start(sampler::Union{DataPartition,LabeledDataPartition})
     order = collect(1:sampler.count)
     if sampler.random_order
         shuffle!(order)
     end
     order, 1
 end
-Base.done(sampler::Union{DataPartitions,LabeledDataPartitions}, state) = state[2] > sampler.count
-Base.length(sampler::Union{DataPartitions,LabeledDataPartitions}) = sampler.count
+Base.done(sampler::Union{DataPartition,LabeledDataPartition}, state) = state[2] > sampler.count
+Base.length(sampler::Union{DataPartition,LabeledDataPartition}) = sampler.count
 
 # ==============================================================
-# Generic fallbacks for (Labeled)DataPartitions
+# Generic fallbacks for (Labeled)DataPartition
 # - requires getobs(data, range)
 
-function Base.getindex(sampler::DataPartitions, batchindex)
+function Base.getindex(sampler::DataPartition, batchindex)
     offset = Int((batchindex-1) * sampler.size + 1)
     getobs(sampler.features, offset:(offset + sampler.size - 1))
 end
 
-function Base.getindex(sampler::LabeledDataPartitions, batchindex)
+function Base.getindex(sampler::LabeledDataPartition, batchindex)
     offset = Int((batchindex-1) * sampler.size + 1)
     range = offset:(offset + sampler.size - 1)
     X = getobs(sampler.features, range)
@@ -223,36 +234,36 @@ function Base.getindex(sampler::LabeledDataPartitions, batchindex)
 end
 
 # ==============================================================
-# Generic fallbacks for (Labeled)DataPartitions
+# Generic fallbacks for (Labeled)DataPartition
 # - requires getindex(::DataPartition, batchindex)
 
-function Base.next(sampler::DataPartitions, state)
+function Base.next(sampler::DataPartition, state)
     order, idx = state
     batchindex = order[idx]
     sampler[batchindex], (order, idx + 1)
 end
 
-function Base.next(sampler::LabeledDataPartitions, state)
+function Base.next(sampler::LabeledDataPartition, state)
     order, idx = state
     batchindex = order[idx]
     (sampler[batchindex], (order, idx + 1))
 end
 
 # ==============================================================
-# DataPartitions{Vector}
-# DataPartitions{Matrix}
+# DataPartition{Vector}
+# DataPartition{Matrix}
 
-Base.eltype{F}(::Type{DataPartitions{Vector{F}}}) = SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}
-Base.eltype{F}(::Type{DataPartitions{Matrix{F}}}) = SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}
+Base.eltype{F}(::Type{DataPartition{Vector{F}}}) = SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}
+Base.eltype{F}(::Type{DataPartition{Matrix{F}}}) = SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}
 
 # ==============================================================
-# LabeledDataPartitions{Vector,Vector}
-# LabeledDataPartitions{Matrix,Vector}
-# LabeledDataPartitions{Vector,Matrix}
-# LabeledDataPartitions{Matrix,Vector}
+# LabeledDataPartition{Vector,Vector}
+# LabeledDataPartition{Matrix,Vector}
+# LabeledDataPartition{Vector,Matrix}
+# LabeledDataPartition{Matrix,Matrix}
 
-Base.eltype{F,T}(::Type{LabeledDataPartitions{Vector{F},Vector{T}}}) = Tuple{SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}, SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},1}}
-Base.eltype{F,T}(::Type{LabeledDataPartitions{Matrix{F},Vector{T}}}) = Tuple{SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}, SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},1}}
-Base.eltype{F,T}(::Type{LabeledDataPartitions{Vector{F},Matrix{T}}}) = Tuple{SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}, SubArray{T,2,Array{T,2},Tuple{Colon,UnitRange{Int64}},2}}
-Base.eltype{F,T}(::Type{LabeledDataPartitions{Matrix{F},Matrix{T}}}) = Tuple{SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}, SubArray{T,2,Array{T,2},Tuple{Colon,UnitRange{Int64}},2}}
+Base.eltype{F,T}(::Type{LabeledDataPartition{Vector{F},Vector{T}}}) = Tuple{SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}, SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},1}}
+Base.eltype{F,T}(::Type{LabeledDataPartition{Matrix{F},Vector{T}}}) = Tuple{SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}, SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},1}}
+Base.eltype{F,T}(::Type{LabeledDataPartition{Vector{F},Matrix{T}}}) = Tuple{SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}, SubArray{T,2,Array{T,2},Tuple{Colon,UnitRange{Int64}},2}}
+Base.eltype{F,T}(::Type{LabeledDataPartition{Matrix{F},Matrix{T}}}) = Tuple{SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}, SubArray{T,2,Array{T,2},Tuple{Colon,UnitRange{Int64}},2}}
 

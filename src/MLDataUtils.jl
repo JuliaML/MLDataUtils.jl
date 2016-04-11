@@ -24,8 +24,8 @@ export
     predict,
     predict!,
 
-    DataPartitions,
-    LabeledDataPartitions,
+    DataPartition,
+    LabeledDataPartition,
     MiniBatches,
     LabeledMiniBatches
 
