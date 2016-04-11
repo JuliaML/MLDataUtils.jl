@@ -24,6 +24,8 @@ export
     predict,
     predict!,
 
+    DataPartitions,
+    LabeledDataPartitions,
     MiniBatches,
     LabeledMiniBatches
 
@@ -31,7 +33,7 @@ include("feature_scaling.jl")
 include("basis_expansion.jl")
 include("noisy_function.jl")
 include("datasets.jl")
-include("samplers.jl")
-include("samplers/minibatches.jl")
+include("dataiterator.jl")
+include("dataiterators/datapartitions.jl")
 
 end

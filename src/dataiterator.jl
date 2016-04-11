@@ -7,12 +7,12 @@ getobs(A::Vector, range::Range) = slice(A, range)
 getobs(A::Matrix, range::Range) = sub(A, :, range)
 
 """
-`DataSampler` is the abstract base type for all sampler iterators.
+`DataIterator` is the abstract base type for all sampler iterators.
 
-DataSampler are to be designed to simplify the process of iterating
+DataIterator are to be designed to simplify the process of iterating
 through the observations of datasets as a for-loop.
 
-Every concrete subtype of `DataSampler` has to implement the iterator
+Every concrete subtype of `DataIterator` has to implement the iterator
 interface. The idea of a sampler is to be used in conjunction with a
 labeled or unlabeled dataset in the following manner:
 
@@ -24,5 +24,5 @@ labeled or unlabeled dataset in the following manner:
         # ... do something supervised with the sampled X and y
     end
 """
-abstract DataSampler
+abstract DataIterator
 

@@ -10,7 +10,7 @@ else
 end
 
 tests = [
-    "tst_samplers.jl"
+    "tst_dataiterators.jl"
     "tst_noisy_function.jl"
     "tst_feature_scaling.jl"
     "tst_datasets.jl"
