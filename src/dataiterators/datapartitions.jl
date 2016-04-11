@@ -109,13 +109,13 @@ iteration by `next`.
 - **`done`** : From the iterator interface. Returns true if all
 batches have been processed.
 
-- **`length`** : Returns the total number batches; i.e. `count`
+- **`length`** : Returns the total number partitios / minibatches
 
 - **`eltype`** : Unless specifically provide for a given type of
 `features` (and `targets`) this will return `Any`. Out of the box
 the concrete eltype for `Matrix` and `Vector` are provided.
 
-- **`next`** : Form the iterator interface. Returns the next batch
+- **`next`** : Form the iterator interface. Returns the next partition
 and the updated state.
 
 Details
@@ -237,13 +237,7 @@ end
 # Generic fallbacks for (Labeled)DataPartition
 # - requires getindex(::DataPartition, batchindex)
 
-function Base.next(sampler::DataPartition, state)
-    order, idx = state
-    batchindex = order[idx]
-    sampler[batchindex], (order, idx + 1)
-end
-
-function Base.next(sampler::LabeledDataPartition, state)
+function Base.next(sampler::Union{DataPartition,LabeledDataPartition}, state)
     order, idx = state
     batchindex = order[idx]
     (sampler[batchindex], (order, idx + 1))

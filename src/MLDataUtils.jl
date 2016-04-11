@@ -27,7 +27,10 @@ export
     DataPartition,
     LabeledDataPartition,
     MiniBatches,
-    LabeledMiniBatches
+    LabeledMiniBatches,
+
+    RandomSamples,
+    LabeledRandomSamples
 
 include("feature_scaling.jl")
 include("basis_expansion.jl")
@@ -35,5 +38,6 @@ include("noisy_function.jl")
 include("datasets.jl")
 include("dataiterator.jl")
 include("dataiterators/datapartitions.jl")
+include("dataiterators/randomsamples.jl")
 
 end

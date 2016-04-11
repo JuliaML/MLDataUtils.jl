@@ -1,66 +1,70 @@
 X, y = load_iris()
 Y = vcat(y', y')
 
-@testset "MiniBatches constructor" begin
-    sampler = MiniBatches(X)
-    @test typeof(sampler) <: MiniBatches{Matrix{Float64}}
+@testset "DataPartition constructor" begin
+    @test DataPartition == MiniBatches
+
+    sampler = DataPartition(X)
+    @test typeof(sampler) <: DataPartition{Matrix{Float64}}
     @test sampler.size == MLDataUtils.default_partitionsize(X) == 20
     @test sampler.count == 7
     @test sampler.features == X
     @test sampler.random_order == true
 
-    sampler = MiniBatches(X, size = 10)
-    @test typeof(sampler) <: MiniBatches{Matrix{Float64}}
+    sampler = DataPartition(X, size = 10)
+    @test typeof(sampler) <: DataPartition{Matrix{Float64}}
     @test sampler.size == 10
     @test sampler.count == 15
     @test sampler.features == X
     @test sampler.random_order == true
 
-    sampler = MiniBatches(X, size = 10, count = 10)
-    @test typeof(sampler) <: MiniBatches{Matrix{Float64}}
+    sampler = DataPartition(X, size = 10, count = 10)
+    @test typeof(sampler) <: DataPartition{Matrix{Float64}}
     @test sampler.size == 10
     @test sampler.count == 10
     @test sampler.features == X
     @test sampler.random_order == true
 
-    sampler = MiniBatches(X, count = 10, random_order = false)
-    @test typeof(sampler) <: MiniBatches{Matrix{Float64}}
+    sampler = DataPartition(X, count = 10, random_order = false)
+    @test typeof(sampler) <: DataPartition{Matrix{Float64}}
     @test sampler.size == 15
     @test sampler.count == 10
     @test sampler.features == X
     @test sampler.random_order == false
 end
 
-@testset "LabeledMiniBatches constructor" begin
-    sampler = MiniBatches(X, y)
-    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64}}
+@testset "LabeledDataPartition constructor" begin
+    @test LabeledDataPartition == LabeledMiniBatches
 
-    sampler = LabeledMiniBatches(X, y)
-    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64}}
+    sampler = DataPartition(X, y)
+    @test typeof(sampler) <: LabeledDataPartition{Matrix{Float64}}
+
+    sampler = LabeledDataPartition(X, y)
+    @test typeof(sampler) <: LabeledDataPartition{Matrix{Float64}}
     @test sampler.size == MLDataUtils.default_partitionsize(X) == 20
     @test sampler.count == 7
     @test sampler.features == X
     @test sampler.targets == y
     @test sampler.random_order == true
 
-    sampler = LabeledMiniBatches(X, y, size = 10, random_order = false)
-    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64}}
+    sampler = LabeledDataPartition(X, y, size = 10, random_order = false)
+    @test typeof(sampler) <: LabeledDataPartition{Matrix{Float64}}
     @test sampler.size == 10
     @test sampler.count == 15
     @test sampler.features == X
     @test sampler.targets == y
     @test sampler.random_order == false
 
-    sampler = LabeledMiniBatches(X, y, size = 10, count = 10)
-    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64}}
+    sampler = LabeledDataPartition(X, y, size = 10, count = 10)
+    @test typeof(sampler) <: LabeledDataPartition{Matrix{Float64}}
     @test sampler.size == 10
     @test sampler.count == 10
     @test sampler.features == X
     @test sampler.targets == y
     @test sampler.random_order == true
 
-    sampler = LabeledMiniBatches(X, y, count = 10)
-    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64}}
+    sampler = LabeledDataPartition(X, y, count = 10)
+    @test typeof(sampler) <: LabeledDataPartition{Matrix{Float64}}
     @test sampler.size == 15
     @test sampler.count == 10
     @test sampler.features == X
@@ -68,9 +72,9 @@ end
     @test sampler.random_order == true
 end
 
-@testset "MiniBatches iterator for Vector" begin
+@testset "DataPartition iterator for Vector" begin
     for batchsize in (1, 10)
-        sampler = MiniBatches(vec(X[1,:]), size = batchsize)
+        sampler = DataPartition(vec(X[1,:]), size = batchsize)
         count = 0
         for features in sampler
             @test typeof(features) <: AbstractVector
@@ -83,9 +87,9 @@ end
     end
 end
 
-@testset "MiniBatches iterator for Matrix" begin
+@testset "DataPartition iterator for Matrix" begin
     for batchsize in (1, 10)
-        sampler = MiniBatches(X, size = batchsize)
+        sampler = DataPartition(X, size = batchsize)
         count = 0
         for features in sampler
             @test typeof(features) <: AbstractMatrix
@@ -98,9 +102,9 @@ end
     end
 end
 
-@testset "LabeledMiniBatches iterator for Vector/Vector" begin
+@testset "LabeledDataPartition iterator for Vector/Vector" begin
     for batchsize in (1, 10)
-        sampler = MiniBatches(vec(X[1,:]), y, size = batchsize)
+        sampler = DataPartition(vec(X[1,:]), y, size = batchsize)
         for tuple in sampler
             @test typeof(tuple) == eltype(sampler)
         end
@@ -119,9 +123,9 @@ end
     end
 end
 
-@testset "LabeledMiniBatches iterator for Matrix/Vector" begin
+@testset "LabeledDataPartition iterator for Matrix/Vector" begin
     for batchsize in (1, 10)
-        sampler = MiniBatches(X, y, size = batchsize)
+        sampler = DataPartition(X, y, size = batchsize)
         for tuple in sampler
             @test typeof(tuple) == eltype(sampler)
         end
@@ -140,9 +144,9 @@ end
     end
 end
 
-@testset "LabeledMiniBatches iterator for Vector/Matrix" begin
+@testset "LabeledDataPartition iterator for Vector/Matrix" begin
     for batchsize in (1, 10)
-        sampler = MiniBatches(vec(X[1,:]), Y, size = batchsize)
+        sampler = DataPartition(vec(X[1,:]), Y, size = batchsize)
         for tuple in sampler
             @test typeof(tuple) == eltype(sampler)
         end
@@ -161,9 +165,9 @@ end
     end
 end
 
-@testset "LabeledMiniBatches iterator for Matrix/Matrix" begin
+@testset "LabeledDataPartition iterator for Matrix/Matrix" begin
     for batchsize in (1, 10)
-        sampler = MiniBatches(X, Y, size = batchsize)
+        sampler = DataPartition(X, Y, size = batchsize)
         for tuple in sampler
             @test typeof(tuple) == eltype(sampler)
         end
@@ -182,9 +186,9 @@ end
     end
 end
 
-@testset "MiniBatches iterator for generic Fallback" begin
+@testset "DataPartition iterator for generic Fallback" begin
     for batchsize in (1, 10)
-        sampler = MiniBatches(slice(X, :, 1:100), size = batchsize)
+        sampler = DataPartition(slice(X, :, 1:100), size = batchsize)
         count = 0
         for features in sampler
             @test typeof(features) <: AbstractMatrix
