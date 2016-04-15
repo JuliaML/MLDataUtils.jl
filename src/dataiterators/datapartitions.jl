@@ -55,7 +55,7 @@ iterate over some dataset using equally-sized blocks, where the
 order in which those blocks are returned can be randomized by setting
 `random_order = true`.
 
-Note: In the case that the size of the dataset is not divideable by
+Note: In the case that the size of the dataset is not dividable by
 the specified (or inferred) size, the remaining observations will
 be ignored.
 
