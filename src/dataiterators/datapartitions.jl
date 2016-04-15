@@ -34,9 +34,9 @@ function _compute_partitionsettings(features::AbstractArray, size::Int, count::I
 end
 
 """
-`DataPartition(features; nargs...)` → `DataPartition`
+`DataPartition(features; nargs...)` →  `DataPartition`
 
-`DataPartition(features, targets; nargs...)` → `LabeledDataPartition`
+`DataPartition(features, targets; nargs...)` →  `LabeledDataPartition`
 
 Description
 ============
@@ -45,9 +45,9 @@ The purpose of `DataPartition` is to provide a generic `DataIterator`
 specification for labeled and unlabeled mini-batches that can be
 used as an iterator, while also being able to be queried using
 `getindex`. In contrast to `RandomSampler`, `DataPartition` tries
-to avoid copying data.
+to avoid copying data by grouping adjacent observations.
 
-If used as an iterator the object will iterate over the dataset once,
+If used as an iterator, the object will iterate over the dataset once,
 effectively denoting an epoch. Each iteration will return a minibatch
 of constant size, which can be specified using keyword parameters.
 In other words the purpose of `DataPartition` is to conveniently
@@ -64,7 +64,7 @@ observations within each batch/partition will in general be adjacent
 to each other. However, one can choose to process the batches in
 random order by setting `random_order = true`. The order will be
 randomized each time the object is iterated over. Be aware that his
-parameter will only take affect if the object is used as an iterator,
+parameter will only take effect if the object is used as an iterator,
 and thus won't influence `getindex`.
 
 Usage
@@ -162,7 +162,7 @@ Examples
 see also
 =========
 
-`DataIterator`
+`DataIterator`, `RandomSamples`
 """
 immutable DataPartition{TFeatures} <: DataIterator
     features::TFeatures

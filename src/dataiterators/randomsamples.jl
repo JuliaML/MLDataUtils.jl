@@ -1,11 +1,33 @@
 
 """
-`RandomSamples(features; nargs...)` → `RandomSamples`
+`RandomSamples(features; nargs...)` →  `RandomSamples`
 
-`RandomSamples(features, targets; nargs...)` → `LabeledRandomSamples`
+`RandomSamples(features, targets; nargs...)` →  `LabeledRandomSamples`
 
 Description
 ============
+
+The purpose of `RandomSamples` is to provide a generic `DataIterator`
+specification for labeled and unlabeled randomly sampled mini-batches
+that can be used as an iterator, while also being able to be queried
+using `StatsBase.sample`. In contrast to `DataPartition`, `RandomSamples`
+generates completely random mini-batches, in which the containing
+observations are generally not adjacent to each other in the original
+dataset.
+
+The fact that the observations within each mini-batch are uniformly
+sampled has important consequences:
+
+- While this approach can often improve convergence, it is typically
+also more resource intensive. The reason for that is because of the
+need to allocate temporary data structures, as well as the need for
+copy operations.
+
+- Because observations are independently sampled, it is possible that
+the same original obervation occurs multiple times within the same
+mini-batch. This may or may not be an issue, depending on the use-case.
+In the presence of online data-augmentation strategies, this fact
+should usually not have any noticible impact.
 
 Usage
 ======
@@ -14,7 +36,7 @@ Usage
 
     RandomSamples(features; size = 1, count = nobs(features))
 
-    RandomSamples(features, targets; size = -1, count = nobs(features))
+    RandomSamples(features, targets; size = 1, count = nobs(features))
 
 Arguments
 ==========
@@ -25,10 +47,10 @@ Arguments
 dataset. Needs to have the same number of observations as `features`.
 
 - **`size`** : The constant size of each sampled batch.
-If not specified. (default: 1)
+If not specified it defaults to 1.
 
-- **`count`** : The number of batches that the dataset will be
-divided into. (default: number of observations in `features`)
+- **`count`** : The number of sample-batches that will be generated.
+(default: number of observations in `features`)
 
 Methods
 ========
@@ -55,13 +77,16 @@ Out-of-the-box it provides support efficient support for datasets
 that are of type `Matrix` and/or `Vector`, as well as a general
 fallback implementation for `AbstractVector`s and `AbstractMatrix`.
 
-There are two ways to add support for custom dataset-container-types.
+There are three ways to add support for custom dataset-container-types.
 
 1. implement the `getobs` method for your custom type to return
-the specified observations, or
+the specified observations.
 
-2. implement the `Base.next` for `RandomSamples{YourType}` to have
-complete control over how the batches are created.
+2. implement the `StatsBase.sample` method for `RandomSamples{YourType}`,
+to define how a batch is generated.
+
+3. implement the `Base.next` method for `RandomSamples{YourType}` to
+have complete control over how your data container is iterated over.
 
 Author(s)
 ==========
@@ -71,10 +96,37 @@ Author(s)
 Examples
 =========
 
+    # batch_X contains 1 randomly sampled observation from X (i.i.d uniform).
+    # Note: This code will in total produce as many batches as there are
+    #       observations in X. However, because the obervations are sampled
+    #       at random, one should expect to see some obervations multiple times,
+    #       while other not at all. If one wants to go through the original
+    #       dataset one observation at a time but in a random order, then a
+    #       DataPartition(X, size = 1, random_order = true) should be used instead.
+    # Note: In the case X is a matrix or a vector then so will be batch_X, because
+    #       the additional dimension will not be dropped. This is for the sake
+    #       of both consistency and typestability
+    for batch_X in RandomSamples(X)
+        # ... train unsupervised model on batch here ...
+    end
+
+    # This time the size of each minibatch is specified explicitly to be 20,
+    # while the number of batches is set to 100. Also note that a vector of
+    # targets y is provided as well.
+    for (batch_X, batch_y) in RandomSamples(X, y; size = 20, count = 100)
+        # ... train supervised model on batch here ...
+    end
+
+    # One can also provide the total number of batches (i.e. count) directly.
+    # This is mainly for intuition and convenience reasons.
+    for batch_X in RandomSamples(X, 10)
+        # ... train unsupervised model on batch here ...
+    end
+
 see also
 =========
 
-`DataIterator`
+`DataIterator`, `DataPartition`
 """
 immutable RandomSamples{TFeatures} <: DataIterator
     features::TFeatures
@@ -107,31 +159,25 @@ end
 # ==============================================================
 # Generic for all (Labeled)RandomSamples subtypes
 
-Base.start(sampler::Union{RandomSamples,LabeledRandomSamples}) = (zeros(Int, sampler.size), 1)
-Base.done(sampler::Union{RandomSamples,LabeledRandomSamples}, state) = state[2] > sampler.count
+Base.start(sampler::Union{RandomSamples,LabeledRandomSamples}) = 1
+Base.done(sampler::Union{RandomSamples,LabeledRandomSamples}, samplenumber) = samplenumber > sampler.count
 Base.length(sampler::Union{RandomSamples,LabeledRandomSamples}) = sampler.count
 
 # ==============================================================
-# - requires getobs(data, range)
+# Generic fallbacks for (Labeled)DataPartition
+# - requires getobs(data, idx_vector)
 
-function _sample_reuse_idx!(indicies, sampler::RandomSamples)
-    rand!(indicies, 1:nobs(sampler.features))
-    getobs(sampler.features, indicies)
+function StatsBase.sample(sampler::RandomSamples)
+    getobs(sampler.features, rand(1:nobs(sampler.features), sampler.size))
 end
 
 # ==============================================================
 # Generic fallbacks for (Labeled)DataPartition
-# - requires getobs(data, range)
+# - requires StatsBase.sample(sampler)
 
-function StatsBase.sample(sampler::RandomSamples)
-    indicies = zeros(Int, sampler.size)
-    _sample_reuse_idx!(indicies, sampler)
-end
-
-function Base.next(sampler::RandomSamples, state)
-    indicies, samplenumber = state[1], state[2]
-    X = _sample_reuse_idx!(indicies, sampler)
-    X, (indicies, samplenumber + 1)
+function Base.next(sampler::RandomSamples, samplenumber)
+    X = StatsBase.sample(sampler)
+    X, samplenumber + 1
 end
 
 # ==============================================================
@@ -140,3 +186,4 @@ end
 
 Base.eltype{F}(::Type{RandomSamples{Vector{F}}}) = Vector{F}
 Base.eltype{F}(::Type{RandomSamples{Matrix{F}}}) = Matrix{F}
+
