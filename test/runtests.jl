@@ -10,6 +10,7 @@ else
 end
 
 tests = [
+    "tst_kfolds.jl"
     "tst_datasubset.jl"
     "tst_minibatches.jl"
     "tst_randomsamples.jl"

@@ -31,7 +31,8 @@ export
     LabeledRandomSamples,
 
     DataSubset,
-    splitdata
+    splitdata,
+    KFolds
 
 include("feature_scaling.jl")
 include("basis_expansion.jl")
@@ -42,6 +43,6 @@ include("dataiterators/minibatches.jl")
 include("dataiterators/randomsamples.jl")
 include("datasplits/datasubset.jl")
 include("datasplits/splitdata.jl")
-include("datasplits/traintestsplit.jl")
+include("datasplits/kfolds.jl")
 
 end
