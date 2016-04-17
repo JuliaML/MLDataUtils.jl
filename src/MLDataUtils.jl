@@ -24,20 +24,24 @@ export
     predict,
     predict!,
 
-    DataPartition,
-    LabeledDataPartition,
     MiniBatches,
     LabeledMiniBatches,
 
     RandomSamples,
-    LabeledRandomSamples
+    LabeledRandomSamples,
+
+    DataSubset,
+    splitdata
 
 include("feature_scaling.jl")
 include("basis_expansion.jl")
 include("noisy_function.jl")
 include("datasets.jl")
-include("dataiterator.jl")
-include("dataiterators/datapartitions.jl")
+include("dataiterators/dataiterator.jl")
+include("dataiterators/minibatches.jl")
 include("dataiterators/randomsamples.jl")
+include("datasplits/datasubset.jl")
+include("datasplits/splitdata.jl")
+include("datasplits/traintestsplit.jl")
 
 end

@@ -10,7 +10,8 @@ else
 end
 
 tests = [
-    "tst_datapartition.jl"
+    "tst_datasubset.jl"
+    "tst_minibatches.jl"
     "tst_randomsamples.jl"
     "tst_noisy_function.jl"
     "tst_feature_scaling.jl"

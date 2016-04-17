@@ -17,7 +17,7 @@ using MLDataUtils
 
 ## Usage
 
-- [Data Partitioning](#data-partitioning)
+- [Data Splitting](#data-splitting)
     - [Training-/Testset Splits](#training-testset-splits)
     - [KFolds for Cross-validation](#kfolds-for-cross-validation)
 - [Data Iteration](#data-iteration)
@@ -37,7 +37,7 @@ using MLDataUtils
     - [Noisy Sin](#noisy-sin-example)
     - [Noisy Polynome](#noisy-polynome-example)
 
-### Data Partitioning
+### Data Splitting
 
 It is a common requirement in machine learning related experiments
 to partition the dataset of interest in one way or the other.
@@ -46,12 +46,49 @@ for the typical use-cases.
 
 #### Training-/Testset Splits
 
-Some separation, such as dividing the dataset into a training- and
-a testset is often performed offline or predefined by a third party.
-That said, it is useful to efficiently and conveniently be able to
-split a given dataset into differently-sized subsets.
+Some separation strategies, such as dividing the dataset into a
+training- and a testset is often performed offline or predefined
+by a third party. That said, it is useful to efficiently and
+conveniently be able to split a given dataset into differently
+sized subsets.
 
-TODO: Train test split
+One such function that this package provides is called `splitdata`.
+Note that this function does not shuffle to content, but instead
+performs a static split at the relative position specified in `at`.
+
+```julia
+# Load iris dataset for demonstration purposes
+X, y = load_iris()
+@assert typeof(X) <: Matrix
+@assert typeof(y) <: Vector
+
+# Splits the iris dataset into 70% training set and 30% test set
+(train_X, train_y), (test_X, test_y) = splitdata(X, y; at = 0.7)
+@assert typeof(train_X) <: DataSubset # same for the rest
+@assert typeof(get(train_X)) <: SubArray # same for the rest
+
+# Splits only X into 70/30 portions
+train_X, test_X = splitdata(X; at = 0.7)
+@assert typeof(train_X) <: DataSubset # again
+```
+
+This package represents subsets of data as a custom type called
+`DataSubset`. The main purpose for the existance of this type is
+to delay the evaluation until an actual batch of data is needed.
+This is particularily useful if the data is not located in memory,
+but on the harddrive or an other remote location. In such a scenario
+one wants to load the required data only when needed.
+
+To allow `splitdata` (and `DataSubset` for that matter) to work
+with any custom data-container-type, simply implement the following
+methods:
+
+- `StatsBase.nobs(YourObject)`: return the total number of
+observations your object represents.
+
+- `MLDataUtils.getobs(YourObject, idx)`: return the observation(s)
+of the given index/indicies in `idx`. *Tip*: You should make use of the
+fact that `idx` can be of type `Range` as well.
 
 #### `KFolds` for Cross-validation
 
@@ -71,8 +108,8 @@ TODO: KFolds
 
 ### Data Iteration
 
-Other partition-needs arise from the fact that the size of
-interesting datasets is increasing in size as the scientific
+Other partition-needs arise from the fact that the
+interesting datasets are increasing in size as the scientific
 community continues to improve the state-of-the-art. However,
 bigger datasets also offer additional challenges in terms of
 computing resources. Luckily, there are popular techniques in place
@@ -155,7 +192,7 @@ have complete control over how your data container is iterated over.
 The purpose of `RandomSamples` is to provide a generic `DataIterator`
 specification for labeled and unlabeled randomly sampled mini-batches
 that can be used as an iterator, while also being able to be queried
-using `StatsBase.sample`. In contrast to `DataPartition`,
+using `StatsBase.sample`. In contrast to `MiniBatches`,
 `RandomSamples` generates completely random mini-batches, in which
 the containing observations are generally not adjacent to each other
 in the original dataset.

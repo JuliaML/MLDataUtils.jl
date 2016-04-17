@@ -10,7 +10,7 @@ Description
 The purpose of `RandomSamples` is to provide a generic `DataIterator`
 specification for labeled and unlabeled randomly sampled mini-batches
 that can be used as an iterator, while also being able to be queried
-using `StatsBase.sample`. In contrast to `DataPartition`, `RandomSamples`
+using `StatsBase.sample`. In contrast to `MiniBatches`, `RandomSamples`
 generates completely random mini-batches, in which the containing
 observations are generally not adjacent to each other in the original
 dataset.
@@ -102,7 +102,7 @@ Examples
     #       at random, one should expect to see some obervations multiple times,
     #       while other not at all. If one wants to go through the original
     #       dataset one observation at a time but in a random order, then a
-    #       DataPartition(X, size = 1, random_order = true) should be used instead.
+    #       MiniBatches(X, size = 1, random_order = true) should be used instead.
     # Note: In the case X is a matrix or a vector then so will be batch_X, because
     #       the additional dimension will not be dropped. This is for the sake
     #       of both consistency and typestability
@@ -126,7 +126,7 @@ Examples
 see also
 =========
 
-`DataIterator`, `DataPartition`
+`DataIterator`, `MiniBatches`
 """
 immutable RandomSamples{TFeatures} <: DataIterator
     features::TFeatures
@@ -183,7 +183,7 @@ Base.done(sampler::Union{RandomSamples,LabeledRandomSamples}, samplenumber) = sa
 Base.length(sampler::Union{RandomSamples,LabeledRandomSamples}) = sampler.count
 
 # ==============================================================
-# Generic fallbacks for (Labeled)DataPartition
+# Generic fallbacks for (Labeled)RandomSamples
 # - requires getobs(data, idx_vector)
 
 function StatsBase.sample(sampler::RandomSamples)
@@ -198,7 +198,7 @@ function StatsBase.sample(sampler::LabeledRandomSamples)
 end
 
 # ==============================================================
-# Generic fallbacks for (Labeled)DataPartition
+# Generic fallbacks for (Labeled)RandomSamples
 # - requires StatsBase.sample(sampler)
 
 function Base.next(sampler::Union{RandomSamples,LabeledRandomSamples}, samplenumber)
