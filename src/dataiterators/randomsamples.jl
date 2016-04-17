@@ -156,6 +156,25 @@ immutable LabeledRandomSamples{TFeatures,TTargets} <: DataIterator
     count::Int
 end
 
+function LabeledRandomSamples{TFeatures, TTargets}(features::TFeatures, targets::TTargets, count::Int; size = 1)
+    @assert nobs(features) == nobs(targets)
+    @assert size > 0
+    @assert count > 0
+    LabeledRandomSamples(features, targets, size, count)
+end
+
+function LabeledRandomSamples{TFeatures, TTargets}(features::TFeatures, targets::TTargets; count = nobs(features), size = 1)
+    LabeledRandomSamples(features, targets, count; size = size)
+end
+
+function RandomSamples{TFeatures, TTargets}(features::TFeatures, targets::TTargets; count = nobs(features), size = 1)
+    LabeledRandomSamples(features, targets; count = count, size = size)
+end
+
+function RandomSamples{TFeatures, TTargets}(features::TFeatures, targets::TTargets, count::Int; size = 1)
+    LabeledRandomSamples(features, targets, count; size = size)
+end
+
 # ==============================================================
 # Generic for all (Labeled)RandomSamples subtypes
 
@@ -171,13 +190,20 @@ function StatsBase.sample(sampler::RandomSamples)
     getobs(sampler.features, rand(1:nobs(sampler.features), sampler.size))
 end
 
+function StatsBase.sample(sampler::LabeledRandomSamples)
+    idx = rand(1:nobs(sampler.features), sampler.size)
+    X = getobs(sampler.features, idx)
+    y = getobs(sampler.targets, idx)
+    X, y
+end
+
 # ==============================================================
 # Generic fallbacks for (Labeled)DataPartition
 # - requires StatsBase.sample(sampler)
 
-function Base.next(sampler::RandomSamples, samplenumber)
-    X = StatsBase.sample(sampler)
-    X, samplenumber + 1
+function Base.next(sampler::Union{RandomSamples,LabeledRandomSamples}, samplenumber)
+    data = StatsBase.sample(sampler)
+    (data, samplenumber + 1)
 end
 
 # ==============================================================
@@ -186,4 +212,15 @@ end
 
 Base.eltype{F}(::Type{RandomSamples{Vector{F}}}) = Vector{F}
 Base.eltype{F}(::Type{RandomSamples{Matrix{F}}}) = Matrix{F}
+
+# ==============================================================
+# LabeledRandomSamples{Vector,Vector}
+# LabeledRandomSamples{Vector,Matrix}
+# LabeledRandomSamples{Matrix,Vector}
+# LabeledRandomSamples{Matrix,Matrix}
+
+Base.eltype{F,T}(::Type{LabeledRandomSamples{Vector{F},Vector{T}}}) = Tuple{Vector{F},Vector{T}}
+Base.eltype{F,T}(::Type{LabeledRandomSamples{Vector{F},Matrix{T}}}) = Tuple{Vector{F},Matrix{T}}
+Base.eltype{F,T}(::Type{LabeledRandomSamples{Matrix{F},Vector{T}}}) = Tuple{Matrix{F},Vector{T}}
+Base.eltype{F,T}(::Type{LabeledRandomSamples{Matrix{F},Matrix{T}}}) = Tuple{Matrix{F},Matrix{T}}
 

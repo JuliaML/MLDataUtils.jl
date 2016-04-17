@@ -37,10 +37,10 @@ end
     @test LabeledDataPartition == LabeledMiniBatches
 
     sampler = DataPartition(X, y)
-    @test typeof(sampler) <: LabeledDataPartition{Matrix{Float64}}
+    @test typeof(sampler) <: LabeledDataPartition{Matrix{Float64},Vector{ASCIIString}}
 
     sampler = LabeledDataPartition(X, y)
-    @test typeof(sampler) <: LabeledDataPartition{Matrix{Float64}}
+    @test typeof(sampler) <: LabeledDataPartition{Matrix{Float64},Vector{ASCIIString}}
     @test sampler.size == MLDataUtils.default_partitionsize(X) == 20
     @test sampler.count == 7
     @test sampler.features == X
@@ -48,7 +48,7 @@ end
     @test sampler.random_order == true
 
     sampler = LabeledDataPartition(X, y, size = 10, random_order = false)
-    @test typeof(sampler) <: LabeledDataPartition{Matrix{Float64}}
+    @test typeof(sampler) <: LabeledDataPartition{Matrix{Float64},Vector{ASCIIString}}
     @test sampler.size == 10
     @test sampler.count == 15
     @test sampler.features == X
@@ -56,7 +56,7 @@ end
     @test sampler.random_order == false
 
     sampler = LabeledDataPartition(X, y, size = 10, count = 10)
-    @test typeof(sampler) <: LabeledDataPartition{Matrix{Float64}}
+    @test typeof(sampler) <: LabeledDataPartition{Matrix{Float64},Vector{ASCIIString}}
     @test sampler.size == 10
     @test sampler.count == 10
     @test sampler.features == X
@@ -64,7 +64,7 @@ end
     @test sampler.random_order == true
 
     sampler = LabeledDataPartition(X, y, count = 10)
-    @test typeof(sampler) <: LabeledDataPartition{Matrix{Float64}}
+    @test typeof(sampler) <: LabeledDataPartition{Matrix{Float64},Vector{ASCIIString}}
     @test sampler.size == 15
     @test sampler.count == 10
     @test sampler.features == X

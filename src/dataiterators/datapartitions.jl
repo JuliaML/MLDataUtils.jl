@@ -252,12 +252,12 @@ Base.eltype{F}(::Type{DataPartition{Matrix{F}}}) = SubArray{F,2,Array{F,2},Tuple
 
 # ==============================================================
 # LabeledDataPartition{Vector,Vector}
-# LabeledDataPartition{Matrix,Vector}
 # LabeledDataPartition{Vector,Matrix}
+# LabeledDataPartition{Matrix,Vector}
 # LabeledDataPartition{Matrix,Matrix}
 
 Base.eltype{F,T}(::Type{LabeledDataPartition{Vector{F},Vector{T}}}) = Tuple{SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}, SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},1}}
-Base.eltype{F,T}(::Type{LabeledDataPartition{Matrix{F},Vector{T}}}) = Tuple{SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}, SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},1}}
 Base.eltype{F,T}(::Type{LabeledDataPartition{Vector{F},Matrix{T}}}) = Tuple{SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}, SubArray{T,2,Array{T,2},Tuple{Colon,UnitRange{Int64}},2}}
+Base.eltype{F,T}(::Type{LabeledDataPartition{Matrix{F},Vector{T}}}) = Tuple{SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}, SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},1}}
 Base.eltype{F,T}(::Type{LabeledDataPartition{Matrix{F},Matrix{T}}}) = Tuple{SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}, SubArray{T,2,Array{T,2},Tuple{Colon,UnitRange{Int64}},2}}
 
