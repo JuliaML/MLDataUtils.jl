@@ -3,10 +3,25 @@ Y = vcat(y', y')
 
 @testset "DataSubset of Matrix" begin
     @testset "DataSubset constructor" begin
+        @test_throws BoundsError DataSubset(X, -1:100)
+        @test_throws BoundsError DataSubset(X, 1:151)
+        @test_throws BoundsError DataSubset(X, [1, 10, 0, 3])
+        @test_throws BoundsError DataSubset(X, [1, 10, -10, 3])
+        @test_throws BoundsError DataSubset(X, [1, 10, 180, 3])
+        split = DataSubset(X, [1, 10, 150, 3])
+        @test typeof(split) <: DataSubset{Matrix{Float64}, Vector{Int}}
+
         split = DataSubset(X, 1:100)
         @test typeof(split) <: DataSubset{Matrix{Float64}, UnitRange{Int}}
         @test split.data == X
         @test split.indicies == 1:100
+
+        @test_throws TypeError split = DataSubset(X, 1)
+
+        split = DataSubset(X, [1])
+        @test typeof(split) <: DataSubset{Matrix{Float64}, Vector{Int}}
+        @test split.data == X
+        @test split.indicies == [1]
 
         split = DataSubset(X, collect(1:5))
         @test typeof(split) <: DataSubset{Matrix{Float64}, Vector{Int}}
@@ -50,6 +65,13 @@ end
         @test typeof(split) <: DataSubset{Vector{ASCIIString}, UnitRange{Int}}
         @test split.data == y
         @test split.indicies == 1:100
+
+        @test_throws TypeError split = DataSubset(X, 1)
+
+        split = DataSubset(y, [1])
+        @test typeof(split) <: DataSubset{Vector{ASCIIString}, Vector{Int}}
+        @test split.data == y
+        @test split.indicies == [1]
 
         split = DataSubset(y, collect(1:5))
         @test typeof(split) <: DataSubset{Vector{ASCIIString}, Vector{Int}}

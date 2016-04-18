@@ -55,11 +55,11 @@ iterate over some dataset using equally-sized blocks, where the
 order in which those blocks are returned can be randomized by setting
 `random_order = true`.
 
-Note: In the case that the size of the dataset is not dividable by
+*Note*: In the case that the size of the dataset is not dividable by
 the specified (or inferred) size, the remaining observations will
 be ignored.
 
-Note: `MiniBatches` itself will not shuffle the data, thus the
+*Note*: `MiniBatches` itself will not shuffle the data, thus the
 observations within each batch/partition will in general be adjacent
 to each other. However, one can choose to process the batches in
 random order by setting `random_order = true`. The order will be
@@ -162,7 +162,7 @@ Examples
 see also
 =========
 
-`DataIterator`, `RandomSamples`
+`DataIterator`, `RandomSamples`, `KFolds`, `splitdata`
 """
 immutable MiniBatches{TFeatures} <: DataIterator
     features::TFeatures

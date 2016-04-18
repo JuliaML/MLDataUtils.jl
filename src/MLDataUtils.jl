@@ -32,7 +32,9 @@ export
 
     DataSubset,
     splitdata,
-    KFolds
+    KFolds,
+    LabeledKFolds,
+    LOOFolds
 
 include("feature_scaling.jl")
 include("basis_expansion.jl")

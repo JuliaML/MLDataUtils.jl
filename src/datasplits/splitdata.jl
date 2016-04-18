@@ -5,7 +5,7 @@ Returns a 2-Tuple of `DataSubset`, each of which pointing to a disjoint
 subset of `X`. The parameter `at` defines the proportion of the
 dataset that should be covered with the first `DataSubset`.
 
-_Note_: The content of `X` will in general not be shuffled or
+*Note*: The content of `X` will in general not be shuffled or
 copied. Thus each subset usually simply covers a specific range
 of observations in `X` using `SubArray`'s. This may not be true
 for datatypes other than `Array`.

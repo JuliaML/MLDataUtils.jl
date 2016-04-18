@@ -5,10 +5,11 @@ Description
 ============
 
 Abstraction for a subset of some `data` of arbitrary type.
-The main purpose for the existance of `DataSubset` is to delay
+The main purpose for the existence of `DataSubset` is to delay
 the evaluation until an actual batch of data is needed.
 This is particularily useful if the data is not located in memory,
-but should instead be loaded on the fly one minibatch at a time.
+but on the harddrive or an other remote location. In such a scenario
+one wants to load the required data only when needed.
 
 Arguments
 ==========
@@ -63,12 +64,17 @@ Examples
 see also
 =========
 
-`DataIterator`, `RandomSamples`
-
+`splitdata`, `KFolds`, `DataIterator`, `RandomSamples`, `MiniBatches`
 """
 immutable DataSubset{TData, TIdx<:AbstractVector}
     data::TData
     indicies::TIdx
+
+    function DataSubset(data::TData, indicies::TIdx)
+        1 <= minimum(indicies) || throw(BoundsError(data, indicies))
+        maximum(indicies) <= nobs(data) || throw(BoundsError(data, indicies))
+        new(data, indicies)
+    end
 end
 
 function DataSubset{TData, TIdx}(data::TData, indicies::TIdx)

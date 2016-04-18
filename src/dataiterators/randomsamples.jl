@@ -96,29 +96,31 @@ Author(s)
 Examples
 =========
 
-    # batch_X contains 1 randomly sampled observation from X (i.i.d uniform).
-    # Note: This code will in total produce as many batches as there are
-    #       observations in X. However, because the obervations are sampled
-    #       at random, one should expect to see some obervations multiple times,
-    #       while other not at all. If one wants to go through the original
-    #       dataset one observation at a time but in a random order, then a
-    #       MiniBatches(X, size = 1, random_order = true) should be used instead.
-    # Note: In the case X is a matrix or a vector then so will be batch_X, because
-    #       the additional dimension will not be dropped. This is for the sake
-    #       of both consistency and typestability
+    # batch_X contains 1 random observation from X (i.i.d uniform).
+    # Note: This code will in total produce as many batches as there
+    #       are observations in X. However, because the obervations
+    #       are sampled at random, one should expect to see some
+    #       obervations multiple times, while other not at all. If one
+    #       wants to go through the original dataset one observation
+    #       at a time but in a random order, then one shoudl instead
+    #       use MiniBatches(X, size = 1, random_order = true).
+    # Note: In the case X is a matrix or a vector then so will be
+    #       batch_X, because the additional dimension will not be
+    #       dropped. This is for the sake of both consistency as well
+    #       as typestability
     for batch_X in RandomSamples(X)
         # ... train unsupervised model on batch here ...
     end
 
-    # This time the size of each minibatch is specified explicitly to be 20,
-    # while the number of batches is set to 100. Also note that a vector of
-    # targets y is provided as well.
+    # This time the size of each minibatch is specified explicitly
+    # to be 20, while the number of batches is set to 100. Also note
+    # that a vector of targets y is provided as well.
     for (batch_X, batch_y) in RandomSamples(X, y; size = 20, count = 100)
         # ... train supervised model on batch here ...
     end
 
-    # One can also provide the total number of batches (i.e. count) directly.
-    # This is mainly for intuition and convenience reasons.
+    # One can also provide the total number of batches (i.e. count)
+    # directly. This is mainly for intuition and convenience reasons.
     for batch_X in RandomSamples(X, 10)
         # ... train unsupervised model on batch here ...
     end
@@ -126,7 +128,7 @@ Examples
 see also
 =========
 
-`DataIterator`, `MiniBatches`
+`DataIterator`, `MiniBatches`, `splitdata`, `KFolds`
 """
 immutable RandomSamples{TFeatures} <: DataIterator
     features::TFeatures
