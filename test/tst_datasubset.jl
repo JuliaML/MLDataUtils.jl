@@ -141,6 +141,43 @@ end
     @test nobs(test_y)  == 45
 end
 
+@testset "partitiondata" begin
+    train, test = partitiondata(X, at = .7)
+    @test typeof(train) <: DataSubset{Matrix{Float64}, SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}
+    @test typeof(test)  <: DataSubset{Matrix{Float64}, SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}
+    @test get(train) == X[:, train.indicies]
+    @test get(test)  == X[:, test.indicies]
+    @test length(unique(vcat(train.indicies, test.indicies))) == 150
+    @test nobs(train) == 105
+    @test nobs(test)  == 45
+
+    train, test = partitiondata(y, at = .7)
+    @test typeof(train) <: DataSubset{Vector{ASCIIString}, SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}
+    @test typeof(test)  <: DataSubset{Vector{ASCIIString}, SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}
+    @test get(train) == y[train.indicies]
+    @test get(test)  == y[test.indicies]
+    @test length(unique(vcat(train.indicies, test.indicies))) == 150
+    @test nobs(train) == 105
+    @test nobs(test)  == 45
+
+    (train_x, train_y), (test_x, test_y) = partitiondata(X, y, at = .7)
+    @test typeof(train_x) <: DataSubset{Matrix{Float64}, SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}
+    @test typeof(test_x)  <: DataSubset{Matrix{Float64}, SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}
+    @test get(train_x) == X[:, train_x.indicies]
+    @test get(test_x)  == X[:, test_x.indicies]
+    @test length(unique(vcat(train_x.indicies, test_x.indicies))) == 150
+    @test nobs(train_x) == 105
+    @test nobs(test_x)  == 45
+    @test typeof(train_y) <: DataSubset{Vector{ASCIIString}, SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}
+    @test typeof(test_y)  <: DataSubset{Vector{ASCIIString}, SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}
+    @test get(train_y) == y[train_y.indicies]
+    @test get(test_y)  == y[test_y.indicies]
+    @test length(unique(vcat(train_y.indicies, test_y.indicies))) == 150
+    @test nobs(train_y) == 105
+    @test nobs(test_y)  == 45
+    @test all(train_x.indicies .== train_y.indicies)
+    @test all(test_x.indicies .== test_y.indicies)
+end
 
 
 

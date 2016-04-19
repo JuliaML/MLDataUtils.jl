@@ -142,6 +142,29 @@ train_X, test_X = splitdata(X; at = 0.7)
 @assert typeof(train_X) <: DataSubset # again
 ```
 
+For the use-cases in which one wants to instead do a completely
+random partitioning to create a training- and a testset, this
+package provides a function called `partitiondata`. It has the same
+signature as `splitdata`, but in contrast to `splitdata` is the
+assignment of data-points to data-partitions random and thus
+non-continuous. While providing more variation and likely improving
+convergence, this approach will typically more resource intensive
+than continuous splits produced my `splitdata`.
+
+```julia
+# Partitions the iris dataset into 70% training set and 30% test set
+(train_X, train_y), (test_X, test_y) = partitiondata(X, y; at = 0.7)
+
+# No data has been copied or allocated at this point
+@assert typeof(train_X) <: DataSubset # same for the rest
+
+# In this case `get` will result in copy operation and memory allocation
+@assert typeof(get(train_X)) <: Matrix
+
+# Also works for unsupervised use-cases
+train_X, test_X = partitiondata(X; at = 0.7)
+@assert typeof(train_X) <: DataSubset # again
+```
 
 ### `KFolds` for Cross-validation
 
