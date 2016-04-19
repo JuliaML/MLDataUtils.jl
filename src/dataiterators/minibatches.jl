@@ -211,6 +211,7 @@ function Base.start(sampler::Union{MiniBatches,LabeledMiniBatches})
 end
 Base.done(sampler::Union{MiniBatches,LabeledMiniBatches}, state) = state[2] > sampler.count
 Base.length(sampler::Union{MiniBatches,LabeledMiniBatches}) = sampler.count
+Base.endof(sampler::Union{MiniBatches,LabeledMiniBatches}) = length(sampler)
 
 # ==============================================================
 # Generic fallbacks for (Labeled)MiniBatches

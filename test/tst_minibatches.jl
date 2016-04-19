@@ -71,6 +71,7 @@ end
 @testset "MiniBatches iterator for Vector" begin
     for batchsize in (1, 10)
         sampler = MiniBatches(vec(X[1,:]), size = batchsize)
+        @test sampler[end] == sampler[length(sampler)]
         count = 0
         for features in sampler
             @test typeof(features) <: AbstractVector
@@ -86,6 +87,7 @@ end
 @testset "MiniBatches iterator for Matrix" begin
     for batchsize in (1, 10)
         sampler = MiniBatches(X, size = batchsize)
+        @test sampler[end] == sampler[length(sampler)]
         count = 0
         for features in sampler
             @test typeof(features) <: AbstractMatrix
@@ -101,6 +103,7 @@ end
 @testset "LabeledMiniBatches iterator for Vector/Vector" begin
     for batchsize in (1, 10)
         sampler = MiniBatches(vec(X[1,:]), y, size = batchsize)
+        @test sampler[end] == sampler[length(sampler)]
         for tuple in sampler
             @test typeof(tuple) == eltype(sampler)
         end
@@ -122,6 +125,7 @@ end
 @testset "LabeledMiniBatches iterator for Matrix/Vector" begin
     for batchsize in (1, 10)
         sampler = MiniBatches(X, y, size = batchsize)
+        @test sampler[end] == sampler[length(sampler)]
         for tuple in sampler
             @test typeof(tuple) == eltype(sampler)
         end
@@ -143,6 +147,7 @@ end
 @testset "LabeledMiniBatches iterator for Vector/Matrix" begin
     for batchsize in (1, 10)
         sampler = MiniBatches(vec(X[1,:]), Y, size = batchsize)
+        @test sampler[end] == sampler[length(sampler)]
         for tuple in sampler
             @test typeof(tuple) == eltype(sampler)
         end
@@ -164,6 +169,7 @@ end
 @testset "LabeledMiniBatches iterator for Matrix/Matrix" begin
     for batchsize in (1, 10)
         sampler = MiniBatches(X, Y, size = batchsize)
+        @test sampler[end] == sampler[length(sampler)]
         for tuple in sampler
             @test typeof(tuple) == eltype(sampler)
         end
@@ -185,6 +191,7 @@ end
 @testset "MiniBatches iterator for generic Fallback" begin
     for batchsize in (1, 10)
         sampler = MiniBatches(slice(X, :, 1:100), size = batchsize)
+        @test sampler[end] == sampler[length(sampler)]
         count = 0
         for features in sampler
             @test typeof(features) <: AbstractMatrix
