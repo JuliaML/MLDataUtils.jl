@@ -31,6 +31,20 @@ Y = vcat(y', y')
 
     @testset "DataSubset methods with Range indicies" begin
         split = DataSubset(X, 101:150)
+        @test typeof(get(split)) <: SubArray
+        @test nobs(split) == length(split) == 50
+        @test split[10:20] == sub(X, :, 110:120)
+        @test split[collect(10:20)] == X[:, 110:120]
+        @test get(split) == split[1:end] == sub(X, :, 101:150)
+
+        i = 101
+        for ob in split
+            @test ob == X[:, i]
+            i += 1
+        end
+
+        split = DataSubset(sub(X, :, 1:150), 101:150)
+        @test typeof(get(split)) <: SubArray
         @test nobs(split) == length(split) == 50
         @test split[10:20] == sub(X, :, 110:120)
         @test split[collect(10:20)] == X[:, 110:120]
@@ -81,6 +95,20 @@ end
 
     @testset "DataSubset methods with Range indicies" begin
         split = DataSubset(y, 101:150)
+        @test typeof(get(split)) <: SubArray
+        @test nobs(split) == length(split) == 50
+        @test split[10:20] == sub(y, 110:120)
+        @test split[collect(10:20)] == y[110:120]
+        @test get(split) == split[1:end] == sub(y, 101:150)
+
+        i = 101
+        for ob in split
+            @test ob == y[i]
+            i += 1
+        end
+
+        split = DataSubset(sub(y, 1:150), 101:150)
+        @test typeof(get(split)) <: SubArray
         @test nobs(split) == length(split) == 50
         @test split[10:20] == sub(y, 110:120)
         @test split[collect(10:20)] == y[110:120]

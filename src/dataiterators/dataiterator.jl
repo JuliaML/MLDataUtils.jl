@@ -4,7 +4,9 @@ StatsBase.nobs(A::AbstractMatrix) = size(A, 2)
 getobs(A::AbstractVector, idx) = A[idx]
 getobs(A::AbstractMatrix, idx) = A[:, idx]
 getobs(A::Vector, range::Range) = slice(A, range)
+getobs{T}(A::SubArray{T,1}, range::Range) = slice(A, range)
 getobs(A::Matrix, range::Range) = sub(A, :, range)
+getobs{T}(A::SubArray{T,2}, range::Range) = sub(A, :, range)
 
 """
 `DataIterator` is the abstract base type for all sampler iterators.
