@@ -32,11 +32,11 @@ should usually not have any noticible impact.
 Usage
 ======
 
-    RandomSamples(features, count; size = 1)
+    RandomSamples(features, count, size = 1)
 
-    RandomSamples(features; size = 1, count = nobs(features))
+    RandomSamples(features; count = nobs(features), size = 1)
 
-    RandomSamples(features, targets; size = 1, count = nobs(features))
+    RandomSamples(features, targets; count = nobs(features), size = 1)
 
 Arguments
 ==========
@@ -46,11 +46,11 @@ Arguments
 - **`targets`** : (Optional) The object describing the targets of the
 dataset. Needs to have the same number of observations as `features`.
 
-- **`size`** : The constant size of each sampled batch.
-If not specified it defaults to 1.
-
 - **`count`** : The number of sample-batches that will be generated.
 (default: number of observations in `features`)
+
+- **`size`** : The constant size of each sampled batch.
+If not specified it defaults to 1.
 
 Methods
 ========
@@ -132,18 +132,22 @@ see also
 """
 immutable RandomSamples{TFeatures} <: DataIterator
     features::TFeatures
-    size::Int
     count::Int
+    size::Int
+
+    function RandomSamples(features::TFeatures, count::Int, size::Int)
+        @assert count > 0
+        @assert size > 0
+        new(features, count, size)
+    end
 end
 
-function RandomSamples{TFeatures}(features::TFeatures, count::Int; size = 1)
-    @assert size > 0
-    @assert count > 0
-    RandomSamples{TFeatures}(features, size, count)
+function RandomSamples{TFeatures}(features::TFeatures, count::Int, size::Int = 1)
+    RandomSamples{TFeatures}(features, count, size)
 end
 
-function RandomSamples{TFeatures}(features::TFeatures; count = nobs(features), size = 1)
-    RandomSamples(features, count; size = size)
+function RandomSamples{TFeatures}(features::TFeatures; count::Int = nobs(features), size::Int = 1)
+    RandomSamples{TFeatures}(features, count, size)
 end
 
 """
@@ -154,27 +158,31 @@ see `RandomSamples` for documentation and usage
 immutable LabeledRandomSamples{TFeatures,TTargets} <: DataIterator
     features::TFeatures
     targets::TTargets
-    size::Int
     count::Int
+    size::Int
+
+    function LabeledRandomSamples(features::TFeatures, targets::TTargets, count::Int, size::Int)
+        @assert nobs(features) == nobs(targets)
+        @assert count > 0
+        @assert size > 0
+        new(features, targets, count, size)
+    end
 end
 
-function LabeledRandomSamples{TFeatures, TTargets}(features::TFeatures, targets::TTargets, count::Int; size = 1)
-    @assert nobs(features) == nobs(targets)
-    @assert size > 0
-    @assert count > 0
-    LabeledRandomSamples(features, targets, size, count)
+function LabeledRandomSamples{TFeatures, TTargets}(features::TFeatures, targets::TTargets, count::Int, size::Int = 1)
+    LabeledRandomSamples{TFeatures, TTargets}(features, targets, count, size)
 end
 
-function LabeledRandomSamples{TFeatures, TTargets}(features::TFeatures, targets::TTargets; count = nobs(features), size = 1)
-    LabeledRandomSamples(features, targets, count; size = size)
+function LabeledRandomSamples{TFeatures, TTargets}(features::TFeatures, targets::TTargets; count::Int = nobs(features), size::Int = 1)
+    LabeledRandomSamples{TFeatures, TTargets}(features, targets, count, size)
 end
 
-function RandomSamples{TFeatures, TTargets}(features::TFeatures, targets::TTargets; count = nobs(features), size = 1)
-    LabeledRandomSamples(features, targets; count = count, size = size)
+function RandomSamples{TFeatures, TTargets}(features::TFeatures, targets::TTargets, count::Int, size::Int = 1)
+    LabeledRandomSamples{TFeatures, TTargets}(features, targets, count, size)
 end
 
-function RandomSamples{TFeatures, TTargets}(features::TFeatures, targets::TTargets, count::Int; size = 1)
-    LabeledRandomSamples(features, targets, count; size = size)
+function RandomSamples{TFeatures, TTargets}(features::TFeatures, targets::TTargets; count::Int = nobs(features), size::Int = 1)
+    LabeledRandomSamples{TFeatures, TTargets}(features, targets, count, size)
 end
 
 # ==============================================================
@@ -214,6 +222,8 @@ end
 
 Base.eltype{F}(::Type{RandomSamples{Vector{F}}}) = Vector{F}
 Base.eltype{F}(::Type{RandomSamples{Matrix{F}}}) = Matrix{F}
+Base.eltype{F}(::Type{RandomSamples{SubArray{F,1}}}) = Vector{F}
+Base.eltype{F}(::Type{RandomSamples{SubArray{F,2}}}) = Matrix{F}
 
 # ==============================================================
 # LabeledRandomSamples{Vector,Vector}

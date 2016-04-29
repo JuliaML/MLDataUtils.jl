@@ -5,13 +5,13 @@ Helper function to compute sensible and compatible values for the
 `size` and `count`
 """
 function _compute_partitionsettings(features, size::Int, count::Int)
-    num_observations = nobs(features)
+    num_observations = nobs(features)::Int
     @assert num_observations > 0
     @assert size  <= num_observations
     @assert count <= num_observations
     if size < 0 && count < 0
         # no batch settings specified, use default size and as many batches as possible
-        size = default_partitionsize(features)
+        size = default_partitionsize(features)::Int
         count = floor(Int, num_observations / size)
     elseif size < 0
         # use count to determine size. uses all observations
@@ -169,10 +169,18 @@ immutable MiniBatches{TFeatures} <: DataIterator
     size::Int
     count::Int
     random_order::Bool
+
+    function MiniBatches(features::TFeatures, size::Int, count::Int = -1, random_order::Bool = true)
+        nsize, ncount = _compute_partitionsettings(features, size, count)
+        new(features, nsize, ncount, random_order)
+    end
 end
 
-function MiniBatches{TFeatures}(features::TFeatures; size = -1, count = -1, random_order = true)
-    size, count = _compute_partitionsettings(features, size, count)
+function MiniBatches{TFeatures}(features::TFeatures, size::Int, count::Int = -1, random_order::Bool = true)
+    MiniBatches{TFeatures}(features, size, count, random_order)
+end
+
+function MiniBatches{TFeatures}(features::TFeatures; size::Int = -1, count::Int = -1, random_order::Bool = true)
     MiniBatches{TFeatures}(features, size, count, random_order)
 end
 
@@ -187,16 +195,28 @@ immutable LabeledMiniBatches{TFeatures, TTargets} <: DataIterator
     size::Int
     count::Int
     random_order::Bool
+
+    function LabeledMiniBatches(features::TFeatures, targets::TTargets, size::Int, count::Int = -1, random_order::Bool = true)
+        @assert nobs(features) == nobs(targets)
+        nsize, ncount = _compute_partitionsettings(features, size, count)
+        new(features, targets, nsize, ncount, random_order)
+    end
 end
 
-function LabeledMiniBatches{TFeatures, TTargets}(features::TFeatures, targets::TTargets; size = -1, count = -1, random_order = true)
-    @assert nobs(features) == nobs(targets)
-    size, count = _compute_partitionsettings(features, size, count)
+function LabeledMiniBatches{TFeatures, TTargets}(features::TFeatures, targets::TTargets, size::Int, count::Int = -1, random_order::Bool = true)
     LabeledMiniBatches{TFeatures, TTargets}(features, targets, size, count, random_order)
 end
 
-function MiniBatches{TFeatures, TTargets}(features::TFeatures, targets::TTargets; size = -1, count = -1, random_order = true)
-    LabeledMiniBatches(features, targets; size = size, count = count, random_order = random_order)
+function LabeledMiniBatches{TFeatures, TTargets}(features::TFeatures, targets::TTargets; size::Int = -1, count::Int = -1, random_order::Bool = true)
+    LabeledMiniBatches{TFeatures, TTargets}(features, targets, size, count, random_order)
+end
+
+function MiniBatches{TFeatures, TTargets}(features::TFeatures, targets::TTargets, size::Int, count::Int = -1, random_order::Bool = true)
+    LabeledMiniBatches{TFeatures, TTargets}(features, targets, size, count, random_order)
+end
+
+function MiniBatches{TFeatures, TTargets}(features::TFeatures, targets::TTargets; size::Int = -1, count::Int = -1, random_order::Bool = true)
+    LabeledMiniBatches{TFeatures, TTargets}(features, targets, size, count, random_order)
 end
 
 # ==============================================================
@@ -246,6 +266,7 @@ end
 
 Base.eltype{F}(::Type{MiniBatches{Vector{F}}}) = SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}
 Base.eltype{F}(::Type{MiniBatches{Matrix{F}}}) = SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}
+# TODO subarrays
 
 # ==============================================================
 # LabeledMiniBatches{Vector,Vector}
@@ -257,4 +278,4 @@ Base.eltype{F,T}(::Type{LabeledMiniBatches{Vector{F},Vector{T}}}) = Tuple{SubArr
 Base.eltype{F,T}(::Type{LabeledMiniBatches{Vector{F},Matrix{T}}}) = Tuple{SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}, SubArray{T,2,Array{T,2},Tuple{Colon,UnitRange{Int64}},2}}
 Base.eltype{F,T}(::Type{LabeledMiniBatches{Matrix{F},Vector{T}}}) = Tuple{SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}, SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},1}}
 Base.eltype{F,T}(::Type{LabeledMiniBatches{Matrix{F},Matrix{T}}}) = Tuple{SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}, SubArray{T,2,Array{T,2},Tuple{Colon,UnitRange{Int64}},2}}
-
+# TODO subarrays

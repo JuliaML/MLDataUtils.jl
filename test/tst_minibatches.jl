@@ -16,10 +16,24 @@ Y = vcat(y', y')
     @test sampler.features == X
     @test sampler.random_order == true
 
-    sampler = MiniBatches(X, size = 10, count = 10)
+    sampler = MiniBatches(X, size = 10, count = 5)
     @test typeof(sampler) <: MiniBatches{Matrix{Float64}}
     @test sampler.size == 10
-    @test sampler.count == 10
+    @test sampler.count == 5
+    @test sampler.features == X
+    @test sampler.random_order == true
+
+    sampler = MiniBatches(X, 10, 5, false)
+    @test typeof(sampler) <: MiniBatches{Matrix{Float64}}
+    @test sampler.size == 10
+    @test sampler.count == 5
+    @test sampler.features == X
+    @test sampler.random_order == false
+
+    sampler = MiniBatches(X, 10)
+    @test typeof(sampler) <: MiniBatches{Matrix{Float64}}
+    @test sampler.size == 10
+    @test sampler.count == 15
     @test sampler.features == X
     @test sampler.random_order == true
 
@@ -51,10 +65,26 @@ end
     @test sampler.targets == y
     @test sampler.random_order == false
 
-    sampler = LabeledMiniBatches(X, y, size = 10, count = 10)
+    sampler = LabeledMiniBatches(X, y, size = 10, count = 5)
     @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64},Vector{ASCIIString}}
     @test sampler.size == 10
-    @test sampler.count == 10
+    @test sampler.count == 5
+    @test sampler.features == X
+    @test sampler.targets == y
+    @test sampler.random_order == true
+
+    sampler = LabeledMiniBatches(X, y, 10, 5, false)
+    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64},Vector{ASCIIString}}
+    @test sampler.size == 10
+    @test sampler.count == 5
+    @test sampler.features == X
+    @test sampler.targets == y
+    @test sampler.random_order == false
+
+    sampler = LabeledMiniBatches(X, y, 10)
+    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64},Vector{ASCIIString}}
+    @test sampler.size == 10
+    @test sampler.count == 15
     @test sampler.features == X
     @test sampler.targets == y
     @test sampler.random_order == true

@@ -21,7 +21,7 @@ Y = vcat(y', y')
     @test sampler.count == 4
     @test sampler.features == X
 
-    sampler = RandomSamples(X, 4, size = 10)
+    sampler = RandomSamples(X, 4, 10)
     @test typeof(sampler) <: RandomSamples{Matrix{Float64}}
     @test sampler.size == 10
     @test sampler.count == 4
@@ -50,7 +50,7 @@ end
     @test sampler.features == X
     @test sampler.targets == y
 
-    sampler = RandomSamples(X, y, 4, size = 10)
+    sampler = RandomSamples(X, y, 4, 10)
     @test typeof(sampler) <: LabeledRandomSamples{Matrix{Float64},Vector{ASCIIString}}
     @test sampler.size == 10
     @test sampler.count == 4
