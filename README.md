@@ -1,6 +1,7 @@
 # MLDataUtils
 
-[![Build Status](https://travis-ci.org/JuliaML/MLDataUtils.jl.svg?branch=master)](https://travis-ci.org/JuliaML/MLDataUtils.jl)
+[![Project Status: Active - The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
+[![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md)
 [![Package Evaluator v4](http://pkg.julialang.org/badges/MLDataUtils_0.4.svg)](http://pkg.julialang.org/?pkg=MLDataUtils&ver=0.4)
 
 Utility package for generating, loading, and processing Machine
@@ -14,6 +15,14 @@ data structures.
 ```julia
 Pkg.add("MLDataUtils")
 using MLDataUtils
+```
+
+For the latest developer version:
+
+[![Build Status](https://travis-ci.org/JuliaML/MLDataUtils.jl.svg?branch=master)](https://travis-ci.org/JuliaML/MLDataUtils.jl)
+
+```Julia
+Pkg.checkout("MLDataUtils")
 ```
 
 ## Table of Contents
