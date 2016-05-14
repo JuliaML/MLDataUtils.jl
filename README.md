@@ -20,6 +20,7 @@ using MLDataUtils
 For the latest developer version:
 
 [![Build Status](https://travis-ci.org/JuliaML/MLDataUtils.jl.svg?branch=master)](https://travis-ci.org/JuliaML/MLDataUtils.jl)
+[![Coverage Status](https://coveralls.io/repos/github/JuliaML/MLDataUtils.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaML/MLDataUtils.jl?branch=master)
 
 ```Julia
 Pkg.checkout("MLDataUtils")
