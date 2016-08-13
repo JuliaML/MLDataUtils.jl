@@ -1,16 +1,18 @@
 # MLDataUtils
 
-[![Project Status: Active - The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
-[![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md)
-[![Package Evaluator v4](http://pkg.julialang.org/badges/MLDataUtils_0.4.svg)](http://pkg.julialang.org/?pkg=MLDataUtils&ver=0.4)
-
-Utility package for generating, loading, and processing Machine
+*Utility package for generating, loading, and processing Machine
 Learning datasets. Aside from providing common functionality,
 this library also defines a set of common interfaces and functions,
 that can (and should) be extended to work with custom user-defined
-data structures.
+data structures.*
+
+| **Package Status** | **Package Evaluator** | **Build Status**  |
+|:------------------:|:---------------------:|:-----------------:|
+| [![Project Status: Active - The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active) [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md) | [![Package Evaluator v4](http://pkg.julialang.org/badges/MLDataUtils_0.4.svg)](http://pkg.julialang.org/?pkg=MLDataUtils&ver=0.4) [![Package Evaluator v5](http://pkg.julialang.org/badges/MLDataUtils_0.5.svg)](http://pkg.julialang.org/?pkg=MLDataUtils&ver=0.5) | [![Build Status](https://travis-ci.org/JuliaML/MLDataUtils.jl.svg?branch=master)](https://travis-ci.org/JuliaML/MLDataUtils.jl) [![Coverage Status](https://coveralls.io/repos/github/JuliaML/MLDataUtils.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaML/MLDataUtils.jl?branch=master) |
 
 ## Installation
+
+This package is registered in `METADATA.jl` and can be installed as usual
 
 ```julia
 Pkg.add("MLDataUtils")
@@ -18,9 +20,6 @@ using MLDataUtils
 ```
 
 For the latest developer version:
-
-[![Build Status](https://travis-ci.org/JuliaML/MLDataUtils.jl.svg?branch=master)](https://travis-ci.org/JuliaML/MLDataUtils.jl)
-[![Coverage Status](https://coveralls.io/repos/github/JuliaML/MLDataUtils.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaML/MLDataUtils.jl?branch=master)
 
 ```Julia
 Pkg.checkout("MLDataUtils")
