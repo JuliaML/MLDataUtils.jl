@@ -10,12 +10,12 @@ getobs{T}(A::AbstractArray{T,4}, idx) = A[:, :, :, idx]
 
 getobs(A::Vector, range::Range) = slice(A, range)
 getobs{T}(A::SubArray{T,1}, range::Range) = slice(A, range)
-getobs(A::Matrix, range::Range) = sub(A, :, range)
-getobs{T}(A::SubArray{T,2}, range::Range) = sub(A, :, range)
-getobs{T}(A::Array{T,3}, range::Range) = sub(A, :, :, range)
-getobs{T}(A::SubArray{T,3}, range::Range) = sub(A, :, :, range)
-getobs{T}(A::Array{T,4}, range::Range) = sub(A, :, :, :, range)
-getobs{T}(A::SubArray{T,4}, range::Range) = sub(A, :, :, :, range)
+getobs(A::Matrix, range::Range) = view(A, :, range)
+getobs{T}(A::SubArray{T,2}, range::Range) = view(A, :, range)
+getobs{T}(A::Array{T,3}, range::Range) = view(A, :, :, range)
+getobs{T}(A::SubArray{T,3}, range::Range) = view(A, :, :, range)
+getobs{T}(A::Array{T,4}, range::Range) = view(A, :, :, :, range)
+getobs{T}(A::SubArray{T,4}, range::Range) = view(A, :, :, :, range)
 
 """
 `DataIterator` is the abstract base type for all sampler iterators.
@@ -36,4 +36,3 @@ labeled or unlabeled dataset in the following manner:
     end
 """
 abstract DataIterator
-

@@ -1,11 +1,12 @@
 X, y = load_iris()
-Y = vcat(y', y')
+Y = repmat(reshape(y,1,length(y)), 2, 1)
 
 @testset "KFolds constructor" begin
     @test_throws ArgumentError KFolds(X, -1)
     @test_throws ArgumentError KFolds(X, 1)
     @test_throws ArgumentError KFolds(X, 151)
 
+    @show typeof(X)
     kf = LOOFolds(X)
     @test kf.k == 150
 
@@ -112,4 +113,3 @@ end
         @test length(unique(all_test_indicies_y)) == 150
     end
 end
-

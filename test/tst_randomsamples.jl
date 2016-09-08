@@ -30,28 +30,28 @@ end
 
 @testset "LabeledRandomSamples constructor" begin
     sampler = RandomSamples(X, y; count = 9)
-    @test typeof(sampler) <: LabeledRandomSamples{Matrix{Float64},Vector{ASCIIString}}
+    @test typeof(sampler) <: LabeledRandomSamples{Matrix{Float64},Vector{String}}
     @test sampler.size == 1
     @test sampler.count == 9
     @test sampler.features == X
     @test sampler.targets == y
 
     sampler = RandomSamples(X, y, 9)
-    @test typeof(sampler) <: LabeledRandomSamples{Matrix{Float64},Vector{ASCIIString}}
+    @test typeof(sampler) <: LabeledRandomSamples{Matrix{Float64},Vector{String}}
     @test sampler.size == 1
     @test sampler.count == 9
     @test sampler.features == X
     @test sampler.targets == y
 
     sampler = RandomSamples(X, y; count = 4, size = 10)
-    @test typeof(sampler) <: LabeledRandomSamples{Matrix{Float64},Vector{ASCIIString}}
+    @test typeof(sampler) <: LabeledRandomSamples{Matrix{Float64},Vector{String}}
     @test sampler.size == 10
     @test sampler.count == 4
     @test sampler.features == X
     @test sampler.targets == y
 
     sampler = RandomSamples(X, y, 4, 10)
-    @test typeof(sampler) <: LabeledRandomSamples{Matrix{Float64},Vector{ASCIIString}}
+    @test typeof(sampler) <: LabeledRandomSamples{Matrix{Float64},Vector{String}}
     @test sampler.size == 10
     @test sampler.count == 4
     @test sampler.features == X
