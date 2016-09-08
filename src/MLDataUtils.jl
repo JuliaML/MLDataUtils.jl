@@ -1,6 +1,10 @@
+__precompile__(true)
+
 module MLDataUtils
 
-using StatsBase
+using LearnBase
+import LearnBase: nobs, getobs
+import StatsBase: fit, predict, predict!
 
 export
 

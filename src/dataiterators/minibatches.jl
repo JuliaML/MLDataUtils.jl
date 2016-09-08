@@ -34,7 +34,7 @@ end
 
 # --------------------------------------------------------------------
 
-immutable RandomBatches{S,B<:Batch}
+immutable RandomBatches{S,B<:Batch} <: BatchIterator
     source::S
     batches::Vector{B}
 end
