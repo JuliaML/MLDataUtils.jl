@@ -15,7 +15,7 @@ function load_iris(n::Int = 150)
     path = joinpath(Pkg.dir("MLDataUtils"), "data", "iris.csv")
     raw_csv = readcsv(path)
     X = convert(Matrix{Float64}, raw_csv[1:n, 1:4]')
-    y = convert(Vector{ASCIIString}, raw_csv[1:n, 5])
+    y = convert(Vector{String}, raw_csv[1:n, 5])
     vars = ["Sepal length", "Sepal width", "Petal length", "Petal width"]
     X, y, vars
 end

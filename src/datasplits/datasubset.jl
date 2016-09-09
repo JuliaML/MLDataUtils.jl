@@ -89,8 +89,7 @@ Base.length(subset::DataSubset) = length(subset.indicies)
 Base.endof(subset::DataSubset) = length(subset)
 Base.getindex(subset::DataSubset, idx) = getobs(subset.data, getobs(subset.indicies, idx))
 
-StatsBase.nobs(subset::DataSubset) = length(subset)
+LearnBase.nobs(subset::DataSubset) = length(subset)
 
-getobs(subset::DataSubset, idx) = subset[idx]
+LearnBase.getobs(subset::DataSubset, idx) = subset[idx]
 Base.get(subset::DataSubset) = getobs(subset.data, subset.indicies)
-

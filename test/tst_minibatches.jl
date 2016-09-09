@@ -47,10 +47,10 @@ end
 
 @testset "LabeledMiniBatches constructor" begin
     sampler = MiniBatches(X, y)
-    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64},Vector{ASCIIString}}
+    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64},Vector{String}}
 
     sampler = LabeledMiniBatches(X, y)
-    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64},Vector{ASCIIString}}
+    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64},Vector{String}}
     @test sampler.size == MLDataUtils.default_partitionsize(X) == 20
     @test sampler.count == 7
     @test sampler.features == X
@@ -58,7 +58,7 @@ end
     @test sampler.random_order == true
 
     sampler = LabeledMiniBatches(X, y, size = 10, random_order = false)
-    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64},Vector{ASCIIString}}
+    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64},Vector{String}}
     @test sampler.size == 10
     @test sampler.count == 15
     @test sampler.features == X
@@ -66,7 +66,7 @@ end
     @test sampler.random_order == false
 
     sampler = LabeledMiniBatches(X, y, size = 10, count = 5)
-    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64},Vector{ASCIIString}}
+    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64},Vector{String}}
     @test sampler.size == 10
     @test sampler.count == 5
     @test sampler.features == X
@@ -74,7 +74,7 @@ end
     @test sampler.random_order == true
 
     sampler = LabeledMiniBatches(X, y, 10, 5, false)
-    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64},Vector{ASCIIString}}
+    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64},Vector{String}}
     @test sampler.size == 10
     @test sampler.count == 5
     @test sampler.features == X
@@ -82,7 +82,7 @@ end
     @test sampler.random_order == false
 
     sampler = LabeledMiniBatches(X, y, 10)
-    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64},Vector{ASCIIString}}
+    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64},Vector{String}}
     @test sampler.size == 10
     @test sampler.count == 15
     @test sampler.features == X
@@ -90,7 +90,7 @@ end
     @test sampler.random_order == true
 
     sampler = LabeledMiniBatches(X, y, count = 10)
-    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64},Vector{ASCIIString}}
+    @test typeof(sampler) <: LabeledMiniBatches{Matrix{Float64},Vector{String}}
     @test sampler.size == 15
     @test sampler.count == 10
     @test sampler.features == X

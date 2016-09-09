@@ -43,7 +43,7 @@ dataset. Needs to have the same number of observations as `features`.
 
 - **`k`** : The number of folds that should be generated. A general
 rule of thumb is to use either `k = 5`, `k = 10`, or
-`k = StatsBase.nobs(features)`.
+`k = LearnBase.nobs(features)`.
 
 Methods
 ========
@@ -126,14 +126,14 @@ see also
 
 `DataSubset`, `splitdata`, `DataIterator`, `RandomSamples`, `MiniBatches`
 """
-immutable KFolds{TFeatures}
+immutable KFolds{TFeatures,TFolds}
     features::TFeatures
-    folds::Vector{DataSubset{TFeatures,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}}
+    folds::TFolds
     k::Int
 
-    function KFolds(features::TFeatures, k::Int)
+    function KFolds(features, k::Int = 10)
         n = nobs(features)
-        1 < k <= n || throw(ArgumentError("k needs to be within 2:StatsBase.nobs(features)"))
+        1 < k <= n || throw(ArgumentError("k needs to be within 2:LearnBase.nobs(features)"))
         indicies = collect(1:n)
         shuffle!(indicies)
         sizes = fill(floor(Int, n/k), k)
@@ -141,20 +141,21 @@ immutable KFolds{TFeatures}
             sizes[i] = sizes[i] + 1
         end
 
-        folds = Array{DataSubset{TFeatures,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}},1}(k)
+        # folds = Array{DataSubset{TFeatures,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}},1}(k)
+        folds = Vector{typeof(DataSubset(features,view(indicies,1:1)))}(k)
         offset = 1
         for i = 1:k
             new_offset = offset + sizes[i] - 1
-            folds[i] = DataSubset(features, sub(indicies, offset:new_offset))
+            folds[i] = DataSubset(features, view(indicies, offset:new_offset))
             offset = new_offset + 1
         end
         new(features, folds, k)
     end
 end
 
-KFolds{TFeatures}(features::TFeatures, k::Int) = KFolds{TFeatures}(features, k)
-KFolds{TFeatures}(features::TFeatures; k::Int = 10) = KFolds(features, k)
-LOOFolds{TFeatures}(features::TFeatures) = KFolds(features, nobs(features))
+# KFolds{TFeatures}(features::TFeatures, k::Int) = KFolds{TFeatures}(features, k)
+# KFolds{TFeatures}(features::TFeatures; k::Int = 10) = KFolds(features, k)
+LOOFolds(features) = KFolds(features, nobs(features))
 
 """
 `LabeledKFolds(features, targets; nargs...)` →  `LabeledKFolds`
@@ -168,10 +169,10 @@ immutable LabeledKFolds{TFeatures, TTargets}
     targets_folds::Vector{DataSubset{TTargets,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}}
     k::Int
 
-    function LabeledKFolds(features::TFeatures, targets::TTargets, k::Int)
+    function LabeledKFolds(features::TFeatures, targets::TTargets, k::Int = 10)
         @assert nobs(features) == nobs(targets)
         n = nobs(features)
-        1 < k <= n || throw(ArgumentError("k needs to be within 2:StatsBase.nobs(features)"))
+        1 < k <= n || throw(ArgumentError("k needs to be within 2:LearnBase.nobs(features)"))
         indicies = collect(1:n)
         shuffle!(indicies)
         sizes = fill(floor(Int, n/k), k)
@@ -184,7 +185,7 @@ immutable LabeledKFolds{TFeatures, TTargets}
         offset = 1
         for i = 1:k
             new_offset = offset + sizes[i] - 1
-            idx_subarray = sub(indicies, offset:new_offset)
+            idx_subarray = view(indicies, offset:new_offset)
             features_folds[i] = DataSubset(features, idx_subarray)
             targets_folds[i]  = DataSubset(targets, idx_subarray)
             offset = new_offset + 1
@@ -193,8 +194,8 @@ immutable LabeledKFolds{TFeatures, TTargets}
     end
 end
 
-LabeledKFolds{TFeatures,TTargets}(features::TFeatures, targets::TTargets, k::Int) = LabeledKFolds{TFeatures,TTargets}(features, targets, k)
-LabeledKFolds{TFeatures,TTargets}(features::TFeatures, targets::TTargets; k::Int = 10) = LabeledKFolds(features, targets, k)
+# LabeledKFolds{TFeatures,TTargets}(features::TFeatures, targets::TTargets, k::Int) = LabeledKFolds{TFeatures,TTargets}(features, targets, k)
+# LabeledKFolds{TFeatures,TTargets}(features::TFeatures, targets::TTargets; k::Int = 10) = LabeledKFolds(features, targets, k)
 KFolds{TFeatures,TTargets}(features::TFeatures, targets::TTargets, k::Int) = LabeledKFolds(features, targets, k)
 KFolds{TFeatures,TTargets}(features::TFeatures, targets::TTargets; k::Int = 10) = LabeledKFolds(features, targets, k)
 LOOFolds(features, targets) = LabeledKFolds(features, targets, nobs(features))
@@ -207,7 +208,7 @@ Base.getindex(kf::LabeledKFolds, idx) = (kf.features_folds[idx], kf.targets_fold
 Base.length(kf::Union{LabeledKFolds,KFolds}) = kf.k
 Base.endof(kf::Union{LabeledKFolds,KFolds}) = length(kf)
 
-StatsBase.nobs(kf::Union{LabeledKFolds,KFolds}) = nobs(kf.features)
+LearnBase.nobs(kf::Union{LabeledKFolds,KFolds}) = nobs(kf.features)
 
 Base.start(kf::Union{LabeledKFolds,KFolds}) = (Array{Int,1}(nobs(kf)), 1)
 Base.done(kf::Union{LabeledKFolds,KFolds}, state) = state[2] > kf.k
@@ -243,4 +244,3 @@ function Base.next(kf::LabeledKFolds, state)
     testset = (kf.features_folds[testfold_idx], kf.targets_folds[testfold_idx])
     (trainset, testset), (buffer, testfold_idx + 1)
 end
-

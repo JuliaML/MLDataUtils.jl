@@ -4,8 +4,8 @@
     X, y, vars = load_iris()
 
     @test typeof(X) <: Matrix{Float64}
-    @test typeof(y) <: Vector{ASCIIString}
-    @test typeof(vars) <: Vector{ASCIIString}
+    @test typeof(y) <: Vector{String}
+    @test typeof(vars) <: Vector{String}
     @test size(X) == (4, 150)
     @test length(y) == 150
     @test length(vars) == size(X, 1)
@@ -21,7 +21,7 @@ end
 
     @test typeof(x) <: Vector{Float64}
     @test typeof(y) <: Vector{Float64}
-    @test typeof(vars) <: Vector{UTF8String}
+    @test typeof(vars) <: Vector{String}
     @test length(x) == length(y) == 15
     @test length(vars) == 2
 end
@@ -33,7 +33,7 @@ end
 
     @test typeof(x) <: Vector{Float64}
     @test typeof(y) <: Vector{Float64}
-    @test typeof(vars) <: Vector{UTF8String}
+    @test typeof(vars) <: Vector{String}
     @test length(x) == length(y) == 11
     @test length(vars) == 2
 end
@@ -45,8 +45,7 @@ end
 
     @test typeof(x) <: Vector{Float64}
     @test typeof(y) <: Vector{Float64}
-    @test typeof(vars) <: Vector{UTF8String}
+    @test typeof(vars) <: Vector{String}
     @test length(x) == length(y) == 50
     @test length(vars) == 2
 end
-
