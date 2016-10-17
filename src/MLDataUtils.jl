@@ -1,5 +1,6 @@
 module MLDataUtils
 
+using LearnBase
 using StatsBase
 
 export
