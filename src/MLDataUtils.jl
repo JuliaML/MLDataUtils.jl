@@ -31,20 +31,11 @@ export
     predict,
     predict!,
 
-#    MiniBatches,
-#    LabeledMiniBatches,
-
-#    RandomSamples,
-#    LabeledRandomSamples,
-
     DataSubset,
-    datasubset
-#    splitdata,
-#    partitiondata,
+    datasubset,
 
-#    KFolds,
-#    LabeledKFolds,
-#    LOOFolds
+    eachobs,
+    shuffled
 
 include("feature_scaling.jl")
 include("basis_expansion.jl")

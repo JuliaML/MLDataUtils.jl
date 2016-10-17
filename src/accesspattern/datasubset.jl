@@ -132,3 +132,25 @@ getobs(subset::DataSubset) = getobs(subset.data, subset.indices)
 Base.collect(subset::DataSubset) = collect(getobs(subset))
 Base.collect{T<:Tuple}(subset::DataSubset{T}) = map(collect, getobs(subset.data, subset.indices))
 
+# --------------------------------------------------------------------
+
+"""
+Iterate over source data.
+```julia
+for (x,y) in eachobs(X,Y)
+    ...
+end
+```
+"""
+eachobs(source) = DataSubset(source)
+
+"""
+Iterate over shuffled (randomized) source data.  This is non-copy and non-mutating (only the indices are shuffled).
+```julia
+for (x,y) in eachobs(shuffled(X,Y))
+    ...
+end
+```
+"""
+shuffled(source) = datasubset(source, shuffle(1:nobs(source)))
+
