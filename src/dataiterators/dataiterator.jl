@@ -1,22 +1,3 @@
-StatsBase.nobs(A::AbstractVector) = length(A)
-StatsBase.nobs(A::AbstractMatrix) = size(A, 2)
-StatsBase.nobs{T}(A::AbstractArray{T,3}) = size(A, 3)
-StatsBase.nobs{T}(A::AbstractArray{T,4}) = size(A, 4)
-
-getobs(A::AbstractVector, idx) = A[idx]
-getobs(A::AbstractMatrix, idx) = A[:, idx]
-getobs{T}(A::AbstractArray{T,3}, idx) = A[:, :, idx]
-getobs{T}(A::AbstractArray{T,4}, idx) = A[:, :, :, idx]
-
-getobs(A::Vector, range::Range) = slice(A, range)
-getobs{T}(A::SubArray{T,1}, range::Range) = slice(A, range)
-getobs(A::Matrix, range::Range) = sub(A, :, range)
-getobs{T}(A::SubArray{T,2}, range::Range) = sub(A, :, range)
-getobs{T}(A::Array{T,3}, range::Range) = sub(A, :, :, range)
-getobs{T}(A::SubArray{T,3}, range::Range) = sub(A, :, :, range)
-getobs{T}(A::Array{T,4}, range::Range) = sub(A, :, :, :, range)
-getobs{T}(A::SubArray{T,4}, range::Range) = sub(A, :, :, :, range)
-
 """
 `DataIterator` is the abstract base type for all sampler iterators.
 
