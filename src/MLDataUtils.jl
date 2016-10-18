@@ -44,12 +44,6 @@ include("datasets.jl")
 include("accesspattern/datasubset.jl")
 include("accesspattern/arrays.jl")
 include("accesspattern/tuples.jl")
-#include("dataiterators/dataiterator.jl")
-#include("dataiterators/minibatches.jl")
-#include("dataiterators/randomsamples.jl")
-#include("datasplits/datasubset.jl")
-#include("datasplits/splitdata.jl")
-#include("datasplits/partitiondata.jl")
-#include("datasplits/kfolds.jl")
+include("accesspattern/partitioning.jl")
 
 end

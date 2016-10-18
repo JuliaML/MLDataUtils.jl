@@ -148,6 +148,8 @@ end
             @test subset[collect(10:20)] == y[110:120]
             @test typeof(subset[collect(10:20)]) <: SubArray
             @test getobs(subset) == subset[1:end] == view(y, 101:150)
+            @test typeof(collect(subset)) <: Array{String,1}
+            @test nobs(collect(subset)) == 50
 
             i = 101
             for ob in subset

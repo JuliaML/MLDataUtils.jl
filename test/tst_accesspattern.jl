@@ -55,3 +55,25 @@ end
     end
 end
 
+@testset "_compute_batch_settings" begin
+    @test MLDataUtils._compute_batch_settings(X) === (30,5)
+    @test MLDataUtils._compute_batch_settings(Xv) === (30,5)
+    @test MLDataUtils._compute_batch_settings(Xs) === (30,5)
+    @test MLDataUtils._compute_batch_settings(DataSubset(X)) === (30,5)
+    @test MLDataUtils._compute_batch_settings((X,y)) === (30,5)
+    @test MLDataUtils._compute_batch_settings((Xv,yv)) === (30,5)
+
+    @test_throws BoundsError MLDataUtils._compute_batch_settings(X, 160)
+    @test_throws BoundsError MLDataUtils._compute_batch_settings(X, 1, 160)
+    @test_throws DimensionMismatch MLDataUtils._compute_batch_settings(X, 10, 20)
+
+    for inner in (Xs, ys, vars...), var in (inner, DataSubset(inner))
+        @test MLDataUtils._compute_batch_settings(var,10) === (10,15)
+        @test MLDataUtils._compute_batch_settings(var,-1,10) === (15,10)
+        @test MLDataUtils._compute_batch_settings(var,10,10) === (10,10)
+        @test MLDataUtils._compute_batch_settings(var,150,1) === (150,1)
+        @test MLDataUtils._compute_batch_settings(var,150) === (150,1)
+        @test MLDataUtils._compute_batch_settings(var,-1,150) === (1,150)
+    end
+end
+
