@@ -35,7 +35,8 @@ export
     datasubset,
 
     eachobs,
-    shuffled
+    shuffled,
+    batches
 
 include("feature_scaling.jl")
 include("basis_expansion.jl")

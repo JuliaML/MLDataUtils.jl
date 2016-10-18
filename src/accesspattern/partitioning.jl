@@ -33,3 +33,34 @@ function _compute_batch_settings(source, size::Int = -1, count::Int = -1)
     size::Int, count::Int
 end
 
+"""
+Split the data apart, either by specifying a size or giving a percentage split point.
+
+```julia
+# split into training and test sets, 60%/40% respectively
+train, test = batches(X, Y, size = 0.6)
+# split into equal-sized minibatches of 10 observations each
+for batch in batches(X, Y, size = 10)
+    # ...
+end
+# Tips:
+#   - Iterators can be nested
+#   - Observations can be extracted immediately
+for (x,y) in batches(shuffled(X, Y), size = 10)
+    # ...
+end
+```
+"""
+function batches(data; size::Int = -1, count::Int = -1)
+    nsize, ncount = _compute_batch_settings(data, size, count)
+    n = nobs(data)
+    offset = 0
+    lst = UnitRange{Int}[]
+    while offset < ncount * nsize
+        sz = clamp(n - offset, 1, nsize)
+        push!(lst, offset+1:offset+sz)
+        offset += sz
+    end
+    [datasubset(data, idx) for idx in lst]
+end
+

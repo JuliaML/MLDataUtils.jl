@@ -38,7 +38,14 @@ for f in (:eachobs, :shuffled, :infinite_obs)
     @eval function $f(s_1, s_rest...)
         tup = (s_1, s_rest...)
         length(unique(map(a->nobs(a), tup))) == 1 || throw(DimensionMismatch("all parameters must have the same number of observations"))
-        $f((s_1, s_rest...))
+        $f(tup)
     end
 end
 
+for f in (:batches, :infinite_batches, :kfolds, :leave_one_out)
+    @eval function $f(s_1, s_rest...; kw...)
+        tup = (s_1, s_rest...)
+        length(unique(map(a->nobs(a), tup))) == 1 || throw(DimensionMismatch("all parameters must have the same number of observations"))
+        $f(tup; kw...)
+    end
+end
