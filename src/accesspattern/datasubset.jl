@@ -81,7 +81,7 @@ immutable DataSubset{T, I<:AbstractVector}
 
     function DataSubset(data::T, indices::I)
         if T <: Tuple
-            length(unique(map(_->nobs(_), data))) == 1 || throw(DimensionMismatch("all parameters must have the same number of observations"))
+            error("Inner constructor should not be called using a Tuple")
         end
         1 <= minimum(indices) || throw(BoundsError(data, indices))
         maximum(indices) <= nobs(data) || throw(BoundsError(data, indices))
@@ -90,6 +90,11 @@ immutable DataSubset{T, I<:AbstractVector}
 end
 
 # --------------------------------------------------------------------
+
+function DataSubset{T<:Tuple,I}(tup::T, indices::I = 1:nobs(tup))
+    length(unique(map(_->nobs(_), tup))) == 1 || throw(DimensionMismatch("all parameters must have the same number of observations"))
+    map(data -> DataSubset(data, indices), tup)
+end
 
 function DataSubset{T,I}(data::T, indices::I = 1:nobs(data))
     DataSubset{T,I}(data, indices)
@@ -133,16 +138,6 @@ Base.collect(subset::DataSubset) = collect(getobs(subset))
 Base.collect{T<:Tuple}(subset::DataSubset{T}) = map(collect, getobs(subset.data, subset.indices))
 
 # --------------------------------------------------------------------
-
-"""
-Iterate over source data.
-```julia
-for (x,y) in eachobs(X,Y)
-    ...
-end
-```
-"""
-eachobs(source) = DataSubset(source)
 
 """
 Iterate over shuffled (randomized) source data.  This is non-copy and non-mutating (only the indices are shuffled).

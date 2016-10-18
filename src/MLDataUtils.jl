@@ -31,8 +31,12 @@ export
     predict,
     predict!,
 
+    DataIterator,
     DataSubset,
     datasubset,
+
+    repeated,
+    repeatedly,
 
     eachobs,
     shuffled,
@@ -42,6 +46,7 @@ include("feature_scaling.jl")
 include("basis_expansion.jl")
 include("noisy_function.jl")
 include("datasets.jl")
+include("accesspattern/dataiterator.jl")
 include("accesspattern/datasubset.jl")
 include("accesspattern/arrays.jl")
 include("accesspattern/tuples.jl")

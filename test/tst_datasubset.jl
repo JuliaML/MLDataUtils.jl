@@ -4,7 +4,8 @@ Xv = view(X,:,:)
 yv = view(y,:)
 XX = rand(20,30,150)
 XXX = rand(3,20,30,150)
-vars = (X, Xv, yv, XX, XXX, y, (X,y), (X,Y), (XX,X,y), (XXX,XX,X,y))
+vars = (X, Xv, yv, XX, XXX, y)
+tuples = ((X,y), (X,Y), (XX,X,y), (XXX,XX,X,y))
 Xs = sprand(10,150,.5)
 ys = sprand(150,.5)
 
@@ -83,7 +84,7 @@ end
         @test_throws DimensionMismatch DataSubset((rand(2,10),rand(9)))
         @test_throws DimensionMismatch DataSubset((rand(2,10),rand(9)),1:2)
         @test_throws DimensionMismatch DataSubset((rand(2,10),rand(4,9,10),rand(9)))
-        for var in vars
+        for var in (vars..., tuples...)
             @test_throws TypeError DataSubset(var, 1)
             @test_throws BoundsError DataSubset(var, -1:100)
             @test_throws BoundsError DataSubset(var, 1:151)
@@ -93,7 +94,7 @@ end
         end
     end
 
-    @testset "Array, SubArray, SparseArray, and Tuple" begin
+    @testset "Array, SubArray, SparseArray" begin
         for var in (Xs, ys, vars...)
             subset = DataSubset(var)
             @test subset.data === var
@@ -163,18 +164,21 @@ end
         for v1 in (X, Xv), v2 in (y, yv)
             subset = DataSubset((v1,v2), 101:150)
             @test typeof(getobs(subset)) <: Tuple{SubArray{Float64,2,Array{Float64,2},Tuple{Colon,UnitRange{Int64}},true},SubArray{String,1,Array{String,1},Tuple{UnitRange{Int64}},true}} # don't ask
-            @test nobs(subset) == length(subset) == 50
-            @test subset[10:20] == (view(X, :, 110:120), view(y, 110:120))
-            @test getobs(subset) == subset[1:end] == (view(X, :, 101:150), view(y, 101:150))
-            @test typeof(collect(subset)) <: Tuple{Array{Float64,2},Array{String,1}}
-            @test nobs(collect(subset)) == 50
+            @test nobs(subset) == nobs(subset[1]) == nobs(subset[2]) == 50
+            @test subset[1][10:20] == view(X, :, 110:120)
+            @test subset[2][10:20] == view(y, 110:120)
+            @test getobs(subset) == (view(X, :, 101:150), view(y, 101:150))
+            @test typeof(map(collect,subset)) <: Tuple{Array{Float64,2},Array{String,1}}
 
             i = 101
-            for ob in subset
+            for ob in eachobs(subset)
                 @test ob == (X[:,i], y[i])
                 i += 1
             end
         end
+    end
+
+    @testset "2-Tuple of SparseArray"  begin
     end
 end
 
@@ -225,19 +229,19 @@ end
     end
 
     @testset "Tuple of SparseArray" begin
-        @test datasubset((X,ys))  === DataSubset((X,ys))
-        @test datasubset((Xs,y))  === DataSubset((Xs,y))
-        @test datasubset((Xs,ys)) === DataSubset((Xs,ys))
-        @test datasubset((Xs,Xs)) === DataSubset((Xs,Xs))
-        @test datasubset((ys,Xs)) === DataSubset((ys,Xs))
-        @test datasubset((XX,Xs,y)) === DataSubset((XX, Xs,y))
+        @test datasubset((X,ys))  === (X,DataSubset(ys))
+        @test datasubset((Xs,y))  === (DataSubset(Xs),y)
+        @test datasubset((Xs,ys)) === (DataSubset(Xs),DataSubset(ys))
+        @test datasubset((Xs,Xs)) === (DataSubset(Xs),DataSubset(Xs))
+        @test datasubset((ys,Xs)) === (DataSubset(ys),DataSubset(Xs))
+        @test datasubset((XX,Xs,y)) === (XX,DataSubset(Xs),y)
         for i in (1:150, 2:10, [2,5,7], [2,1])
-            @test datasubset((X,ys),i)  === DataSubset((X,ys),i)
-            @test datasubset((Xs,y),i)  === DataSubset((Xs,y),i)
-            @test datasubset((Xs,ys),i) === DataSubset((Xs,ys),i)
-            @test datasubset((Xs,Xs),i) === DataSubset((Xs,Xs),i)
-            @test datasubset((ys,Xs),i) === DataSubset((ys,Xs),i)
-            @test datasubset((XX,Xs,y),i) === DataSubset((XX, Xs,y),i)
+            @test datasubset((X,ys),i)  === (view(X,:,i), DataSubset(ys,i))
+            @test datasubset((Xs,y),i)  === (DataSubset(Xs,i), view(y,i))
+            @test datasubset((Xs,ys),i) === (DataSubset(Xs,i), DataSubset(ys,i))
+            @test datasubset((Xs,Xs),i) === (DataSubset(Xs,i), DataSubset(Xs,i))
+            @test datasubset((ys,Xs),i) === (DataSubset(ys,i), DataSubset(Xs,i))
+            @test datasubset((XX,Xs,y),i) === (view(XX,:,:,i),DataSubset(Xs,i),view(y,i))
         end
     end
 end

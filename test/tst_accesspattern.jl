@@ -14,12 +14,12 @@ ys = sprand(150,.5)
     # Iteration already tested for DataSubset
     # Just need to make sure that a DataSubset is created
     for var in (Xs, ys, vars...)
-        @test eachobs(var) === DataSubset(var)
-        @test eachobs(DataSubset(var)) === DataSubset(var)
+        @test eachobs(var) === DataIterator(var)
+        @test eachobs(DataSubset(var)) === DataIterator(DataSubset(var))
     end
-    @test eachobs(X,y) === DataSubset((X,y))
-    @test eachobs(Xv,y) === DataSubset((Xv,y))
-    @test eachobs(XX,X,y) === DataSubset((XX,X,y))
+    @test eachobs(X,y) === DataIterator((X,y))
+    @test eachobs(Xv,y) === DataIterator((Xv,y))
+    @test eachobs(XX,X,y) === DataIterator((XX,X,y))
 end
 
 @testset "shuffled" begin
@@ -49,7 +49,7 @@ end
 
     @testset "Tuple of SparseArray" begin
         for var in ((Xs,ys), (X,ys), (Xs,y), (Xs,Xs), (XX,X,ys))
-            @test typeof(shuffled(var)) <: DataSubset
+            @test typeof(shuffled(var)) <: Tuple
             @test nobs(shuffled(var)) == nobs(var)
         end
     end

@@ -1,31 +1,11 @@
-@generated function datasubset(A::Tuple, indices)
-    if all(map(T -> T<:NativeArray, A.types))
-        # Don't box in DataSubset
-        expr = :(length(unique(map(a->nobs(a), A))) == 1 || throw(DimensionMismatch("all parameters must have the same number of observations")))
-        :($expr; map(a -> getobs(a, indices), A))
-    else
-        # Box in DataSubset
-        :(DataSubset(A, indices))
-    end
-end
-
-@generated function datasubset(A::Tuple)
-    if all(map(T -> T<:NativeArray, A.types))
-        # Don't box in DataSubset
-        expr = :(length(unique(map(a->nobs(a), A))) == 1 || throw(DimensionMismatch("all parameters must have the same number of observations")))
-        :($expr; A)
-    else
-        # Box in DataSubset
-        :(DataSubset(A))
-    end
-end
-
-# --------------------------------------------------------------------
+# map datasubset over the tuple instead
+datasubset(tup::Tuple, indices) = map(_ -> datasubset(_, indices), tup)
+datasubset(tup::Tuple) = map(_ -> datasubset(_), tup)
 
 # add support for arbitrary tuples
-nobs{T<:Tuple}(tup::T) = nobs(tup[1])
-getobs{T<:Tuple}(tup::T) = tup
-getobs{T<:Tuple}(tup::T, idx) = map(a -> getobs(a, idx), tup)
+nobs(tup::Tuple) = nobs(tup[1])
+getobs(tup::Tuple) = map(_ -> getobs(_), tup)
+getobs(tup::Tuple, indices) = map(_ -> getobs(_, indices), tup)
 
 # specialized for empty tuples
 nobs(tup::Tuple{}) = 0
