@@ -1,5 +1,5 @@
 """
-`DataSubset(data, indices)`
+    DataSubset(data, [indices])
 
 Description
 ============
@@ -11,11 +11,18 @@ This is particularily useful if the data is not located in memory,
 but on the harddrive or an other remote location. In such a scenario
 one wants to load the required data only when needed.
 
+The type is usually not constructed manually, but instead instantiated
+by calling `batches`, `shuffled`, or `splitobs`
+
+In the case `data` is some `Tuple`, the constructor will be mapped
+over its elements. That means that the constructor returns a `Tuple`
+of `DataSubset` and instead of a `DataSubset` of `Tuple`
+
 Arguments
 ==========
 
 - **`data`** : The object describing the dataset. Can be of any
-    type as long as it implements `getobs`.
+    type as long as it implements `getobs` and `nobs`.
 
 - **`indices`** : Optional. A subtype of `AbstractVector` that denotes
     which observations of `data` belong to this subset.
@@ -31,10 +38,21 @@ Methods
 - **`getindex`** : Returns the observation(s) of the given
     index/indices
 
-- **`length`** : Returns the total number observations in the subset.
+- **`nobs`** : Returns the total number observations in the subset.
 
 - **`getobs`** : Returns the underlying data that the `DataSubset`
     represents at the given indices.
+
+Details
+========
+
+For `DataSubset` to work on some data structure, the given variable
+`data` must implement the following interface:
+
+- `getobs(data, i)` : Should return the observation(s) indexed
+    by `i`. In what form is up to the user.
+
+- `nobs(data)` : Should return the number of observations in `data`
 
 Author(s)
 ==========
@@ -45,35 +63,37 @@ Author(s)
 Examples
 =========
 
-    X, y = load_iris()
+```julia
+X, y = load_iris()
 
-    # Represents the 80 observations as a DataSubset
-    subset = DataSubset(X, 21:100)
-    @assert nobs(subset) == 80
-    @assert typeof(subset) <: DataSubset
-    # getobs indexes into the subset
-    @assert getobs(subset, 1:10) == view(X, :, 21:30)
+# Represents the 80 observations as a DataSubset
+subset = DataSubset(X, 21:100)
+@assert nobs(subset) == 80
+@assert typeof(subset) <: DataSubset
+# getobs indexes into the subset
+@assert getobs(subset, 1:10) == view(X, :, 21:30)
 
-    # Also works for tuple of data
-    subset = DataSubset((X,y), 1:100)
-    @assert nobs(subset) == 100
-    @assert typeof(subset) <: DataSubset
+# Also works for tuple of data
+subset = DataSubset((X,y), 1:100)
+@assert nobs(subset) == 100
+@assert typeof(subset) <: Typle # Tuple of DataSubset
 
-    # The lowercase version tries to avoid boxing for arrays
-    # Here it instead creates a native SubArray
-    subset = datasubset(X, 1:100)
-    @assert nobs(subset) == 100
-    @assert typeof(subset) <: SubArray
+# The lowercase version tries to avoid boxing for arrays
+# Here it instead creates a native SubArray
+subset = datasubset(X, 1:100)
+@assert nobs(subset) == 100
+@assert typeof(subset) <: SubArray
 
-    # Also works for tuples of arbitrary length
-    subset = datasubset((X,y), 1:100)
-    @assert nobs(subset) == 100
-    @assert typeof(subset) <: Tuple # tuple of SubArray
+# Also works for tuples of arbitrary length
+subset = datasubset((X,y), 1:100)
+@assert nobs(subset) == 100
+@assert typeof(subset) <: Tuple # tuple of SubArray
+```
 
 see also
 =========
 
-`datasubset`, `splitobs`, `KFolds`, `batches`, `eachobs`, `getobs`
+`datasubset`, `splitobs`, `KFolds`, `batches`, `eachbatch`, `shuffled`, `eachobs`, `getobs`
 """
 immutable DataSubset{T, I<:Union{Int,AbstractVector}}
     data::T
@@ -90,11 +110,6 @@ immutable DataSubset{T, I<:Union{Int,AbstractVector}}
 end
 
 # --------------------------------------------------------------------
-
-function DataSubset{T<:Tuple,I}(tup::T, indices::I = 1:nobs(tup))
-    length(unique(map(_->nobs(_), tup))) == 1 || throw(DimensionMismatch("all parameters must have the same number of observations"))
-    map(data -> DataSubset(data, indices), tup)
-end
 
 function DataSubset{T,I}(data::T, indices::I = 1:nobs(data))
     DataSubset{T,I}(data, indices)
@@ -139,12 +154,16 @@ Base.collect(subset::DataSubset) = collect(getobs(subset))
 # --------------------------------------------------------------------
 
 """
-Iterate over shuffled (randomized) source data.  This is non-copy and non-mutating (only the indices are shuffled).
+    shuffled(data[...])
+
+Iterate over shuffled (randomized) source data.
+This is non-copy and non-mutating (only the indices are shuffled).
+
 ```julia
 for (x,y) in eachobs(shuffled(X,Y))
     ...
 end
 ```
 """
-shuffled(source) = datasubset(source, shuffle(1:nobs(source)))
+shuffled(data) = datasubset(data, shuffle(1:nobs(data)))
 

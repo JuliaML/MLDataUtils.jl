@@ -1,3 +1,9 @@
+# map DataSubset over the tuple instead
+function DataSubset(tup::Tuple, indices = 1:nobs(tup))
+    length(unique(map(_->nobs(_), tup))) == 1 || throw(DimensionMismatch("all parameters must have the same number of observations"))
+    map(data -> DataSubset(data, indices), tup)
+end
+
 # map datasubset over the tuple instead
 datasubset(tup::Tuple, indices) = map(_ -> datasubset(_, indices), tup)
 datasubset(tup::Tuple) = map(_ -> datasubset(_), tup)
@@ -12,8 +18,8 @@ nobs(tup::Tuple{}) = 0
 getobs(tup::Tuple{}) = ()
 
 # --------------------------------------------------------------------
-
 # call with a tuple for more than one arg
+
 for f in (:eachobs, :shuffled, :infinite_obs)
     @eval function $f(s_1, s_rest...)
         tup = (s_1, s_rest...)
@@ -29,3 +35,4 @@ for f in (:eachbatch, :batches, :infinite_batches, :kfolds, :leave_one_out)
         $f(tup; kw...)
     end
 end
+

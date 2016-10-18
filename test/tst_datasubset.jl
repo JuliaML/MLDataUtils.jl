@@ -85,7 +85,6 @@ end
         @test_throws DimensionMismatch DataSubset((rand(2,10),rand(9)),1:2)
         @test_throws DimensionMismatch DataSubset((rand(2,10),rand(4,9,10),rand(9)))
         for var in (vars..., tuples...)
-            @test_throws TypeError DataSubset(var, 1)
             @test_throws BoundsError DataSubset(var, -1:100)
             @test_throws BoundsError DataSubset(var, 1:151)
             @test_throws BoundsError DataSubset(var, [1, 10, 0, 3])
