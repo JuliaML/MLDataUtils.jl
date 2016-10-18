@@ -58,6 +58,15 @@ for x in batches(shuffled(X), count = 10)
 end
 ```
 
+Or alternatively just process the statically assigned batches in
+random order.
+
+```julia
+for x in shuffled(batches(X, count = 10))
+    # ...
+end
+```
+
 Multiple variables are supported (e.g. for labeled data).
 
 ```julia
@@ -81,5 +90,69 @@ function batches(data; size::Int = -1, count::Int = -1)
         offset += sz
     end
     [datasubset(data, idx) for idx in lst]
+end
+
+"""
+    splitobs(data[...]; at = 0.7)
+
+Splits the data into multiple subsets. Not that this function will
+performs the splits statically and not perform any randomization.
+The function creates a vector `DataSubset` in which the first
+N-1 elements/subsets contain the fraction of observations of `data`
+that is specified by `at`.
+
+For example if `at` is a Float64 then the vector contains two elements.
+In the following code the first subset `train` will contain 70% of the
+observations and the second subset `test` the rest.
+
+```julia
+train, test = splitobs(X, at = 0.7)
+```
+
+If `at` is a tuple of `Float64` then additional subsets will be created.
+In this example `train` will have 50% of the observations, `val` will
+have 30% and `test` the other 20%
+
+```julia
+train, val, test = splitobs(X, at = (0.5, 0.3))
+```
+
+It is also possible to call it with multiple data arguments,
+which all have to have the same number of total observations.
+This is useful for labeled data.
+
+```julia
+train, test = splitobs(X, y, at = 0.7)
+(x_train,y_train), (x_test,y_test) = splitobs(X, y, at = 0.7)
+```
+
+If the observations should be randomly assigned to a subset,
+then you can combine the function with `shuffled`
+
+```julia
+train, test = splitobs(shuffled(X,y), at = 0.7)
+```
+
+see `DataSubset` for more info, or `batches` for equally sized paritions
+"""
+function splitobs(data; at = 0.7)
+    n = nobs(data)
+    T = typeof(at)
+	idx_list = if T <: AbstractFloat
+        # partition into 2 sets
+        n1 = clamp(round(Int, at*n), 1, n)
+        [1:n1, n1+1:n]
+    elseif (T <: NTuple || T <: AbstractVector) && eltype(T) <: AbstractFloat
+        nleft = n
+        lst = UnitRange{Int}[]
+        for (i,sz) in enumerate(at)
+            ni = clamp(round(Int, sz*n), 0, nleft)
+            push!(lst, n-nleft+1:n-nleft+ni)
+            nleft -= ni
+        end
+        push!(lst, n-nleft+1:n)
+        lst
+    end::Vector{UnitRange{Int}}
+    [datasubset(data, idx) for idx in idx_list]
 end
 

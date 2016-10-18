@@ -88,6 +88,13 @@ subset = datasubset(X, 1:100)
 subset = datasubset((X,y), 1:100)
 @assert nobs(subset) == 100
 @assert typeof(subset) <: Tuple # tuple of SubArray
+
+# Split dataset into training and test split
+train, test = splitobs(shuffled(X, y), at = 0.7)
+@assert typeof(train) <: Tuple # of SubArray
+@assert typeof(test)  <: Tuple # of SubArray
+@assert nobs(train) == 105
+@assert nobs(test) == 45
 ```
 
 see also

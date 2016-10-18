@@ -41,7 +41,8 @@ export
     eachobs,
     eachbatch,
     shuffled,
-    batches
+    batches,
+    splitobs
 
 include("feature_scaling.jl")
 include("basis_expansion.jl")
