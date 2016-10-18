@@ -9,14 +9,14 @@ function _compute_batch_settings(source, size::Int = -1, count::Int = -1)
     @assert num_observations > 0
     size  <= num_observations || throw(BoundsError(source,size))
     count <= num_observations || throw(BoundsError(source,count))
-    if size < 0 && count < 0
+    if size <= 0 && count <= 0
         # no batch settings specified, use default size and as many batches as possible
         size = default_batch_size(source)::Int
         count = floor(Int, num_observations / size)
-    elseif size < 0
+    elseif size <= 0
         # use count to determine size. uses all observations
         size = floor(Int, num_observations / count)
-    elseif count < 0
+    elseif count <= 0
         # use size and as many batches as possible
         count = floor(Int, num_observations / size)
     else
