@@ -7,6 +7,11 @@ Description
 Allows to iterator over some `data`, either in single steps
 if `indices` is an integer, or in batches, if `indices` is a range.
 
+If used as an iterator, the object will iterate over the dataset once,
+effectively denoting an epoch. Each iteration will return a
+minibatch/observation of constant `nobs`, which can be specified using
+keyword parameters.
+
 The type is usually not constructed manually, but instead instantiated
 by calling `eachobs`, or `eachbatch`
 
@@ -133,6 +138,9 @@ eachobs(source) = DataIterator(source, 1, nobs(source))
 
 Iterate over a data source in `count` equally sized batches of
 `size` by using a `DataIterator`.
+In the case that the size of the dataset is not dividable by
+the specified (or inferred) size, the remaining observations will
+be ignored.
 
 ```julia
 for x in eachbatch(X, count = 10)

@@ -38,6 +38,9 @@ end
 
 Create a vector of `count` equally sized `DataSubset` of size
 `size` by partitioning the given `data` in their current order.
+In the case that the size of the dataset is not dividable by
+the specified (or inferred) size, the remaining observations will
+be ignored.
 
 ```julia
 for x in batches(X, count = 10)
