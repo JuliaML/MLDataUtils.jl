@@ -228,3 +228,37 @@ end
     @test i === 15
 end
 
+@testset "splitobs" begin
+    train, test = splitobs(shuffled(X), at = 0.7)
+    @test typeof(train) <: SubArray{Float64}
+    @test typeof(test) <: SubArray{Float64}
+    @test size(train) === (4,105)
+    @test size(test) === (4,45)
+
+    train, test = splitobs(X, at = 0.7)
+    @test typeof(train) <: SubArray{Float64}
+    @test typeof(test) <: SubArray{Float64}
+    @test size(train) === (4,105)
+    @test size(test) === (4,45)
+
+    train, val, test = splitobs(y, at = (0.5,0.3))
+    @test typeof(train) <: SubArray{String}
+    @test typeof(val) <: SubArray{String}
+    @test typeof(test) <: SubArray{String}
+    @test size(train) === (75,)
+    @test size(val) === (45,)
+    @test size(test) === (30,)
+
+    train, val, test = splitobs(ys, at = (0.5,0.3))
+    @test typeof(train) <: DataSubset
+    @test typeof(val) <: DataSubset
+    @test typeof(test) <: DataSubset
+    @test nobs(train) === 75
+    @test nobs(val) === 45
+    @test nobs(test) === 30
+
+    split = splitobs(X,y)
+    @test typeof(split) <: Vector
+    @test eltype(split) <: Tuple
+end
+
