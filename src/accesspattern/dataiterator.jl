@@ -108,7 +108,7 @@ nobs(iter::DataIterator) = nobs(iter.data)
 Base.endof(iter::DataIterator) = iter.count
 Base.getindex(iter::DataIterator, batchindex) = getobs(iter, batchindex)
 getobs(iter::DataIterator, batchindex) = getobs(iter.data, (batchindex-1)*length(iter.start)+iter.start)
-getobs(iter::DataIterator) = getobs(iter.data)
+getobs(iter::DataIterator) = getobs.(collect(iter))
 
 """
     eachobs(source[...])

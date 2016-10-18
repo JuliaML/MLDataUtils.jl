@@ -102,6 +102,7 @@ end
             @test nobs(subset) === nobs(var)
             @test getobs(subset) == var
             @test DataSubset(subset) === subset
+            @test subset[end] == getobs(var, 150)
             @test subset[20:25] == getobs(var, 20:25)
             for idx in (1:100, [1,10,150,3], [2])
                 subset = DataSubset(var, idx)

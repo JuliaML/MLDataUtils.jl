@@ -146,6 +146,7 @@ Base.length(subset::DataSubset) = length(subset.indices)
 nobs(subset::DataSubset) = length(subset)
 
 Base.getindex(subset::DataSubset, idx) = getobs(subset.data, subset.indices[idx])
+getobs(data) = data
 getobs(subset::DataSubset, idx) = subset[idx]
 getobs(subset::DataSubset) = getobs(subset.data, subset.indices)
 

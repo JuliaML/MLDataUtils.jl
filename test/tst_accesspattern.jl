@@ -18,6 +18,9 @@ ys = sprand(150,.5)
     @test eachobs(X,y) === DataIterator((X,y))
     @test eachobs(Xv,y) === DataIterator((Xv,y))
     @test eachobs(XX,X,y) === DataIterator((XX,X,y))
+    @test typeof(getobs(eachobs(X,y))) <: Vector
+    @test eltype(getobs(eachobs(X,y))) <: Tuple
+    @test length(getobs(eachobs(X,y))) === 150
 
     for var in (X,Xv,shuffled(X),shuffled(Xv))
         @test typeof(eachobs(var)[end]) <: SubArray
@@ -121,6 +124,9 @@ end
     @test eachbatch(X,y) === DataIterator((X,y), 1:30, 5)
     @test eachbatch(Xv,y) === DataIterator((Xv,y), 1:30, 5)
     @test eachbatch(XX,X,y) === DataIterator((XX,X,y), 1:30, 5)
+    @test typeof(getobs(eachbatch(X,y))) <: Vector
+    @test eltype(getobs(eachbatch(X,y))) <: Tuple
+    @test length(getobs(eachbatch(X,y))) === 5
 
     for var in (X,Xv,shuffled(X),shuffled(Xv))
         @test typeof(eachbatch(var)[end]) <: SubArray

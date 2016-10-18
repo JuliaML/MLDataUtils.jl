@@ -3,8 +3,6 @@ typealias NativeArray Union{Array,SubArray}
 datasubset(A::NativeArray) = A
 datasubset(A::NativeArray, indices) = getobs(A, indices)
 
-# --------------------------------------------------------------------
-
 nobs{T,N}(A::AbstractArray{T,N}) = size(A, N)
 
 getobs(A::AbstractArray) = A
