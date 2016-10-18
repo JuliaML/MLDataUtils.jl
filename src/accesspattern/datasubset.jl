@@ -75,7 +75,7 @@ see also
 
 `datasubset`, `splitobs`, `KFolds`, `batches`, `eachobs`, `getobs`
 """
-immutable DataSubset{T, I<:AbstractVector}
+immutable DataSubset{T, I<:Union{Int,AbstractVector}}
     data::T
     indices::I
 
@@ -135,7 +135,6 @@ getobs(subset::DataSubset, idx) = subset[idx]
 getobs(subset::DataSubset) = getobs(subset.data, subset.indices)
 
 Base.collect(subset::DataSubset) = collect(getobs(subset))
-Base.collect{T<:Tuple}(subset::DataSubset{T}) = map(collect, getobs(subset.data, subset.indices))
 
 # --------------------------------------------------------------------
 

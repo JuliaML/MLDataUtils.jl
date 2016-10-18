@@ -22,7 +22,7 @@ for f in (:eachobs, :shuffled, :infinite_obs)
     end
 end
 
-for f in (:batches, :infinite_batches, :kfolds, :leave_one_out)
+for f in (:eachbatch, :batches, :infinite_batches, :kfolds, :leave_one_out)
     @eval function $f(s_1, s_rest...; kw...)
         tup = (s_1, s_rest...)
         length(unique(map(a->nobs(a), tup))) == 1 || throw(DimensionMismatch("all parameters must have the same number of observations"))

@@ -39,6 +39,7 @@ export
     repeatedly,
 
     eachobs,
+    eachbatch,
     shuffled,
     batches
 
