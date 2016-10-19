@@ -101,8 +101,8 @@ end
             @test nobs(subset) === nobs(var)
             @test getobs(subset) == getobs(var)
             @test DataSubset(subset) === subset
-            @test subset[end] == getobs(var, 150)
-            @test subset[20:25] == getobs(var, 20:25)
+            @test subset[end] == viewobs(var, 150)
+            @test subset[20:25] == viewobs(var, 20:25)
             for idx in (1:100, [1,10,150,3], [2])
                 subset = DataSubset(var, idx)
                 @test typeof(subset) <: DataSubset{typeof(var), typeof(idx)}
@@ -111,8 +111,9 @@ end
                 @test nobs(subset) === length(idx)
                 @test getobs(subset) == getobs(var, idx)
                 @test DataSubset(subset) === subset
-                @test subset[1] == getobs(var, idx[1])
-                @test subset[1:1] == getobs(var, idx[1:1])
+                @test subset[1] == viewobs(var, idx[1])
+                @test typeof(subset[1:1]) == typeof(viewobs(var, idx[1:1]))
+                @test nobs(subset[1:1]) == nobs(viewobs(var, idx[1:1]))
             end
         end
     end
@@ -124,11 +125,11 @@ end
             subset = DataSubset(var, 101:150)
             @test typeof(getobs(subset)) <: Array{Float64,2}
             @test nobs(subset) == length(subset) == 50
-            @test subset[10:20] == getindex(X, :, 110:120)
-            @test typeof(subset[10:20]) <: Array
+            @test subset[10:20] == view(X, :, 110:120)
+            @test typeof(subset[10:20]) <: SubArray
             @test subset[collect(10:20)] == X[:, 110:120]
-            @test typeof(subset[collect(10:20)]) <: Array
-            @test getobs(subset) == subset[1:end] == view(X, :, 101:150)
+            @test typeof(subset[collect(10:20)]) <: SubArray
+            @test getobs(subset) == subset[1:end] == getindex(X, :, 101:150)
 
             i = 101
             for ob in subset
@@ -144,9 +145,9 @@ end
             @test typeof(getobs(subset)) <: Array{String,1}
             @test nobs(subset) == length(subset) == 50
             @test subset[10:20] == getindex(y, 110:120)
-            @test typeof(subset[10:20]) <: Array
+            @test typeof(subset[10:20]) <: SubArray
             @test subset[collect(10:20)] == y[110:120]
-            @test typeof(subset[collect(10:20)]) <: Array
+            @test typeof(subset[collect(10:20)]) <: SubArray
             @test getobs(subset) == subset[1:end] == getindex(y, 101:150)
             @test typeof(collect(subset)) <: Array{String,1}
             @test nobs(collect(subset)) == 50
@@ -167,7 +168,7 @@ end
             @test subset[1][10:20] == getindex(X, :, 110:120)
             @test subset[2][10:20] == getindex(y, 110:120)
             @test getobs(subset) == (getindex(X, :, 101:150), getindex(y, 101:150))
-            @test typeof(map(collect,subset)) <: Tuple{Array{Array{Float64,1},1},Array{String,1}}
+            @test typeof(map(collect,subset)) <: Tuple{Array{SubArray{Float64,1,Array{Float64,2},Tuple{Colon,Int64},true},1},Array{String,1}}
 
             i = 101
             for ob in eachobs(subset)

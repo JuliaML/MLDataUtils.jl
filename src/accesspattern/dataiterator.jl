@@ -88,13 +88,8 @@ immutable DataIterator{T,S<:Union{Int,UnitRange{Int}},R}
     count::Int
 end
 
-function DataIterator{T,S<:UnitRange}(data::T, start::S, count::Int)
+function DataIterator{T,S}(data::T, start::S = 1, count::Int = nobs(data))
     R = typeof(datasubset(data,start))
-    DataIterator{T,S,R}(data,start,count)
-end
-
-function DataIterator{T,S<:Int}(data::T, start::S = 1, count::Int = nobs(data))
-    R = typeof(getobs(data,start))
     DataIterator{T,S,R}(data,start,count)
 end
 
@@ -105,15 +100,13 @@ Base.show(io::IO, iter::DataIterator) = print(io, "DataIterator{", typeof(iter.d
 Base.eltype{T,S,R}(::Type{DataIterator{T,S,R}}) = R
 Base.start(iter::DataIterator) = iter.start
 Base.done(iter::DataIterator, idx) = maximum(idx) > iter.count * length(iter.start)
-Base.next(iter::DataIterator, idx::UnitRange) = (datasubset(iter.data, idx), idx + length(iter.start))
-Base.next(iter::DataIterator, idx::Int) = (getobs(iter.data, idx), idx + length(iter.start))
+Base.next(iter::DataIterator, idx) = (datasubset(iter.data, idx), idx + length(iter.start))
 
 Base.length(iter::DataIterator) = iter.count
 nobs(iter::DataIterator) = nobs(iter.data)
 
 Base.endof(iter::DataIterator) = iter.count
-Base.getindex{T}(iter::DataIterator{T,UnitRange{Int}}, batchindex) = datasubset(iter.data, (batchindex-1)*length(iter.start)+iter.start)
-Base.getindex{T}(iter::DataIterator{T,Int}, batchindex) = getobs(iter, batchindex)
+Base.getindex(iter::DataIterator, batchindex) = datasubset(iter.data, (batchindex-1)*length(iter.start)+iter.start)
 getobs(iter::DataIterator, batchindex) = getobs(iter.data, (batchindex-1)*length(iter.start)+iter.start)
 getobs(iter::DataIterator) = getobs.(collect(iter))
 

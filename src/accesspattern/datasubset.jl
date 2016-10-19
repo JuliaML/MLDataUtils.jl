@@ -144,13 +144,14 @@ see `DataSubset` for more information.
 """
 datasubset(data, indices) = DataSubset(data, indices)
 datasubset(data) = DataSubset(data)
+datasubset(subset::DataSubset, indices) = datasubset(subset.data, subset.indices[indices])
 const viewobs = datasubset
 
 # --------------------------------------------------------------------
 
 Base.show(io::IO, subset::DataSubset) = print(io, "DataSubset of ", nobs(subset), " obs in ", typeof(subset.data))
 
-Base.rand(subset::DataSubset, args...) = getobs(subset.data, rand(subset.indices, args...))
+Base.rand(subset::DataSubset, args...) = datasubset(subset.data, rand(subset.indices, args...))
 
 Base.start(::DataSubset) = 1
 Base.done(subset::DataSubset, idx) = idx > length(subset.indices)
@@ -162,7 +163,7 @@ Base.collect(subset::DataSubset) = collect(eachobs(subset))
 Base.length(subset::DataSubset) = length(subset.indices)
 nobs(subset::DataSubset) = length(subset)
 
-Base.getindex(subset::DataSubset, idx) = getobs(subset.data, subset.indices[idx])
+Base.getindex(subset::DataSubset, idx) = datasubset(subset.data, subset.indices[idx])
 getobs(data) = data
 getobs(subset::DataSubset, idx) = subset[idx]
 getobs(subset::DataSubset) = getobs(subset.data, subset.indices)
