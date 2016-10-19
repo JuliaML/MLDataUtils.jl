@@ -87,14 +87,20 @@ immutable DataIterator{T,S<:Union{Int,UnitRange{Int}},R}
     start::S
     count::Int
 end
+
 function DataIterator{T,S<:UnitRange}(data::T, start::S, count::Int)
     R = typeof(datasubset(data,start))
     DataIterator{T,S,R}(data,start,count)
 end
+
 function DataIterator{T,S<:Int}(data::T, start::S = 1, count::Int = nobs(data))
     R = typeof(getobs(data,start))
     DataIterator{T,S,R}(data,start,count)
 end
+
+# --------------------------------------------------------------------
+
+Base.show(io::IO, iter::DataIterator) = print(io, "DataIterator{", typeof(iter.data), "}: ", iter.count, " elements with ", length(iter.start), " obs each")
 
 Base.eltype{T,S,R}(::Type{DataIterator{T,S,R}}) = R
 Base.start(iter::DataIterator) = iter.start

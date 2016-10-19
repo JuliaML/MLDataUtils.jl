@@ -141,6 +141,8 @@ datasubset(data) = DataSubset(data)
 
 # --------------------------------------------------------------------
 
+Base.show(io::IO, subset::DataSubset) = print(io, "DataSubset of ", nobs(subset), " obs in ", typeof(subset.data))
+
 Base.rand(subset::DataSubset, args...) = getobs(subset.data, rand(subset.indices, args...))
 
 Base.start(::DataSubset) = 1

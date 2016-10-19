@@ -10,6 +10,7 @@ ys = sprand(150,.5)
 
 @testset "eachobs" begin
     @test_throws DimensionMismatch eachobs(X, rand(149))
+    println(eachobs(Xs)) # make sure it doesn't crash
 
     for var in (Xs, ys, vars...)
         @test eachobs(var) === DataIterator(var)

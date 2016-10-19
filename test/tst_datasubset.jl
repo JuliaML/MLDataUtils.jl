@@ -96,6 +96,7 @@ end
     @testset "Array, SubArray, SparseArray" begin
         for var in (Xs, ys, vars...)
             subset = DataSubset(var)
+            println(subset) # make sure it doesn't crash
             @test subset.data === var
             @test subset.indices === 1:150
             @test typeof(subset) <: DataSubset
