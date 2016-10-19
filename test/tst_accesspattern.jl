@@ -24,31 +24,31 @@ ys = sprand(150,.5)
     @test length(getobs(eachobs(X,y))) === 150
 
     for var in (X,Xv,shuffled(X),shuffled(Xv))
-        @test typeof(eachobs(var)[end]) <: SubArray
+        @test typeof(eachobs(var)[end]) <: Array
         @test size(eachobs(var)[end]) === (4,)
         i = 0
         for x in eachobs(var)
-            @test typeof(x) <: SubArray
+            @test typeof(x) <: Array
             @test size(x) == (4,)
             i = i + 1
-            @test x === eachobs(var)[i]
+            @test x == eachobs(var)[i]
         end
         @test i === 150
     end
 
     i = 0
     for (x,y1) in eachobs(X,y)
-        @test typeof(x) <: SubArray
+        @test typeof(x) <: Array
         @test typeof(y1) <: String
         @test size(x) == (4,)
         i = i + 1
-        @test (x,y1) === eachobs(X,y)[i]
+        @test (x,y1) == eachobs(X,y)[i]
     end
     @test i === 150
 
     i = 0
     for (x,y1,xs) in eachobs(X,y,Xs)
-        @test typeof(x) <: SubArray
+        @test typeof(x) <: Array
         @test typeof(y1) <: String
         @test typeof(xs) <: SparseVector
         @test size(x) == (4,)

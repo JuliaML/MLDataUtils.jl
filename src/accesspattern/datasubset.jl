@@ -131,13 +131,20 @@ DataSubset(subset::DataSubset) = subset
 # --------------------------------------------------------------------
 
 """
-Similar to `DataSubset`, but results in a `SubArray` for if `data`
-is an `Array` or `SubArray`.
+    viewobs(data, [indices])
 
-see `DataSubset` for more information
+Returns a view into the observations of `data` that correspond
+to the given `indices`. No data will be copied. If instead you want
+to get the observations of the given `indices` use `getobs`.
+
+Similar to calling `DataSubset(data, [indices])`, but returns a
+`SubArray` if the type of `data` is `Array` or `SubArray`.
+
+see `DataSubset` for more information.
 """
 datasubset(data, indices) = DataSubset(data, indices)
 datasubset(data) = DataSubset(data)
+const viewobs = datasubset
 
 # --------------------------------------------------------------------
 
@@ -149,6 +156,7 @@ Base.start(::DataSubset) = 1
 Base.done(subset::DataSubset, idx) = idx > length(subset.indices)
 Base.next(subset::DataSubset, idx) = (subset[idx], idx + 1)
 Base.endof(subset::DataSubset) = length(subset)
+Base.collect(subset::DataSubset) = collect(eachobs(subset))
 
 # TODO: Base.size
 Base.length(subset::DataSubset) = length(subset.indices)
@@ -158,8 +166,6 @@ Base.getindex(subset::DataSubset, idx) = getobs(subset.data, subset.indices[idx]
 getobs(data) = data
 getobs(subset::DataSubset, idx) = subset[idx]
 getobs(subset::DataSubset) = getobs(subset.data, subset.indices)
-
-Base.collect(subset::DataSubset) = collect(getobs(subset))
 
 # --------------------------------------------------------------------
 

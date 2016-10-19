@@ -28,22 +28,20 @@ end
 
 @testset "getobs" begin
     @testset "Array and Subarray" begin
-        @test getobs(X)   === X
-        @test getobs(Xv)  === Xv
-        @test getobs(XX)  === XX
-        @test getobs(XXX) === XXX
-        @test getobs(y)   === y
-        @test getobs(yv)  === yv
+        @test getobs(X)   == X
+        @test all(getobs(Xv)  .== X)
+        @test getobs(XX)  == XX
+        @test getobs(XXX) == XXX
+        @test getobs(y)   == y
+        @test all(getobs(yv)  .== y)
         for i in (2, 1:150, 2:10, [2,5,7], [2,1])
-            @test getobs(X,i)   === view(X,:,i)
-            @test getobs(Xv,i)  === view(X,:,i)
-            @test getobs(Xv,i)  === view(Xv,:,i)
-            @test getobs(XX,i)  === view(XX,:,:,i)
-            @test getobs(XXX,i) === view(XXX,:,:,:,i)
-            @test getobs(y,i)   === ((typeof(i) <: Int) ? y[i] : view(y,i))
-            @test getobs(yv,i)  === ((typeof(i) <: Int) ? y[i] : view(y,i))
-            @test getobs(yv,i)  === ((typeof(i) <: Int) ? yv[i] : view(yv,i))
-            @test getobs(Y,i)   === view(Y,:,i)
+            @test getobs(X,i)   == getindex(X,:,i)
+            @test all(getobs(Xv,i) .== getindex(X,:,i))
+            @test getobs(XX,i)  == getindex(XX,:,:,i)
+            @test getobs(XXX,i) == getindex(XXX,:,:,:,i)
+            @test getobs(y,i)   == ((typeof(i) <: Int) ? y[i] : getindex(y,i))
+            @test getobs(yv,i)  == ((typeof(i) <: Int) ? y[i] : getindex(y,i))
+            @test getobs(Y,i)   == getindex(Y,:,i)
         end
     end
 
@@ -59,23 +57,23 @@ end
     @testset "Tuple" begin
         @test getobs(()) === ()
         @test getobs((X,y))  === (X,y)
-        @test getobs((X,yv)) === (X,yv)
-        @test getobs((Xv,y)) === (Xv,y)
-        @test getobs((Xv,yv)) === (Xv,yv)
+        @test getobs((X,yv)) == (X,y)
+        @test getobs((Xv,y)) == (X,y)
+        @test getobs((Xv,yv)) == (X,y)
         @test getobs((XX,X,y)) === (XX,X,y)
         @test getobs((XXX,XX,X,y)) === (XXX,XX,X,y)
         for i in (1:150, 2:10, [2,5,7], [2,1])
-            @test getobs((X,y), i)  === (view(X,:,i), view(y,i))
-            @test getobs((X,yv), i) === (view(X,:,i), view(y,i))
-            @test getobs((Xv,y), i) === (view(X,:,i), view(y,i))
-            @test getobs((X,Y), i)  === (view(X,:,i), view(Y,:,i))
-            @test getobs((XX,X,y), i) === (view(XX,:,:,i), view(X,:,i), view(y,i))
+            @test getobs((X,y), i)  == (getindex(X,:,i), getindex(y,i))
+            @test getobs((X,yv), i) == (getindex(X,:,i), getindex(y,i))
+            @test getobs((Xv,y), i) == (getindex(X,:,i), getindex(y,i))
+            @test getobs((X,Y), i)  == (getindex(X,:,i), getindex(Y,:,i))
+            @test getobs((XX,X,y), i) == (getindex(XX,:,:,i), getindex(X,:,i), getindex(y,i))
         end
-        @test getobs((X,y), 2) === (view(X,:,2), y[2])
-        @test getobs((Xv,y), 2) === (view(X,:,2), y[2])
-        @test getobs((X,yv), 2) === (view(X,:,2), y[2])
-        @test getobs((X,Y), 2) === (view(X,:,2), view(Y,:,2))
-        @test getobs((XX,X,y), 2) === (view(XX,:,:,2), view(X,:,2), y[2])
+        @test getobs((X,y), 2) == (getindex(X,:,2), y[2])
+        @test getobs((Xv,y), 2) == (getindex(X,:,2), y[2])
+        @test getobs((X,yv), 2) == (getindex(X,:,2), y[2])
+        @test getobs((X,Y), 2) == (getindex(X,:,2), getindex(Y,:,2))
+        @test getobs((XX,X,y), 2) == (getindex(XX,:,:,2), getindex(X,:,2), y[2])
     end
 end
 
@@ -101,7 +99,7 @@ end
             @test subset.indices === 1:150
             @test typeof(subset) <: DataSubset
             @test nobs(subset) === nobs(var)
-            @test getobs(subset) == var
+            @test getobs(subset) == getobs(var)
             @test DataSubset(subset) === subset
             @test subset[end] == getobs(var, 150)
             @test subset[20:25] == getobs(var, 20:25)
@@ -124,12 +122,12 @@ end
     @testset "Matrix and SubArray{T,2}" begin
         for var in (X, Xv)
             subset = DataSubset(var, 101:150)
-            @test typeof(getobs(subset)) <: SubArray{Float64,2,Array{Float64,2}}
+            @test typeof(getobs(subset)) <: Array{Float64,2}
             @test nobs(subset) == length(subset) == 50
-            @test subset[10:20] == view(X, :, 110:120)
-            @test typeof(subset[10:20]) <: SubArray
+            @test subset[10:20] == getindex(X, :, 110:120)
+            @test typeof(subset[10:20]) <: Array
             @test subset[collect(10:20)] == X[:, 110:120]
-            @test typeof(subset[collect(10:20)]) <: SubArray
+            @test typeof(subset[collect(10:20)]) <: Array
             @test getobs(subset) == subset[1:end] == view(X, :, 101:150)
 
             i = 101
@@ -143,13 +141,13 @@ end
     @testset "Vector and SubArray{T,1}" begin
         for var in (y, yv)
             subset = DataSubset(var, 101:150)
-            @test typeof(getobs(subset)) <: SubArray{String,1,Array{String,1}}
+            @test typeof(getobs(subset)) <: Array{String,1}
             @test nobs(subset) == length(subset) == 50
-            @test subset[10:20] == view(y, 110:120)
-            @test typeof(subset[10:20]) <: SubArray
+            @test subset[10:20] == getindex(y, 110:120)
+            @test typeof(subset[10:20]) <: Array
             @test subset[collect(10:20)] == y[110:120]
-            @test typeof(subset[collect(10:20)]) <: SubArray
-            @test getobs(subset) == subset[1:end] == view(y, 101:150)
+            @test typeof(subset[collect(10:20)]) <: Array
+            @test getobs(subset) == subset[1:end] == getindex(y, 101:150)
             @test typeof(collect(subset)) <: Array{String,1}
             @test nobs(collect(subset)) == 50
 
@@ -164,12 +162,12 @@ end
     @testset "2-Tuple of Matrix, Vector, or SubArray"  begin
         for v1 in (X, Xv), v2 in (y, yv)
             subset = DataSubset((v1,v2), 101:150)
-            @test typeof(getobs(subset)) <: Tuple{SubArray{Float64,2,Array{Float64,2},Tuple{Colon,UnitRange{Int64}},true},SubArray{String,1,Array{String,1},Tuple{UnitRange{Int64}},true}} # don't ask
+            @test typeof(getobs(subset)) <: Tuple{Array{Float64,2},Array{String,1}}
             @test nobs(subset) == nobs(subset[1]) == nobs(subset[2]) == 50
-            @test subset[1][10:20] == view(X, :, 110:120)
-            @test subset[2][10:20] == view(y, 110:120)
-            @test getobs(subset) == (view(X, :, 101:150), view(y, 101:150))
-            @test typeof(map(collect,subset)) <: Tuple{Array{Float64,2},Array{String,1}}
+            @test subset[1][10:20] == getindex(X, :, 110:120)
+            @test subset[2][10:20] == getindex(y, 110:120)
+            @test getobs(subset) == (getindex(X, :, 101:150), getindex(y, 101:150))
+            @test typeof(map(collect,subset)) <: Tuple{Array{Array{Float64,1},1},Array{String,1}}
 
             i = 101
             for ob in eachobs(subset)
@@ -184,6 +182,7 @@ end
 end
 
 @testset "datasubset" begin
+    @test viewobs === datasubset
     @testset "Array and SubArray" begin
         @test datasubset(X)   === X
         @test datasubset(Xv)  === Xv

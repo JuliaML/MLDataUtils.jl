@@ -112,7 +112,8 @@ Base.length(iter::DataIterator) = iter.count
 nobs(iter::DataIterator) = nobs(iter.data)
 
 Base.endof(iter::DataIterator) = iter.count
-Base.getindex(iter::DataIterator, batchindex) = getobs(iter, batchindex)
+Base.getindex{T}(iter::DataIterator{T,UnitRange{Int}}, batchindex) = datasubset(iter.data, (batchindex-1)*length(iter.start)+iter.start)
+Base.getindex{T}(iter::DataIterator{T,Int}, batchindex) = getobs(iter, batchindex)
 getobs(iter::DataIterator, batchindex) = getobs(iter.data, (batchindex-1)*length(iter.start)+iter.start)
 getobs(iter::DataIterator) = getobs.(collect(iter))
 

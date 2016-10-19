@@ -10,6 +10,7 @@ export
 
     nobs,
     getobs,
+    viewobs,
 
     noisy_function,
     noisy_sin,
