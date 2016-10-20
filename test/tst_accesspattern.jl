@@ -8,19 +8,52 @@ vars = (X, Xv, yv, XX, XXX, y, (X,y), (X,Y), (XX,X,y), (XXX,XX,X,y))
 Xs = sprand(10,150,.5)
 ys = sprand(150,.5)
 
-@testset "eachobs" begin
+@testset "EachObs" begin
     @test ObsIterator <: DataIterator
-    @test_throws DimensionMismatch eachobs(X, rand(149))
-    println(eachobs(Xs)) # make sure it doesn't crash
-    @test typeof(eachobs(Xs)) <: ObsIterator
+    @test EachObs <: ObsIterator
 
     for var in (Xs, ys, vars...)
-        @test eachobs(var) === DataIterator(var)
-        @test eachobs(DataSubset(var)) === DataIterator(DataSubset(var))
+        iter = EachObs(var)
+        @test iter[end] === datasubset(var, 150)
+        @test getobs(iter) == getobs.(collect(iter))
+        @test getobs(iter, 2) == getobs(var, 2)
+        @test iter.data === var
+        @test iter.count === nobs(var)
+        @test nobs(iter) === nobs(var)
+        @test typeof(iter) <: EachObs{typeof(var), typeof(datasubset(var,1))}
     end
-    @test eachobs(X,y) === DataIterator((X,y))
-    @test eachobs(Xv,y) === DataIterator((Xv,y))
-    @test eachobs(XX,X,y) === DataIterator((XX,X,y))
+end
+
+@testset "EachBatch" begin
+    @test BatchIterator <: DataIterator
+    @test EachBatch <: BatchIterator
+
+    for var in (Xs, ys, vars...)
+        iter = EachBatch(var)
+        @test iter[end] === datasubset(var, 121:150)
+        @test getobs(iter) == getobs.(collect(iter))
+        @test getobs(iter, 2) == getobs(var, 31:60)
+        @test iter.data === var
+        @test iter.size === 30
+        @test iter.count === 5
+        @test_throws MethodError nobs(iter)
+        @test typeof(iter) <: EachBatch{typeof(var), typeof(datasubset(var,1:30))}
+    end
+end
+
+@testset "eachobs" begin
+    @test_throws DimensionMismatch eachobs(X, rand(149))
+    println(eachobs(Xs)) # make sure it doesn't crash
+    @test typeof(eachobs(Xs)) <: EachObs
+
+    for var in (Xs, ys, vars...)
+        @test eachobs(var) === EachObs(var)
+        @test eachobs(var) === EachObs(var, 150)
+        @test eachobs(DataSubset(var)) === EachObs(DataSubset(var))
+    end
+    @test eachobs(X,y) === EachObs((X,y))
+    @test eachobs(Xv,y) === EachObs((Xv,y))
+    @test eachobs(XX,X,y) === EachObs((XX,X,y))
     @test typeof(getobs(eachobs(X,y))) <: Vector
     @test eltype(getobs(eachobs(X,y))) <: Tuple
     @test length(getobs(eachobs(X,y))) === 150
@@ -118,18 +151,18 @@ end
 end
 
 @testset "eachbatch" begin
-    @test BatchIterator <: DataIterator
     @test_throws DimensionMismatch eachbatch(X, rand(149))
     println(eachbatch(Xs)) # make sure it doesn't crash
-    @test typeof(eachbatch(Xs)) <: BatchIterator
+    @test typeof(eachbatch(Xs)) <: EachBatch
 
     for var in (Xs, ys, vars...)
-        @test eachbatch(var) === DataIterator(var, 1:30, 5)
-        @test eachbatch(DataSubset(var)) === DataIterator(DataSubset(var), 1:30, 5)
+        @test eachbatch(var) === EachBatch(var, 30, 5)
+        @test eachbatch(var, size = 25, count = 2) === EachBatch(var, 25, 2)
+        @test eachbatch(DataSubset(var)) === EachBatch(DataSubset(var), 30, 5)
     end
-    @test eachbatch(X,y) === DataIterator((X,y), 1:30, 5)
-    @test eachbatch(Xv,y) === DataIterator((Xv,y), 1:30, 5)
-    @test eachbatch(XX,X,y) === DataIterator((XX,X,y), 1:30, 5)
+    @test eachbatch(X,y) === EachBatch((X,y), 30, 5)
+    @test eachbatch(Xv,y) === EachBatch((Xv,y), 30, 5)
+    @test eachbatch(XX,X,y) === EachBatch((XX,X,y), 30, 5)
     @test typeof(getobs(eachbatch(X,y))) <: Vector
     @test eltype(getobs(eachbatch(X,y))) <: Tuple
     @test length(getobs(eachbatch(X,y))) === 5

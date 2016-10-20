@@ -33,8 +33,10 @@ export
     predict!,
 
     DataIterator,
-    ObsIterator,
-    BatchIterator,
+        ObsIterator,
+            EachObs,
+        BatchIterator,
+            EachBatch,
 
     DataSubset,
     datasubset,
