@@ -153,16 +153,11 @@ Base.show(io::IO, subset::DataSubset) = print(io, "DataSubset of ", nobs(subset)
 
 Base.rand(subset::DataSubset, args...) = datasubset(subset.data, rand(subset.indices, args...))
 
-Base.start(::DataSubset) = 1
-Base.done(subset::DataSubset, idx) = idx > length(subset.indices)
-Base.next(subset::DataSubset, idx) = (subset[idx], idx + 1)
-Base.endof(subset::DataSubset) = length(subset)
-Base.collect(subset::DataSubset) = collect(eachobs(subset))
-
 # TODO: Base.size
 Base.length(subset::DataSubset) = length(subset.indices)
 nobs(subset::DataSubset) = length(subset)
 
+Base.endof(subset::DataSubset) = length(subset)
 Base.getindex(subset::DataSubset, idx) = datasubset(subset.data, subset.indices[idx])
 getobs(data) = data
 getobs(subset::DataSubset, idx) = subset[idx]

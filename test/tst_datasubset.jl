@@ -119,7 +119,7 @@ end
     end
 end
 
-@testset "DataSubset iteration" begin
+@testset "DataSubset getindex" begin
     @testset "Matrix and SubArray{T,2}" begin
         for var in (X, Xv)
             subset = DataSubset(var, 101:150)
@@ -130,12 +130,6 @@ end
             @test subset[collect(10:20)] == X[:, 110:120]
             @test typeof(subset[collect(10:20)]) <: SubArray
             @test getobs(subset) == subset[1:end] == getindex(X, :, 101:150)
-
-            i = 101
-            for ob in subset
-                @test ob == X[:, i]
-                i += 1
-            end
         end
     end
 
@@ -149,14 +143,6 @@ end
             @test subset[collect(10:20)] == y[110:120]
             @test typeof(subset[collect(10:20)]) <: SubArray
             @test getobs(subset) == subset[1:end] == getindex(y, 101:150)
-            @test typeof(collect(subset)) <: Array{String,1}
-            @test nobs(collect(subset)) == 50
-
-            i = 101
-            for ob in subset
-                @test ob == y[i]
-                i += 1
-            end
         end
     end
 
@@ -168,13 +154,6 @@ end
             @test subset[1][10:20] == getindex(X, :, 110:120)
             @test subset[2][10:20] == getindex(y, 110:120)
             @test getobs(subset) == (getindex(X, :, 101:150), getindex(y, 101:150))
-            @test typeof(map(collect,subset)) <: Tuple{Array{SubArray{Float64,1,Array{Float64,2},Tuple{Colon,Int64},true},1},Array{String,1}}
-
-            i = 101
-            for ob in eachobs(subset)
-                @test ob == (X[:,i], y[i])
-                i += 1
-            end
         end
     end
 
