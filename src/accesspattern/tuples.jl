@@ -1,6 +1,15 @@
+function _check_nobs(tup::Tuple)
+    n1 = nobs(tup[1])
+    for i=2:length(tup)
+        if nobs(tup[i]) != n1
+            throw(DimensionMismatch("all parameters must have the same number of observations"))
+        end
+    end
+end
+
 # map DataSubset over the tuple instead
 function DataSubset(tup::Tuple, indices = 1:nobs(tup))
-    length(unique(map(_->nobs(_), tup))) == 1 || throw(DimensionMismatch("all parameters must have the same number of observations"))
+	_check_nobs(tup)
     map(data -> DataSubset(data, indices), tup)
 end
 
@@ -23,7 +32,7 @@ getobs(tup::Tuple{}) = ()
 for f in (:eachobs, :shuffled, :infinite_obs)
     @eval function $f(s_1, s_rest...)
         tup = (s_1, s_rest...)
-        length(unique(map(a->nobs(a), tup))) == 1 || throw(DimensionMismatch("all parameters must have the same number of observations"))
+        _check_nobs(tup)
         $f(tup)
     end
 end
@@ -32,7 +41,7 @@ for f in (:splitobs, :eachbatch, :batches, :infinite_batches,
           :kfolds, :leave_one_out)
     @eval function $f(s_1, s_rest...; kw...)
         tup = (s_1, s_rest...)
-        length(unique(map(a->nobs(a), tup))) == 1 || throw(DimensionMismatch("all parameters must have the same number of observations"))
+        _check_nobs(tup)
         $f(tup; kw...)
     end
 end
