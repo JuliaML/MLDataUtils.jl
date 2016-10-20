@@ -9,8 +9,10 @@ Xs = sprand(10,150,.5)
 ys = sprand(150,.5)
 
 @testset "eachobs" begin
+    @test ObsIterator <: DataIterator
     @test_throws DimensionMismatch eachobs(X, rand(149))
     println(eachobs(Xs)) # make sure it doesn't crash
+    @test typeof(eachobs(Xs)) <: ObsIterator
 
     for var in (Xs, ys, vars...)
         @test eachobs(var) === DataIterator(var)
@@ -116,7 +118,10 @@ end
 end
 
 @testset "eachbatch" begin
+    @test BatchIterator <: DataIterator
     @test_throws DimensionMismatch eachbatch(X, rand(149))
+    println(eachbatch(Xs)) # make sure it doesn't crash
+    @test typeof(eachbatch(Xs)) <: BatchIterator
 
     for var in (Xs, ys, vars...)
         @test eachbatch(var) === DataIterator(var, 1:30, 5)

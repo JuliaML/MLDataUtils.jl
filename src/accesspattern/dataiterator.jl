@@ -93,9 +93,13 @@ function DataIterator{T,S}(data::T, start::S = 1, count::Int = nobs(data))
     DataIterator{T,S,R}(data,start,count)
 end
 
+typealias ObsIterator{T,R} DataIterator{T,Int,R}
+typealias BatchIterator{T,R} DataIterator{T,UnitRange{Int},R}
+
 # --------------------------------------------------------------------
 
-Base.show(io::IO, iter::DataIterator) = print(io, "DataIterator{", typeof(iter.data), "}: ", iter.count, " elements with ", length(iter.start), " obs each")
+Base.show(io::IO, iter::ObsIterator) = print(io, "ObsIterator{", typeof(iter.data), "}: ", iter.count, " observations")
+Base.show(io::IO, iter::BatchIterator) = print(io, "BatchIterator{", typeof(iter.data), "}: ", iter.count, " batches of ", length(iter.start), " observations")
 
 Base.eltype{T,S,R}(::Type{DataIterator{T,S,R}}) = R
 Base.start(iter::DataIterator) = iter.start

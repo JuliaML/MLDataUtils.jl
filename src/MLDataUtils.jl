@@ -3,7 +3,7 @@ module MLDataUtils
 using LearnBase
 using StatsBase
 
-import Iterators: repeatedly, repeated
+import Iterators: repeatedly
 import LearnBase: nobs, getobs
 
 export
@@ -33,10 +33,12 @@ export
     predict!,
 
     DataIterator,
+    ObsIterator,
+    BatchIterator,
+
     DataSubset,
     datasubset,
 
-    repeated,
     repeatedly,
 
     eachobs,
