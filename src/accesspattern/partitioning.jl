@@ -37,7 +37,7 @@ end
     batches(data[...]; [count], [size])
 
 Create a vector of `count` equally sized `DataSubset` of size
-`size` by partitioning the given `data` in their current order.
+`size` by partitioning the given `data` in their _current_ order.
 In the case that the size of the dataset is not dividable by
 the specified (or inferred) size, the remaining observations will
 be ignored.

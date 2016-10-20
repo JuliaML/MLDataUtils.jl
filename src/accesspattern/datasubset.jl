@@ -149,7 +149,7 @@ const viewobs = datasubset
 
 # --------------------------------------------------------------------
 
-Base.show(io::IO, subset::DataSubset) = print(io, "DataSubset of ", nobs(subset), " obs in ", typeof(subset.data))
+Base.show(io::IO, subset::DataSubset) = print(io, "DataSubset{", typeof(subset.data), "}: " , nobs(subset), " observations")
 
 Base.rand(subset::DataSubset, args...) = datasubset(subset.data, rand(subset.indices, args...))
 
