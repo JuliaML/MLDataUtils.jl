@@ -32,9 +32,6 @@ Methods
 
 - **`rand`** : Returns a random observation from the subset.
 
-- **`collect`** : Returns a copy of the underlying data at the given
-    indices.
-
 - **`getindex`** : Returns the observation(s) of the given
     index/indices
 
@@ -76,7 +73,7 @@ subset = DataSubset(X, 21:100)
 # Also works for tuple of data
 subset = DataSubset((X,y), 1:100)
 @assert nobs(subset) == 100
-@assert typeof(subset) <: Typle # Tuple of DataSubset
+@assert typeof(subset) <: Tuple # Tuple of DataSubset
 
 # The lowercase version tries to avoid boxing for arrays
 # Here it instead creates a native SubArray
@@ -168,8 +165,8 @@ getobs(subset::DataSubset) = getobs(subset.data, subset.indices)
 """
     shuffled(data[...])
 
-Iterate over shuffled (randomized) source data.
-This is non-copy and non-mutating (only the indices are shuffled).
+Returns a lazy view into `data` with the order of the indices
+randomized. This is non-copy (only the indices are shuffled).
 
 ```julia
 for (x,y) in eachobs(shuffled(X,Y))
