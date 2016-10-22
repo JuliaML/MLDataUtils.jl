@@ -63,7 +63,7 @@ Examples
 
     # leavout is a shortcut for setting k = nobs(X)
     for (train_X, test_X) in leaveout(X)
-        @assert size(get(test_X)) == (4, 1)
+        @assert size(test_X) == (4, 1)
     end
 
 see also
@@ -145,7 +145,7 @@ for ((x_train, y_train), (x_test, y_test)) in kfolds(X, Y, k = 20)
 end
 ```
 
-see `KFolds` for more info, or `leavout` for a related function.
+see `KFolds` for more info, or `leaveout` for a related function.
 """
 function kfolds(data; k::Int = 5)
     KFolds(data, k)

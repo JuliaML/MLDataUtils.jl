@@ -101,6 +101,7 @@ end
             @test nobs(subset) === nobs(var)
             @test getobs(subset) == getobs(var)
             @test DataSubset(subset) === subset
+            @test DataSubset(subset, 1:150) === subset
             @test subset[end] == viewobs(var, 150)
             @test subset[20:25] == viewobs(var, 20:25)
             for idx in (1:100, [1,10,150,3], [2])
@@ -126,6 +127,8 @@ end
             @test typeof(getobs(subset)) <: Array{Float64,2}
             @test nobs(subset) == length(subset) == 50
             @test subset[10:20] == view(X, :, 110:120)
+            @test getobs(subset, 10:20) == X[:, 110:120]
+            @test getobs(subset, [11,10,14]) == X[:, [111,110,114]]
             @test typeof(subset[10:20]) <: SubArray
             @test subset[collect(10:20)] == X[:, 110:120]
             @test typeof(subset[collect(10:20)]) <: SubArray
@@ -139,6 +142,8 @@ end
             @test typeof(getobs(subset)) <: Array{String,1}
             @test nobs(subset) == length(subset) == 50
             @test subset[10:20] == getindex(y, 110:120)
+            @test getobs(subset, 10:20) == y[110:120]
+            @test getobs(subset, [11,10,14]) == y[[111,110,114]]
             @test typeof(subset[10:20]) <: SubArray
             @test subset[collect(10:20)] == y[110:120]
             @test typeof(subset[collect(10:20)]) <: SubArray
@@ -147,6 +152,7 @@ end
     end
 
     @testset "2-Tuple of Matrix, Vector, or SubArray"  begin
+        @test_throws ErrorException DataSubset{Tuple{Matrix{Float64},Matrix{Float64}},Int}((X,X), 1)
         for v1 in (X, Xv), v2 in (y, yv)
             subset = DataSubset((v1,v2), 101:150)
             @test typeof(getobs(subset)) <: Tuple{Array{Float64,2},Array{String,1}}
@@ -158,6 +164,17 @@ end
     end
 
     @testset "2-Tuple of SparseArray"  begin
+        subset = DataSubset((Xs,ys), 101:150)
+        @test typeof(subset) <: Tuple
+        @test typeof(subset[1]) <: DataSubset
+        @test typeof(subset[2]) <: DataSubset
+        @test typeof(getobs(subset)) <: Tuple
+        @test typeof(getobs(subset)[1]) <: SparseMatrixCSC
+        @test typeof(getobs(subset)[2]) <: SparseVector
+        @test nobs(subset) == nobs(subset[1]) == nobs(subset[2]) == 50
+        @test getobs(subset[1][10:20]) == getindex(Xs, :, 110:120)
+        @test getobs(subset[2][10:20]) == getindex(ys, 110:120)
+        @test getobs(subset) == (getindex(Xs, :, 101:150), getindex(ys, 101:150))
     end
 end
 

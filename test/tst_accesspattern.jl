@@ -29,6 +29,12 @@ end
     @test EachBatch <: BatchIterator
 
     for var in (Xs, ys, vars...)
+        iter = EachBatch(var, -1, 9)
+        @test iter.size === 16
+        @test iter.count === 9
+        iter = EachBatch(var, 16)
+        @test iter.size === 16
+        @test iter.count === 9
         iter = EachBatch(var)
         @test iter[end] === datasubset(var, 121:150)
         @test getobs(iter) == getobs.(collect(iter))
