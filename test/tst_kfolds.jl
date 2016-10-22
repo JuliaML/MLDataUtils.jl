@@ -1,115 +1,148 @@
 X, y = load_iris()
-Y = vcat(y', y')
+Y = permutedims(hcat(y,y), [2,1])
+Xv = view(X,:,:)
+yv = view(y,:)
+XX = rand(20,30,150)
+XXX = rand(3,20,30,150)
+vars = (X, Xv, yv, XX, XXX, y, (X,y), (X,Y), (XX,X,y), (XXX,XX,X,y))
+Xs = sprand(10,150,.5)
+ys = sprand(150,.5)
 
 @testset "KFolds constructor" begin
+    @test KFolds <: DataIterator
     @test_throws ArgumentError KFolds(X, -1)
     @test_throws ArgumentError KFolds(X, 1)
     @test_throws ArgumentError KFolds(X, 151)
+    println(KFolds(X)) # make sure it doesn't crash
 
-    kf = LOOFolds(X)
-    @test kf.k == 150
+    for var in (Xs, ys, vars...)
+        kf = KFolds(var)
+        @test kf.k == length(kf.sizes) == length(kf.indices) == 5
+        @test kf.data === var
 
-    kf = KFolds(X, k = 15)
-    @test kf.k == 15
+        kf = KFolds(var, 15)
+        @test kf.k == length(kf.sizes) == length(kf.indices) == 15
+        @test kf.data === var
 
-    kf = KFolds(X)
-    @test kf.k == 10
-
-    kf = KFolds(X, 20)
-    @test kf.features == X
-    @test kf.k == 20
-    @test length(kf.folds) == 20
-    sizes = 0
-    for i = 1:kf.k
-        sizes += length(kf.folds[i])
+        kf = KFolds(var, 20)
+        @test kf.k == length(kf.sizes) == length(kf.indices) == 20
+        @test kf.data === var
+        cumobs = kf.sizes[1]
+        for i = 2:kf.k
+            cumobs += kf.sizes[i]
+            @test 7 <= kf.sizes[i] <= kf.sizes[1] <= 8
+            @test 1 <= kf.indices[i-1] < kf.indices[i] < nobs(var)
+        end
+        @test cumobs == nobs(var)
     end
-    @test sizes == StatsBase.nobs(kf) == StatsBase.nobs(X)
 end
 
-@testset "LabeledKFolds constructor" begin
-    @test_throws ArgumentError KFolds(X, y, -1)
-    @test_throws ArgumentError KFolds(X, y, 1)
-    @test_throws ArgumentError KFolds(X, y, 151)
-
-    kf = LOOFolds(X, y)
-    @test typeof(kf) <: LabeledKFolds
-    @test kf.k == 150
-
-    kf = LabeledKFolds(X, y, k = 15)
-    @test typeof(kf) <: LabeledKFolds
-    @test kf.k == 15
-    kf = KFolds(X, y, k = 15)
-    @test typeof(kf) <: LabeledKFolds
-    @test kf.k == 15
-
-    kf = KFolds(X, y)
-    @test typeof(kf) <: LabeledKFolds
-    @test kf.k == 10
-
-    kf = KFolds(X, y, 20)
-    @test typeof(kf) <: LabeledKFolds
-    @test kf.features == X
-    @test kf.targets == y
-    @test kf.k == 20
-    @test length(kf.features_folds) == 20
-    @test length(kf.targets_folds) == 20
-    sizes_f = 0
-    sizes_t = 0
-    for i = 1:kf.k
-        sizes_f += length(kf.features_folds[i])
-        sizes_t += length(kf.targets_folds[i])
+@testset "KFolds getindex, endof, length" begin
+    for var in vars
+        kf = KFolds(var, 10)
+        @test length(kf) == 10
+        @test kf[end] == kf[length(kf)]
     end
-    @test sizes_f == sizes_t == StatsBase.nobs(kf) == StatsBase.nobs(X)
+    for var in (Xs, ys, vars...)
+        kf = KFolds(var, 10)
+        @test length(kf) == 10
+        @test getobs(kf[end]) == getobs(kf[length(kf)])
+    end
 end
 
-@testset "(Labeled)KFolds methods" begin
-    kf = KFolds(X, 20)
-    @test length(kf) == kf.k
-    for i = 1:length(kf)
-        @test kf[i] == kf.folds[i]
-    end
-    @test kf[end] == kf[kf.k]
+@testset "KFolds iteration" begin
+    for var in (X, Xv, yv, XX, XXX, y)
+        all_train_indices = Array{Int,1}()
+        all_test_indices = Array{Int,1}()
+        for (train, test) in KFolds(var, 10)
+            @test nobs(train) == 135
+            @test nobs(test)  == 15
 
-    kf = KFolds(X, y, 20)
-    @test length(kf) == kf.k
-    for i = 1:length(kf)
-        @test kf[i] == (kf.features_folds[i], kf.targets_folds[i])
-    end
-    @test kf[end] == kf[kf.k]
-end
+            @test typeof(train) <: SubArray
+            @test typeof(test) <: SubArray
 
-@testset "KFolds iterator" begin
-    for k in (2, 10, 20, 150)
-        all_test_indicies = Array{Int,1}()
-        for (train, test) in KFolds(X, k)
+            @test length(setdiff(train.indexes[ndims(train)], test.indexes[ndims(test)])) == 135
+            @test length(setdiff(test.indexes[ndims(test)], train.indexes[ndims(train)])) == 15
+            append!(all_train_indices, train.indexes[ndims(train)])
+            append!(all_test_indices, test.indexes[ndims(test)])
+        end
+        @test length(unique(all_train_indices)) == 150
+        @test length(unique(all_test_indices)) == 150
+        @test length(all_test_indices) == 150
+    end
+    for var in (Xs, ys)
+        all_train_indices = Array{Int,1}()
+        all_test_indices = Array{Int,1}()
+        for (train, test) in KFolds(var, 10)
+            @test nobs(train) == 135
+            @test nobs(test)  == 15
+
             @test typeof(train) <: DataSubset
             @test typeof(test) <: DataSubset
-            @test StatsBase.nobs(train) >= StatsBase.nobs(test)
-            @test length(unique(vcat(train.indicies, test.indicies))) == 150
-            append!(all_test_indicies, test.indicies)
+
+            @test length(setdiff(train.indices, test.indices)) == 135
+            @test length(setdiff(test.indices, train.indices)) == 15
+
+            append!(all_train_indices, train.indices)
+            append!(all_test_indices, test.indices)
         end
-        @test length(unique(all_test_indicies)) == 150
+        @test length(unique(all_train_indices)) == 150
+        @test length(unique(all_test_indices)) == 150
+        @test length(all_test_indices) == 150
+    end
+    for var in (Xs, ys)
+        for (train, test) in KFolds(var, 10)
+            @test nobs(train) == 135
+            @test nobs(test)  == 15
+
+            @test typeof(train) <: DataSubset
+            @test typeof(test) <: DataSubset
+        end
     end
 end
 
-@testset "LabeledKFolds iterator" begin
-    for k in (2, 10, 20, 150)
-        all_test_indicies_X = Array{Int,1}()
-        all_test_indicies_y = Array{Int,1}()
-        for ((train_X, train_y), (test_X, test_y)) in KFolds(X, y, k)
-            @test typeof(train_X) <: DataSubset
-            @test typeof(train_y) <: DataSubset
-            @test typeof(test_X) <: DataSubset
-            @test typeof(test_y) <: DataSubset
-            @test train_X.indicies == train_y.indicies
-            @test test_X.indicies == test_y.indicies
-            @test length(unique(vcat(train_X.indicies, test_X.indicies))) == 150
-            @test length(unique(vcat(train_y.indicies, test_y.indicies))) == 150
-            append!(all_test_indicies_X, test_X.indicies)
-            append!(all_test_indicies_y, test_y.indicies)
+@testset "kfolds" begin
+    for v1 in (X, Xv), v2 in (y, yv)
+        kf = kfolds(v1, v2, k = 15)
+        @test typeof(kf) <: KFolds{Tuple{typeof(v1),typeof(v2)}}
+        for ((train_x, train_y), (test_x, test_y)) in kf
+            @test typeof(train_x) <: SubArray{Float64, 2}
+            @test typeof(test_x) <: SubArray{Float64, 2}
+            @test typeof(train_y) <: SubArray{String, 1}
+            @test typeof(test_y) <: SubArray{String, 1}
+            @test nobs(train_x) == 140
+            @test nobs(train_y) == 140
+            @test nobs(test_x) == 10
+            @test nobs(test_y) == 10
         end
-        @test length(unique(all_test_indicies_X)) == 150
-        @test length(unique(all_test_indicies_y)) == 150
+    end
+
+    for var in (Xs, ys, vars...)
+        kf = kfolds(var)
+        @test typeof(kf) <: KFolds{typeof(var)}
+    end
+end
+
+@testset "leaveout" begin
+    for v1 in (X, Xv), v2 in (y, yv)
+        @test leaveout(v1, v2).k == 150
+        kf = leaveout(v1, v2, size = 10)
+        @test typeof(kf) <: KFolds{Tuple{typeof(v1),typeof(v2)}}
+        for ((train_x, train_y), (test_x, test_y)) in kf
+            @test typeof(train_x) <: SubArray{Float64, 2}
+            @test typeof(test_x) <: SubArray{Float64, 2}
+            @test typeof(train_y) <: SubArray{String, 1}
+            @test typeof(test_y) <: SubArray{String, 1}
+            @test nobs(train_x) == 140
+            @test nobs(train_y) == 140
+            @test nobs(test_x) == 10
+            @test nobs(test_y) == 10
+        end
+    end
+
+    for var in (Xs, ys, vars...)
+        kf = leaveout(var)
+        @test typeof(kf) <: KFolds{typeof(var)}
     end
 end
 

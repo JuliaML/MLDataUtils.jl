@@ -37,6 +37,7 @@ export
             EachObs,
         BatchIterator,
             EachBatch,
+        KFolds,
 
     DataSubset,
     datasubset,
@@ -47,7 +48,9 @@ export
     eachbatch,
     shuffled,
     batches,
-    splitobs
+    splitobs,
+    kfolds,
+    leaveout
 
 include("feature_scaling.jl")
 include("basis_expansion.jl")
@@ -58,5 +61,6 @@ include("accesspattern/datasubset.jl")
 include("accesspattern/arrays.jl")
 include("accesspattern/tuples.jl")
 include("accesspattern/partitioning.jl")
+include("accesspattern/kfolds.jl")
 
 end

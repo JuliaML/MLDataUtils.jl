@@ -9,6 +9,10 @@ see `EachObs`, `EachBatch`
 """
 abstract DataIterator{TData}
 
+Base.endof(iter::DataIterator) = length(iter)
+getobs(iter::DataIterator) = getobs.(collect(iter))
+getobs(iter::DataIterator, idx::Int) = getobs(iter[idx])
+
 """
     abstract ObsIterator{TData} <: DataIterator{TData}
 
@@ -25,7 +29,7 @@ end
 
 see `EachObs`
 """
-abstract ObsIterator{TData}   <: DataIterator{TData}
+abstract ObsIterator{TData} <: DataIterator{TData}
 
 """
     abstract BatchIterator{TData} <: DataIterator{TData}
@@ -45,10 +49,6 @@ end
 see `EachBatch`
 """
 abstract BatchIterator{TData} <: DataIterator{TData}
-
-Base.endof(iter::DataIterator) = length(iter)
-getobs(iter::DataIterator) = getobs.(collect(iter))
-getobs(iter::DataIterator, idx::Int) = getobs(iter[idx])
 
 """
     EachObs(data, count)

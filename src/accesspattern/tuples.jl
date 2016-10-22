@@ -38,7 +38,7 @@ for f in (:eachobs, :shuffled, :infinite_obs)
 end
 
 for f in (:splitobs, :eachbatch, :batches, :infinite_batches,
-          :kfolds, :leave_one_out)
+          :kfolds, :leaveout)
     @eval function $f(s_1, s_rest...; kw...)
         tup = (s_1, s_rest...)
         _check_nobs(tup)
