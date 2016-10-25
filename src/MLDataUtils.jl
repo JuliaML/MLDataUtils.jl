@@ -11,6 +11,7 @@ export
     nobs,
     getobs,
     viewobs,
+    randobs,
 
     noisy_function,
     noisy_sin,

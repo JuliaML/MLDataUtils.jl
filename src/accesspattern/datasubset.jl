@@ -149,6 +149,7 @@ const viewobs = datasubset
 Base.show(io::IO, subset::DataSubset) = print(io, "DataSubset{", typeof(subset.data), "}: " , nobs(subset), " observations")
 
 Base.rand(subset::DataSubset, args...) = datasubset(subset.data, rand(subset.indices, args...))
+randobs(data, args...) = getobs(data, rand(1:nobs(data), args...))
 
 # TODO: Base.size
 Base.length(subset::DataSubset) = length(subset.indices)

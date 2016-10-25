@@ -77,6 +77,27 @@ end
     end
 end
 
+@testset "randobs" begin
+    for var in (vars, tuples)
+        @test typeof(randobs(var)) == typeof(getobs(var, 1))
+        @test typeof(randobs(var, 4)) == typeof(getobs(var, 1:4))
+        @test nobs(randobs(var)) == nobs(getobs(var, 1))
+        @test nobs(randobs(var, 4)) == nobs(getobs(var, 1:4))
+    end
+    X_rnd = randobs(X, 30)
+    for i = 1:30
+        @testset "random obs $i" begin
+            found = false
+            for j = 1:150
+                if all(X_rnd[:,i] .== X[:,j])
+                    found = true
+                end
+            end
+            @test found
+        end
+    end
+end
+
 @testset "DataSubset constructor" begin
     @testset "bounds check" begin
         @test_throws DimensionMismatch DataSubset((rand(2,10),rand(9)))
