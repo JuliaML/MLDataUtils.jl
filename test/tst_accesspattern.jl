@@ -42,7 +42,7 @@ end
         @test iter.data === var
         @test iter.size === 30
         @test iter.count === 5
-        @test_throws MethodError nobs(iter)
+        @test nobs(iter) === 150
         @test typeof(iter) <: EachBatch{typeof(var), typeof(datasubset(var,1:30))}
     end
 end

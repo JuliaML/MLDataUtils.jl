@@ -7,11 +7,13 @@ manner.
 
 see `EachObs`, `EachBatch`
 """
-abstract DataIterator{TData}
+abstract DataIterator{TData,TElem} <: AbstractVector{TElem}
 
+Base.size(iter::DataIterator) = (length(iter),)
 Base.endof(iter::DataIterator) = length(iter)
 getobs(iter::DataIterator) = getobs.(collect(iter))
 getobs(iter::DataIterator, idx::Int) = getobs(iter[idx])
+Base.getindex(iter::DataIterator, idx::CartesianIndex{1}) = iter[idx.I[1]]
 
 """
     abstract ObsIterator{TData} <: DataIterator{TData}
@@ -29,7 +31,7 @@ end
 
 see `EachObs`
 """
-abstract ObsIterator{TData} <: DataIterator{TData}
+abstract ObsIterator{TData,TElem} <: DataIterator{TData,TElem}
 
 """
     abstract BatchIterator{TData} <: DataIterator{TData}
@@ -48,7 +50,7 @@ end
 
 see `EachBatch`
 """
-abstract BatchIterator{TData} <: DataIterator{TData}
+abstract BatchIterator{TData,TElem} <: DataIterator{TData,TElem}
 
 """
     EachObs(data, count)
@@ -130,7 +132,7 @@ see also
 
 `eachobs`, `eachbatch`, `shuffled`, `getobs`, `nobs`
 """
-immutable EachObs{T,E} <: ObsIterator{T}
+immutable EachObs{T,E} <: ObsIterator{T,E}
     data::T
     count::Int
 end
@@ -140,8 +142,6 @@ function EachObs{T}(data::T, count::Int = nobs(data))
     EachObs{T,E}(data, count)
 end
 
-Base.show(io::IO, iter::EachObs) = print(io, "EachObs{", typeof(iter.data), "}: ", iter.count, " observations")
-
 Base.eltype{T,E}(::Type{EachObs{T,E}}) = E
 Base.start(iter::EachObs) = 1
 Base.done(iter::EachObs, idx) = idx > iter.count
@@ -149,7 +149,7 @@ Base.next(iter::EachObs, idx) = (datasubset(iter.data, idx), idx+1)
 
 Base.length(iter::EachObs) = iter.count
 nobs(iter::EachObs) = length(iter)
-Base.getindex(iter::EachObs, idx) = datasubset(iter.data, idx)
+Base.getindex{T<:Union{AbstractVector,Int}}(iter::EachObs, idx::T) = datasubset(iter.data, idx)
 
 """
     eachobs(data[...])
@@ -267,7 +267,7 @@ see also
 
 `eachbatch`, `eachobs`, `shuffled`, `getobs`, `nobs`
 """
-immutable EachBatch{T,E} <: BatchIterator{T}
+immutable EachBatch{T,E} <: BatchIterator{T,E}
     data::T
     size::Int
     count::Int
@@ -279,13 +279,12 @@ function EachBatch{T}(data::T, size::Int = -1, count::Int = -1)
     EachBatch{T,E}(data, nsize, ncount)
 end
 
-Base.show(io::IO, iter::EachBatch) = print(io, "EachBatch{", typeof(iter.data), "}: ", iter.count, " batches of ", iter.size, " observations")
-
 Base.eltype{T,E}(::Type{EachBatch{T,E}}) = E
 Base.start(iter::EachBatch) = 1
 Base.done(iter::EachBatch, batchindex) = batchindex > iter.count
 Base.next(iter::EachBatch, batchindex) = (iter[batchindex], batchindex + 1)
 
+nobs(iter::BatchIterator) = iter.count * iter.size
 Base.length(iter::EachBatch) = iter.count
 function Base.getindex(iter::EachBatch, batchindex::Int)
     startidx = (batchindex - 1) * iter.size + 1
@@ -322,5 +321,55 @@ see `EachBatch` for more info.
 """
 function eachbatch(data; size::Int = -1, count::Int = -1)
     EachBatch(data, size, count)
+end
+
+"""
+    batches(data[...]; [count], [size])
+
+Create a vector of `count` equally sized `DataSubset` of size
+`size` by partitioning the given `data` in their _current_ order.
+In the case that the size of the dataset is not dividable by
+the specified (or inferred) size, the remaining observations will
+be ignored.
+
+```julia
+for x in batches(X, count = 10)
+    # code called 10 times
+    # nobs(x) won't change over iterations
+end
+```
+
+Using `shuffled` one can also have batches with randomly
+assigned observations
+
+```julia
+for x in batches(shuffled(X), count = 10)
+    # ...
+end
+```
+
+Or alternatively just process the statically assigned batches in
+random order.
+
+```julia
+for x in shuffled(batches(X, count = 10))
+    # ...
+end
+```
+
+Multiple variables are supported (e.g. for labeled data).
+
+```julia
+for (x,y) in batches(X, Y, size = 20)
+    @assert nobs(x) == 20
+    @assert nobs(y) == 20
+    # ...
+end
+```
+
+see `DataSubset` for more info, or `eachbatch` for an iterator version.
+"""
+function batches(data; size::Int = -1, count::Int = -1)
+    collect(EachBatch(data, size, count))
 end
 

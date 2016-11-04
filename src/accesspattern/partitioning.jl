@@ -34,65 +34,6 @@ function _compute_batch_settings(source, size::Int = -1, count::Int = -1)
 end
 
 """
-    batches(data[...]; [count], [size])
-
-Create a vector of `count` equally sized `DataSubset` of size
-`size` by partitioning the given `data` in their _current_ order.
-In the case that the size of the dataset is not dividable by
-the specified (or inferred) size, the remaining observations will
-be ignored.
-
-```julia
-for x in batches(X, count = 10)
-    # code called 10 times
-    # nobs(x) won't change over iterations
-end
-```
-
-Using `shuffled` one can also have batches with randomly
-assigned observations
-
-```julia
-for x in batches(shuffled(X), count = 10)
-    # ...
-end
-```
-
-Or alternatively just process the statically assigned batches in
-random order.
-
-```julia
-for x in shuffled(batches(X, count = 10))
-    # ...
-end
-```
-
-Multiple variables are supported (e.g. for labeled data).
-
-```julia
-for (x,y) in batches(X, Y, size = 20)
-    @assert nobs(x) == 20
-    @assert nobs(y) == 20
-    # ...
-end
-```
-
-see `DataSubset` for more info, or `eachbatch` for an iterator version.
-"""
-function batches(data; size::Int = -1, count::Int = -1)
-    nsize, ncount = _compute_batch_settings(data, size, count)
-    n = nobs(data)
-    offset = 0
-    lst = UnitRange{Int}[]
-    while offset < ncount * nsize
-        sz = clamp(n - offset, 1, nsize)
-        push!(lst, offset+1:offset+sz)
-        offset += sz
-    end
-    [datasubset(data, idx) for idx in lst]
-end
-
-"""
     splitobs(data[...]; at = 0.7)
 
 Splits the data into multiple subsets. Not that this function will
@@ -135,9 +76,8 @@ train, test = splitobs(shuffled(X,y), at = 0.7)
 
 see `DataSubset` for more info, or `batches` for equally sized paritions
 """
-function splitobs(data; at = 0.7)
+function splitobs{T}(data; at::T = 0.7)
     n = nobs(data)
-    T = typeof(at)
 	idx_list = if T <: AbstractFloat
         # partition into 2 sets
         n1 = clamp(round(Int, at*n), 1, n)
