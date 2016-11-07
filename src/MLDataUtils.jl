@@ -10,7 +10,6 @@ export
 
     nobs,
     getobs,
-    viewobs,
     randobs,
 
     noisy_function,
@@ -60,11 +59,9 @@ include("basis_expansion.jl")
 include("noisy_function.jl")
 include("datasets.jl")
 include("accesspattern/obsdim.jl")
-include("accesspattern/dataiterator.jl")
+include("accesspattern/dataprovider.jl")
 include("accesspattern/datasubset.jl")
-include("accesspattern/arrays.jl")
-include("accesspattern/tuples.jl")
-include("accesspattern/partitioning.jl")
 include("accesspattern/kfolds.jl")
 
 end
+

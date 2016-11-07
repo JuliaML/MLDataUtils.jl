@@ -123,8 +123,8 @@ end
             @test getobs(subset) == getobs(var)
             @test DataSubset(subset) === subset
             @test DataSubset(subset, 1:150) === subset
-            @test subset[end] == viewobs(var, 150)
-            @test subset[20:25] == viewobs(var, 20:25)
+            @test subset[end] == datasubset(var, 150)
+            @test subset[20:25] == datasubset(var, 20:25)
             for idx in (1:100, [1,10,150,3], [2])
                 subset = DataSubset(var, idx)
                 @test typeof(subset) <: DataSubset{typeof(var), typeof(idx)}
@@ -133,9 +133,9 @@ end
                 @test nobs(subset) === length(idx)
                 @test getobs(subset) == getobs(var, idx)
                 @test DataSubset(subset) === subset
-                @test subset[1] == viewobs(var, idx[1])
-                @test typeof(subset[1:1]) == typeof(viewobs(var, idx[1:1]))
-                @test nobs(subset[1:1]) == nobs(viewobs(var, idx[1:1]))
+                @test subset[1] == datasubset(var, idx[1])
+                @test typeof(subset[1:1]) == typeof(datasubset(var, idx[1:1]))
+                @test nobs(subset[1:1]) == nobs(datasubset(var, idx[1:1]))
             end
         end
     end
@@ -200,7 +200,7 @@ end
 end
 
 @testset "datasubset" begin
-    @test viewobs === datasubset
+    @test datasubset === datasubset
     @testset "Array and SubArray" begin
         @test datasubset(X)   === X
         @test datasubset(Xv)  === Xv
