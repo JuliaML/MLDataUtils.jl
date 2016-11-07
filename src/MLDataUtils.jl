@@ -51,12 +51,15 @@ export
     batches,
     splitobs,
     kfolds,
-    leaveout
+    leaveout,
+
+    ObsDim
 
 include("feature_scaling.jl")
 include("basis_expansion.jl")
 include("noisy_function.jl")
 include("datasets.jl")
+include("accesspattern/obsdim.jl")
 include("accesspattern/dataiterator.jl")
 include("accesspattern/datasubset.jl")
 include("accesspattern/arrays.jl")
