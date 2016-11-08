@@ -3,15 +3,23 @@ abstract ObsDimension
 """
     module ObsDim
 
-Contants types to define which dimension of some data structure
+Singleton types to define which dimension of some data structure
 (e.g. some `Array`) denotes the observations.
 
 - `ObsDim.First()`
 - `ObsDim.Last()`
 - `ObsDim.Contant(dim)`
+
+Used for efficient dispatching
 """
 module ObsDim
     using ..MLDataUtils.ObsDimension
+
+    """
+    Default value for most functions. Denotes that the concept of
+    an observation dimension is not defined for the given data.
+    """
+    immutable Undefined <: ObsDimension end
 
     """
         ObsDim.Last <: ObsDimension
@@ -40,6 +48,7 @@ obs_dim(dim) = throw(ArgumentError("Unknown way to specify a obsdim: $dim"))
 obs_dim(dim::ObsDimension) = dim
 obs_dim(dim::Int) = ObsDim.Constant(dim)
 obs_dim(dim::String) = obs_dim(Symbol(lowercase(dim)))
+obs_dim(dims::Tuple) = map(obs_dim, dims)
 function obs_dim(dim::Symbol)
     if dim == :first || dim == :begin
         ObsDim.First()
@@ -49,4 +58,8 @@ function obs_dim(dim::Symbol)
         throw(ArgumentError("Unknown way to specify a obsdim: $dim"))
     end
 end
+
+@noinline default_obsdim(data) = ObsDim.Undefined()
+@noinline default_obsdim(A::AbstractArray) = ObsDim.Last()
+default_obsdim(tup::Tuple) = map(default_obsdim, tup)
 

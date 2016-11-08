@@ -1,5 +1,5 @@
 """
-    DataSubset(data, [indices])
+    DataSubset(data, indices, [obsdim])
 
 Description
 ============
@@ -24,16 +24,16 @@ Arguments
 - **`data`** : The object describing the dataset. Can be of any
     type as long as it implements `getobs` and `nobs`.
 
-- **`indices`** : Optional. A subtype of `AbstractVector` that denotes
+- **`indices`** : A subtype of `AbstractVector` that denotes
     which observations of `data` belong to this subset.
+
+- **`obsdim`** : Optional. TODO
 
 Methods
 ========
 
-- **`rand`** : Returns a random observation from the subset.
-
 - **`getindex`** : Returns the observation(s) of the given
-    index/indices
+    index/indices as a new `DataSubset`
 
 - **`nobs`** : Returns the total number observations in the subset.
 
@@ -46,10 +46,10 @@ Details
 For `DataSubset` to work on some data structure, the given variable
 `data` must implement the following interface:
 
-- `getobs(data, i)` : Should return the observation(s) indexed
+- `getobs(data, i, [obsdim])` : Should return the observation(s) indexed
     by `i`. In what form is up to the user.
 
-- `nobs(data)` : Should return the number of observations in `data`
+- `nobs(data, [obsdim])` : Should return the number of observations in `data`
 
 Author(s)
 ==========
@@ -99,92 +99,189 @@ see also
 
 `datasubset`, `splitobs`, `KFolds`, `batches`, `eachbatch`, `shuffled`, `eachobs`, `getobs`
 """
-immutable DataSubset{T, I<:Union{Int,AbstractVector}}
+immutable DataSubset{T, I<:Union{Int,AbstractVector}, O<:ObsDimension}
     data::T
     indices::I
+    obsdim::O
 
-    function DataSubset(data::T, indices::I)
+    function DataSubset(data::T, indices::I, obsdim::O)
         if T <: Tuple
             error("Inner constructor should not be called using a Tuple")
         end
         1 <= minimum(indices) || throw(BoundsError(data, indices))
-        maximum(indices) <= nobs(data) || throw(BoundsError(data, indices))
-        new(data, indices)
+        maximum(indices) <= nobs(data, obsdim) || throw(BoundsError(data, indices))
+        new(data, indices, obsdim)
     end
 end
 
-# --------------------------------------------------------------------
+DataSubset{T,I,O}(data::T, indices::I, obsdim::O) =
+    DataSubset{T,I,O}(data, indices, obsdim)
 
-function DataSubset{T,I}(data::T, indices::I = 1:nobs(data))
-    DataSubset{T,I}(data, indices)
-end
-
-function DataSubset(subset::DataSubset, indices)
-    DataSubset(subset.data, subset.indices[indices])
-end
-
-DataSubset(subset::DataSubset) = subset
+default_obsdim(subset::DataSubset) = subset.obsdim
 
 Base.show(io::IO, subset::DataSubset) = print(io, "DataSubset{", typeof(subset.data), "}: " , nobs(subset), " observations")
 
-Base.rand(subset::DataSubset, args...) = datasubset(subset.data, rand(subset.indices, args...))
-randobs(data, args...) = getobs(data, rand(1:nobs(data), args...))
-
 Base.length(subset::DataSubset) = length(subset.indices)
-nobs(subset::DataSubset) = length(subset)
 
 Base.endof(subset::DataSubset) = length(subset)
-Base.getindex(subset::DataSubset, idx) = datasubset(subset.data, subset.indices[idx])
-getobs(data) = data
-getobs(subset::DataSubset, idx) = subset[idx]
-getobs(subset::DataSubset) = getobs(subset.data, subset.indices)
+
+Base.getindex(subset::DataSubset, idx) =
+    datasubset(subset.data, subset.indices[idx], subset.obsdim)
+
+nobs(subset::DataSubset) = length(subset)
+
+getobs(subset::DataSubset, idx) =
+    getobs(subset.data, subset.indices[idx], subset.obsdim)
+
+getobs(subset::DataSubset) =
+    getobs(subset.data, subset.indices, subset.obsdim)
+
+# compatibility with complex functions
+function nobs(subset::DataSubset, obsdim::ObsDimension)
+    @assert obsdim === subset.obsdim
+    nobs(subset)
+end
+
+function getobs(subset::DataSubset, idx, obsdim::ObsDimension)
+    @assert obsdim === subset.obsdim
+    getobs(subset, idx)
+end
 
 # --------------------------------------------------------------------
 
 """
-    datasubset(data, [indices])
+    datasubset(data, [indices], [obsdim])
 
 Returns a lazy subset of the observations in `data` that correspond
 to the given `indices`. No data will be copied. If instead you want
 to get the observations of the given `indices` use `getobs`.
 
-Similar to calling `DataSubset(data, [indices])`, but returns a
-`SubArray` if the type of `data` is `Array` or `SubArray`.
+The optional (keyword) parameter `obsdim` allows one to specify which
+dimension denotes the observations. see `ObsDim` for more detail.
+
+Similar to calling `DataSubset(data, [indices], [obsdim])`, but
+returns a `SubArray` if the type of `data` is `Array` or `SubArray`.
 
 see `DataSubset` for more information.
 """
-datasubset(data, indices) = DataSubset(data, indices)
-datasubset(data) = DataSubset(data)
-datasubset(subset::DataSubset, indices) = datasubset(subset.data, subset.indices[indices])
+datasubset(data, indices, obsdim::ObsDimension) =
+    DataSubset(data, indices, obsdim)
+
+# --------------------------------------------------------------------
+
+for fun in (:DataSubset, :datasubset)
+    @eval begin
+        ($fun)(data, indices; obsdim = default_obsdim(data)) =
+            ($fun)(data, indices, obs_dim(obsdim))
+
+        function ($fun)(data; obsdim = default_obsdim(data))
+            nobsdim = obs_dim(obsdim)
+            ($fun)(data, 1:nobs(data, nobsdim), nobsdim)
+        end
+
+        # don't nest subsets
+        ($fun)(subset::DataSubset, indices, obsdim::ObsDimension) =
+            ($fun)(subset.data, subset.indices[indices], obsdim)
+
+        # No-op
+        ($fun)(subset::DataSubset) = subset
+
+        # map DataSubset over the tuple
+        function ($fun)(tup::Tuple)
+            _check_nobs(tup)
+            map(data -> ($fun)(data), tup)
+        end
+
+        function ($fun)(tup::Tuple, indices)
+            _check_nobs(tup)
+            map(data -> ($fun)(data, indices), tup)
+        end
+
+        function ($fun)(tup::Tuple, indices, obsdim::ObsDimension)
+            _check_nobs(tup, obsdim)
+            map(data -> ($fun)(data, indices, obsdim), tup)
+        end
+
+        function ($fun)(tup::Tuple, indices, obsdims::NTuple)
+            _check_nobs(tup, obsdims)
+            (map(_ -> ($fun)(_[1], indices, _[2]), zip(tup,obsdims))...)
+        end
+    end
+end
+
+# --------------------------------------------------------------------
+
+randobs(data, obsdim::Union{Tuple,ObsDimension}) =
+    getobs(data, rand(1:nobs(data, obsdim)), obsdim)
+
+randobs(data; obsdim = default_obsdim(data)) =
+    randobs(data, obs_dim(obsdim))
+
+randobs(data, n, obsdim::Union{Tuple,ObsDimension}) =
+    getobs(data, rand(1:nobs(data, obsdim), n), obsdim)
+
+randobs(data, n; obsdim = default_obsdim(data)) =
+    randobs(data, n, obs_dim(obsdim))
+
+getobs(data) = data
+
+# fallback methods discards unused obsdim
+nobs(data, ::ObsDim.Undefined) = nobs(data)
+getobs(data, idx, ::ObsDim.Undefined) = getobs(data, idx)
+
+function nobs(data; obsdim = default_obsdim(data))
+    nobsdim = obs_dim(obsdim)
+    # make sure we don't bounce between fallback methods
+    typeof(nobsdim) <: ObsDim.Undefined && throw(MethodError(nobs, (data,)))
+    nobs(data, nobsdim)
+end
+
+function getobs(data, idx; obsdim = default_obsdim(data))
+    nobsdim = obs_dim(obsdim)
+    # make sure we don't bounce between fallback methods
+    typeof(nobsdim) <: ObsDim.Undefined && throw(MethodError(getobs, (data,idx)))
+    getobs(data, idx, nobsdim)
+end
 
 # --------------------------------------------------------------------
 # Arrays
 
 typealias NativeArray{T,N} Union{Array{T,N},SubArray{T,N}}
 
-datasubset(A::NativeArray) = A
+datasubset(A::SubArray; kw...) = A
 
-# apply a view to the last dimension
-@generated function datasubset{T,N}(A::NativeArray{T,N}, idx)
+@generated function datasubset{T,N}(A::NativeArray{T,N}, idx, obsdim::ObsDimension)
     @assert N > 0
     if N == 1 && idx <: Integer
         :(A[idx])
-    else
-        :(view(A,  $(fill(:(:),N-1)...), idx))
+    elseif obsdim <: ObsDim.First
+        :(view(A, idx, $(fill(:(:),N-1)...)))
+    elseif obsdim <: ObsDim.Last || (obsdim <: ObsDim.Constant && obsdim.parameters[1] == N)
+        :(view(A, $(fill(:(:),N-1)...), idx))
+    else # obsdim <: ObsDim.Constant
+        DIM = obsdim.parameters[1]
+        DIM > N && throw(DimensionMismatch("The given obsdim=$DIM is greater than the number of available dimensions N=$N"))
+        :(view(A, $(fill(:(:),DIM-1)...), idx, $(fill(:(:),N-DIM)...)))
     end
 end
 
-nobs{T,N}(A::AbstractArray{T,N}) = size(A, N)
+nobs{DIM}(A::AbstractArray, ::ObsDim.Constant{DIM}) = size(A, DIM)
+nobs{T,N}(A::AbstractArray{T,N}, ::ObsDim.Last) = size(A, N)
 
 getobs(A::SubArray) = copy(A)
-getobs(A::AbstractArray) = A
 
-@generated function getobs{T,N}(A::AbstractArray{T,N}, idx)
+@generated function getobs{T,N}(A::AbstractArray{T,N}, idx, obsdim::ObsDimension)
     @assert N > 0
     if N == 1 && idx <: Integer
         :(A[idx])
-    else
-        :(getindex(A,  $(fill(:(:),N-1)...), idx))
+    elseif obsdim <: ObsDim.First
+        :(getindex(A, idx, $(fill(:(:),N-1)...)))
+    elseif obsdim <: ObsDim.Last || (obsdim <: ObsDim.Constant && obsdim.parameters[1] == N)
+        :(getindex(A, $(fill(:(:),N-1)...), idx))
+    else # obsdim <: ObsDim.Constant
+        DIM = obsdim.parameters[1]
+        DIM > N && throw(DimensionMismatch("The given obsdim=$DIM is greater than the number of available dimensions N=$N"))
+        :(getindex(A, $(fill(:(:),DIM-1)...), idx, $(fill(:(:),N-DIM)...)))
     end
 end
 
@@ -195,45 +292,79 @@ function _check_nobs(tup::Tuple)
     n1 = nobs(tup[1])
     for i=2:length(tup)
         if nobs(tup[i]) != n1
-            throw(DimensionMismatch("all parameters must have the same number of observations"))
+            throw(DimensionMismatch("all data variables must have the same number of observations"))
         end
     end
 end
 
-# map DataSubset over the tuple instead
-function DataSubset(tup::Tuple, indices = 1:nobs(tup))
-	_check_nobs(tup)
-    map(data -> DataSubset(data, indices), tup)
+function _check_nobs(tup::Tuple, obsdim::ObsDimension)
+    n1 = nobs(tup[1], obsdim)
+    for i=2:length(tup)
+        if nobs(tup[i], obsdim) != n1
+            throw(DimensionMismatch("all data variables must have the same number of observations"))
+        end
+    end
 end
 
-# map datasubset over the tuple instead
-datasubset(tup::Tuple, indices) = map(_ -> datasubset(_, indices), tup)
-datasubset(tup::Tuple) = map(_ -> datasubset(_), tup)
+function _check_nobs{O<:ObsDimension}(tup::Tuple, obsdims::NTuple{O})
+    length(tup) == length(obsdims) || throw(DimensionMismatch("number of elements in obsdim doesn't match"))
+    n1 = nobs(tup[1], obsdims[1])
+    for i=2:length(tup)
+        if nobs(tup[i], obsdims[i]) != n1
+            throw(DimensionMismatch("all data variables must have the same number of observations"))
+        end
+    end
+end
 
-# add support for arbitrary tuples
-nobs(tup::Tuple) = nobs(tup[1])
-getobs(tup::Tuple) = map(_ -> getobs(_), tup)
-getobs(tup::Tuple, indices) = map(_ -> getobs(_, indices), tup)
+function nobs(tup::Tuple)
+    _check_nobs(tup)
+    nobs(tup[1])
+end
+
+function nobs(tup::Tuple, obsdim::ObsDimension)
+    _check_nobs(tup, obsdim)
+    nobs(tup[1], obsdim)
+end
+
+function nobs(tup::Tuple, obsdims::NTuple)
+    _check_nobs(tup, obsdims)
+    nobs(tup[1], obsdims[1])
+end
+
+getobs(tup::Tuple) = map(getobs, tup)
+
+function getobs(tup::Tuple, indices)
+    _check_nobs(tup)
+    map(data -> getobs(data, indices), tup)
+end
+
+function getobs(tup::Tuple, indices, obsdim::ObsDimension)
+    _check_nobs(tup, obsdim)
+    map(data -> getobs(data, indices, obsdim), tup)
+end
+
+function getobs(tup::Tuple, indices, obsdims::NTuple)
+    _check_nobs(tup, obsdims)
+    (map(_ -> getobs(_[1], indices, _[2]), zip(tup,obsdims))...)
+end
 
 # specialized for empty tuples
-nobs(tup::Tuple{}) = 0
-getobs(tup::Tuple{}) = ()
+nobs(tup::Tuple{}, args...) = 0
+getobs(tup::Tuple{}, args...) = ()
 
 # call with a tuple for more than one arg
-for f in (:eachobs, :shuffled, :infinite_obs)
+for f in (:eachobs, :infinite_obs)
     @eval function $f(s_1, s_rest...)
         tup = (s_1, s_rest...)
-        _check_nobs(tup)
         $f(tup)
     end
 end
 
 # call with a tuple for more than one arg (plus kws)
 for f in (:splitobs, :eachbatch, :batches, :infinite_batches,
-          :kfolds, :leaveout)
+          :shuffled, :kfolds, :leaveout)
     @eval function $f(s_1, s_rest...; kw...)
         tup = (s_1, s_rest...)
-        _check_nobs(tup)
         $f(tup; kw...)
     end
 end
@@ -241,7 +372,7 @@ end
 # --------------------------------------------------------------------
 
 """
-    shuffled(data[...])
+    shuffled(data[...]; [obsdim])
 
 Returns a lazy view into `data` with the order of the indices
 randomized. This is non-copy (only the indices are shuffled).
@@ -252,7 +383,7 @@ for (x,y) in eachobs(shuffled(X,Y))
 end
 ```
 """
-shuffled(data) = datasubset(data, shuffle(1:nobs(data)))
+shuffled(data; kw...) = datasubset(data, shuffle(1:nobs(data; kw...)); kw...)
 
 # --------------------------------------------------------------------
 
@@ -272,7 +403,7 @@ function _compute_batch_settings(source, size::Int = -1, count::Int = -1)
         size = default_batch_size(source)::Int
         count = floor(Int, num_observations / size)
     elseif size <= 0
-        # use count to determine size. uses all observations
+        # use count to determine size. try use all observations
         size = floor(Int, num_observations / count)
     elseif count <= 0
         # use size and as many batches as possible
@@ -294,7 +425,7 @@ end
 # --------------------------------------------------------------------
 
 """
-    splitobs(data[...]; at = 0.7)
+    splitobs(data[...]; [at = 0.7], [obsdim])
 
 Splits the data into multiple subsets. Not that this function will
 performs the splits statically and not perform any randomization.
@@ -336,23 +467,28 @@ train, test = splitobs(shuffled(X,y), at = 0.7)
 
 see `DataSubset` for more info, or `batches` for equally sized paritions
 """
-function splitobs{T}(data; at::T = 0.7)
-    n = nobs(data)
-	idx_list = if T <: AbstractFloat
-        # partition into 2 sets
-        n1 = clamp(round(Int, at*n), 1, n)
-        [1:n1, n1+1:n]
-    elseif (T <: NTuple || T <: AbstractVector) && eltype(T) <: AbstractFloat
-        nleft = n
-        lst = UnitRange{Int}[]
-        for (i,sz) in enumerate(at)
-            ni = clamp(round(Int, sz*n), 0, nleft)
-            push!(lst, n-nleft+1:n-nleft+ni)
-            nleft -= ni
-        end
-        push!(lst, n-nleft+1:n)
-        lst
-    end::Vector{UnitRange{Int}}
-    [datasubset(data, idx) for idx in idx_list]
+function splitobs{T}(data; at::T = 0.7, obsdim = default_obsdim(data))
+    _splitobs(data, at, obs_dim(obsdim))
+end
+
+function _splitobs(data, at::AbstractFloat, obsdim)
+    # partition into 2 sets
+    n = nobs(data, obsdim)
+    n1 = clamp(round(Int, at*n), 1, n)
+    [datasubset(data, idx, obsdim) for idx in (1:n1, n1+1:n)]
+end
+
+function _splitobs{T<:AbstractFloat}(data, at::Union{NTuple{T},AbstractVector{T}}, obsdim)
+    # partition into length(a)+1 sets
+    n = nobs(data, obsdim)
+    nleft = n
+    lst = UnitRange{Int}[]
+    for (i,sz) in enumerate(at)
+        ni = clamp(round(Int, sz*n), 0, nleft)
+        push!(lst, n-nleft+1:n-nleft+ni)
+        nleft -= ni
+    end
+    push!(lst, n-nleft+1:n)
+    [datasubset(data, idx, obsdim) for idx in lst]
 end
 

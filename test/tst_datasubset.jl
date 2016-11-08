@@ -1,5 +1,6 @@
 X, y = load_iris()
 Y = permutedims(hcat(y,y), [2,1])
+yt = Y[1:1,:]
 Xv = view(X,:,:)
 yv = view(y,:)
 XX = rand(20,30,150)
@@ -9,12 +10,27 @@ tuples = ((X,y), (X,Y), (XX,X,y), (XXX,XX,X,y))
 Xs = sprand(10,150,.5)
 ys = sprand(150,.5)
 
+immutable EmptyType end
+
 @testset "nobs" begin
+    # test that fallback bouncing doesn't cause stackoverflow
+    @test_throws MethodError nobs(EmptyType())
+    @test_throws MethodError nobs(EmptyType(), obsdim = 1)
+    @test_throws MethodError nobs(EmptyType(), obsdim = :last)
+
     @testset "Array, SparseArray, and Tuple" begin
+        @test_throws DimensionMismatch nobs((X,X'))
+        @test_throws DimensionMismatch nobs((X,XX), obsdim = :first)
         for var in (Xs, ys, vars...)
             @test nobs(var) === 150
+            @test nobs(var, obsdim = :last) === 150
+            @test nobs(var, ObsDim.Last()) === 150
+            @test nobs(var, obsdim = 100) === 1
         end
         @test nobs(()) === 0
+        @test nobs((), obsdim = :first) === 0
+        @test nobs((), obsdim = :last) === 0
+        @test nobs((), obsdim = 3) === 0
     end
 
     @testset "SubArray" begin
@@ -23,20 +39,82 @@ ys = sprand(150,.5)
         @test nobs(view(XXX,:,:,:,:)) === 150
         @test nobs(view(y,:)) === 150
         @test nobs(view(Y,:,:)) === 150
+        @test nobs(view(X,:,:), obsdim = :last) === 150
+        @test nobs(view(XX,:,:,:), obsdim = :last) === 150
+        @test nobs(view(XXX,:,:,:,:), obsdim = :last) === 150
+        @test nobs(view(y,:), obsdim = :last) === 150
+        @test nobs(view(Y,:,:), obsdim = :last) === 150
+    end
+
+    @testset "various obsdim" begin
+        @test_throws ArgumentError nobs(X, obsdim = 1.0)
+        @test_throws ArgumentError nobs(X, obsdim = :one)
+        @test_throws MethodError nobs(X, obsdim = ObsDim.Undefined())
+        @test nobs(X, ObsDim.Undefined()) === 150 # fallback
+        @test nobs(Xs, obsdim = 1) === 10
+        @test nobs(Xs, obsdim = :first) === 10
+        @test nobs(XXX, obsdim = 1) === 3
+        @test nobs(XXX, obsdim = :first) === 3
+        @test nobs(XXX, obsdim = 2) === 20
+        @test nobs(XXX, obsdim = 3) === 30
+        @test nobs(XXX, obsdim = 4) === 150
+        @test nobs((X,y), obsdim = :last) === 150
+        @test nobs((X',y), obsdim = :first) === 150
+        @test nobs((X',X'), obsdim = :first) === 150
+        @test nobs((X,X), obsdim = :first) === 4
     end
 end
 
 @testset "getobs" begin
+    @test getobs(EmptyType()) === EmptyType()
+    @test_throws MethodError getobs(EmptyType(), obsdim = 1)
+    # test that fallback bouncing doesn't cause stackoverflow
+    @test_throws MethodError getobs(EmptyType(), 1)
+    @test_throws MethodError getobs(EmptyType(), 1:10)
+    @test_throws MethodError getobs(EmptyType(), 1, obsdim = :first)
+    @test_throws MethodError getobs(EmptyType(), 1, obsdim = 10)
+    @test_throws MethodError getobs(EmptyType(), 1:10, obsdim = :last)
+
     @testset "Array and Subarray" begin
-        @test getobs(X)   == X
-        @test all(getobs(Xv)  .== X)
-        @test getobs(XX)  == XX
-        @test getobs(XXX) == XXX
-        @test getobs(y)   == y
-        @test all(getobs(yv)  .== y)
+        # interpreted as idx
+        @test_throws ErrorException getobs(X, ObsDim.Undefined())
+        @test_throws ErrorException getobs(X, ObsDim.Constant(1))
+        # obsdim not defined without some idx
+        @test_throws MethodError getobs(X, obsdim = ObsDim.Undefined())
+        @test_throws MethodError getobs(X, obsdim = ObsDim.Constant(1))
+        # access outside nobs bounds
+        @test_throws BoundsError getobs(X, -1)
+        @test_throws BoundsError getobs(X, 0)
+        @test_throws BoundsError getobs(X, 0, obsdim = 1)
+        @test_throws BoundsError getobs(X, 151)
+        @test_throws BoundsError getobs(X, 151, obsdim = 2)
+        @test_throws BoundsError getobs(X, 151, obsdim = 1)
+        @test_throws BoundsError getobs(X, 5, obsdim = 1)
+        @test typeof(getobs(Xv)) <: Array
+        @test typeof(getobs(yv)) <: Array
+        @test getobs(X)   === X
+        @test getobs(XX)  === XX
+        @test getobs(XXX) === XXX
+        @test getobs(y)   === y
+        @test all(getobs(Xv) .== X)
+        @test all(getobs(yv) .== y)
+        @test getobs(X, 45) == getobs(X', 45, obsdim = 1)
+        @test getobs(X, 3:10) == getobs(X', 3:10, obsdim = 1)'
+        for i in (2, 2:20, [2,1,4])
+            @test getobs(XX, i, ObsDim.First()) == getindex(XX,i,:,:)
+            @test getobs(XX, i, obsdim = 1) == getindex(XX,i,:,:)
+            @test getobs(XX, i, obsdim = :first) == getindex(XX,i,:,:)
+            @test getobs(XX, i, obsdim = 2) == getindex(XX,:,i,:)
+            @test getobs(XX, i, obsdim = :last) == getindex(XX,:,:,i)
+            @test getobs(XX, i, ObsDim.Last()) == getindex(XX,:,:,i)
+        end
         for i in (2, 1:150, 2:10, [2,5,7], [2,1])
-            @test getobs(X,i)   == getindex(X,:,i)
+            @test_throws MethodError getobs(X, i, ObsDim.Undefined())
+            @test_throws DimensionMismatch getobs(X, i, obsdim = 12)
+            @test typeof(getobs(Xv, i)) <: Array
+            @test typeof(getobs(yv, i)) <: ((typeof(i) <: Int) ? String : Array)
             @test all(getobs(Xv,i) .== getindex(X,:,i))
+            @test getobs(X,i)   == getindex(X,:,i)
             @test getobs(XX,i)  == getindex(XX,:,:,i)
             @test getobs(XXX,i) == getindex(XXX,:,:,:,i)
             @test getobs(y,i)   == ((typeof(i) <: Int) ? y[i] : getindex(y,i))
@@ -48,28 +126,83 @@ end
     @testset "SparseArray" begin
         @test getobs(Xs) === Xs
         @test getobs(ys) === ys
+        @test getobs(Xs, 45) == getobs(Xs', 45, obsdim = 1)
+        @test getobs(Xs, 3:9) == getobs(Xs', 3:9, obsdim = 1)'
+        @test typeof(getobs(Xs,2)) <: SparseVector
+        @test typeof(getobs(Xs,1:5)) <: SparseMatrixCSC
+        @test typeof(getobs(ys,2)) <: Float64
+        @test typeof(getobs(ys,1:5)) <: SparseVector
+        for i in (2, 2:10, [2,1,4])
+            @test getobs(Xs, i, ObsDim.First()) == Xs[i,:]
+            @test getobs(Xs, i, obsdim = 1) == Xs[i,:]
+            @test getobs(Xs, i, obsdim = :first) == Xs[i,:]
+            @test getobs(Xs, i, obsdim = 2) == Xs[:,i]
+            @test getobs(Xs, i, obsdim = :last) == Xs[:,i]
+        end
         for i in (2, 1:150, 2:10, [2,5,7], [2,1])
+            @test_throws MethodError getobs(Xs, i, ObsDim.Undefined())
+            @test_throws DimensionMismatch getobs(Xs, i, obsdim = 12)
             @test getobs(Xs,i) == Xs[:,i]
             @test getobs(ys,i) == ys[i]
+            @test getobs(ys,i, obsdim = :last) == ys[i]
+            @test getobs(ys,i, obsdim = :first) == ys[i]
         end
     end
 
     @testset "Tuple" begin
+        # obsdim not defined without some idx
+        @test_throws MethodError getobs((), obsdim=2)
+        @test_throws MethodError getobs((X,yv), obsdim=2)
+        # special case empty tuple
         @test getobs(()) === ()
-        @test getobs((X,y))  === (X,y)
+        @test getobs((), ObsDim.Last()) === ()
+        @test getobs((), 10) === ()
+        @test getobs((), 10, obsdim = 1) === ()
+        @test getobs((X,y)) === (X,y)
         @test getobs((X,yv)) == (X,y)
         @test getobs((Xv,y)) == (X,y)
         @test getobs((Xv,yv)) == (X,y)
+        @test getobs((X',y)) == (X',y) # no-op doesn't care about nobs
+        tx, ty = getobs((Xv,yv))
+        @test typeof(tx) <: Array
+        @test typeof(ty) <: Array
+        tx, ty = getobs((Xv,yv), 10:50)
+        @test typeof(tx) <: Array
+        @test typeof(ty) <: Array
         @test getobs((XX,X,y)) === (XX,X,y)
         @test getobs((XXX,XX,X,y)) === (XXX,XX,X,y)
         for i in (1:150, 2:10, [2,5,7], [2,1])
+            @test_throws DimensionMismatch getobs((X',y), i)
+            @test_throws DimensionMismatch getobs((X,y),  i, obsdim=2)
+            @test_throws DimensionMismatch getobs((X',y), i, obsdim=2)
+            @test_throws DimensionMismatch getobs((X,y), i, obsdim=(1,2))
+            @test_throws DimensionMismatch getobs((X,y), i, obsdim=(2,1,1))
+            @test_throws DimensionMismatch getobs((XX,X,y), i, obsdim=(2,2,1))
+            @test_throws DimensionMismatch getobs((XX,X,y), i, obsdim=(3,2))
             @test getobs((X,y), i)  == (getindex(X,:,i), getindex(y,i))
             @test getobs((X,yv), i) == (getindex(X,:,i), getindex(y,i))
             @test getobs((Xv,y), i) == (getindex(X,:,i), getindex(y,i))
             @test getobs((X,Y), i)  == (getindex(X,:,i), getindex(Y,:,i))
             @test getobs((XX,X,y), i) == (getindex(XX,:,:,i), getindex(X,:,i), getindex(y,i))
+            @test getobs((XX,X,y), i, obsdim=(3,2,1)) == (getindex(XX,:,:,i), getindex(X,:,i), getindex(y,i))
+            @test getobs((X,yt), i)  == (getindex(X,:,i), getindex(yt,:,i))
+            @test getobs((X,y), i, obsdim = :last)  == (getindex(X,:,i), getindex(y,i))
+            @test getobs((X',y), i, obsdim = :first)  == (getindex(X',i,:), getindex(y,i))
+            @test getobs((X,yv), i, obsdim = :last) == (getindex(X,:,i), getindex(y,i))
+            @test getobs((Xv,y), i, obsdim = :last) == (getindex(X,:,i), getindex(y,i))
+            @test getobs((X,Y), i, obsdim = :last)  == (getindex(X,:,i), getindex(Y,:,i))
+            @test getobs((XX,X,y), i, obsdim = :last) == (getindex(XX,:,:,i), getindex(X,:,i), getindex(y,i))
+            @test getobs((X',y), i, obsdim = :first)  == (getindex(X',i,:), getindex(y,i))
+            @test getobs((X,y), i, obsdim = (:last,:last))  == (getindex(X,:,i), getindex(y,i))
+            @test getobs((X,y), i, obsdim = (2,1))  == (getindex(X,:,i), getindex(y,i))
+            @test getobs((X',y), i, obsdim = (1,1))  == (getindex(X',i,:), getindex(y,i))
+            @test getobs((X',yt), i, obsdim = (1,2))  == (getindex(X',i,:), getindex(yt,:,i))
+            @test getobs((X',yt), i, obsdim = (:first,:last))  == (getindex(X',i,:), getindex(yt,:,i))
         end
         @test getobs((X,y), 2) == (getindex(X,:,2), y[2])
+        @test getobs((X,y), 2, obsdim=:last) == (getindex(X,:,2), y[2])
+        @test getobs((X,y), 2, obsdim=(:last,:first)) == (getindex(X,:,2), y[2])
+        @test getobs((X,y), 2, obsdim=(2,:first)) == (getindex(X,:,2), y[2])
         @test getobs((Xv,y), 2) == (getindex(X,:,2), y[2])
         @test getobs((X,yv), 2) == (getindex(X,:,2), y[2])
         @test getobs((X,Y), 2) == (getindex(X,:,2), getindex(Y,:,2))
@@ -81,19 +214,20 @@ end
     for var in (vars, tuples)
         @test typeof(randobs(var)) == typeof(getobs(var, 1))
         @test typeof(randobs(var, 4)) == typeof(getobs(var, 1:4))
-        @test nobs(randobs(var)) == nobs(getobs(var, 1))
         @test nobs(randobs(var, 4)) == nobs(getobs(var, 1:4))
     end
-    X_rnd = randobs(X, 30)
-    for i = 1:30
-        @testset "random obs $i" begin
-            found = false
-            for j = 1:150
-                if all(X_rnd[:,i] .== X[:,j])
-                    found = true
+    for tX in (X, DataSubset(X))
+        X_rnd = randobs(tX, 30)
+        for i = 1:30
+            @testset "random obs $i" begin
+                found = false
+                for j = 1:150
+                    if all(X_rnd[:,i] .== X[:,j])
+                        found = true
+                    end
                 end
+                @test found
             end
-            @test found
         end
     end
 end
@@ -173,7 +307,6 @@ end
     end
 
     @testset "2-Tuple of Matrix, Vector, or SubArray"  begin
-        @test_throws ErrorException DataSubset{Tuple{Matrix{Float64},Matrix{Float64}},Int}((X,X), 1)
         for v1 in (X, Xv), v2 in (y, yv)
             subset = DataSubset((v1,v2), 101:150)
             @test typeof(getobs(subset)) <: Tuple{Array{Float64,2},Array{String,1}}
@@ -202,11 +335,14 @@ end
 @testset "datasubset" begin
     @test datasubset === datasubset
     @testset "Array and SubArray" begin
-        @test datasubset(X)   === X
+        @test datasubset(X)   == Xv
+        @test typeof(datasubset(X)) <: SubArray
         @test datasubset(Xv)  === Xv
-        @test datasubset(XX)  === XX
-        @test datasubset(XXX) === XXX
-        @test datasubset(y)   === y
+        @test datasubset(XX)  == XX
+        @test datasubset(XXX) == XXX
+        @test typeof(datasubset(XXX)) <: SubArray
+        @test datasubset(y)   == y
+        @test typeof(datasubset(y)) <: SubArray
         @test datasubset(yv)  === yv
         for i in (2, 1:150, 2:10, [2,5,7], [2,1])
             @test datasubset(X,i)   === view(X,:,i)
@@ -222,12 +358,14 @@ end
     end
 
     @testset "Tuple of Array and Subarray" begin
-        @test datasubset((X,y))   === (X,y)
-        @test datasubset((X,yv))  === (X,yv)
-        @test datasubset((Xv,y))  === (Xv,y)
+        @test datasubset((X,y))   == (X,y)
+        @test datasubset((X,yv))  == (X,yv)
+        @test datasubset((X,yv))  === (view(X,:,1:150),yv)
+        @test datasubset((Xv,y))  == (Xv,y)
+        @test datasubset((Xv,y))  === (Xv,view(y,1:150))
         @test datasubset((Xv,yv)) === (Xv,yv)
-        @test datasubset((X,Y))   === (X,Y)
-        @test datasubset((XX,X,y)) === (XX,X,y)
+        @test datasubset((X,Y))   == (X,Y)
+        @test datasubset((XX,X,y)) == (XX,X,y)
         for i in (1:150, 2:10, [2,5,7], [2,1])
             @test datasubset((X,y),i)   === (view(X,:,i), view(y,i))
             @test datasubset((Xv,y),i)  === (view(X,:,i), view(y,i))
@@ -247,12 +385,13 @@ end
     end
 
     @testset "Tuple of SparseArray" begin
-        @test datasubset((X,ys))  === (X,DataSubset(ys))
-        @test datasubset((Xs,y))  === (DataSubset(Xs),y)
+        @test datasubset((Xv,ys))  === (Xv,DataSubset(ys))
+        @test datasubset((X,ys))  === (datasubset(X),DataSubset(ys))
+        @test datasubset((Xs,y))  === (DataSubset(Xs),datasubset(y))
         @test datasubset((Xs,ys)) === (DataSubset(Xs),DataSubset(ys))
         @test datasubset((Xs,Xs)) === (DataSubset(Xs),DataSubset(Xs))
         @test datasubset((ys,Xs)) === (DataSubset(ys),DataSubset(Xs))
-        @test datasubset((XX,Xs,y)) === (XX,DataSubset(Xs),y)
+        @test datasubset((XX,Xs,yv)) === (datasubset(XX),DataSubset(Xs),yv)
         for i in (1:150, 2:10, [2,5,7], [2,1])
             @test datasubset((X,ys),i)  === (view(X,:,i), DataSubset(ys,i))
             @test datasubset((Xs,y),i)  === (DataSubset(Xs,i), view(y,i))
