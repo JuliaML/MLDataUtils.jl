@@ -202,9 +202,14 @@ for fun in (:DataSubset, :datasubset)
             map(data -> ($fun)(data, indices, obsdim), tup)
         end
 
-        function ($fun)(tup::Tuple, indices, obsdims::NTuple)
-            _check_nobs(tup, obsdims)
-            (map(_ -> ($fun)(_[1], indices, _[2]), zip(tup,obsdims))...)
+        @generated function ($fun)(tup::Tuple, indices, obsdims::Tuple)
+            N = length(obsdims.types)
+            quote
+                _check_nobs(tup, obsdims)
+                $(Expr(:tuple, (:(($($fun))(tup[$i], indices, obsdims[$i])) for i in 1:N)...))
+                # This line generates a tuple of N elements:
+                # (datasubset(tup[1], indices, obsdims[1]), datasu...
+            end
         end
     end
 end
@@ -226,10 +231,10 @@ randobs(data, n; obsdim = default_obsdim(data)) =
 getobs(data) = data
 
 # fallback methods discards unused obsdim
-nobs(data, ::ObsDim.Undefined) = nobs(data)
+nobs(data, ::ObsDim.Undefined)::Int = nobs(data)
 getobs(data, idx, ::ObsDim.Undefined) = getobs(data, idx)
 
-function nobs(data; obsdim = default_obsdim(data))
+function nobs(data; obsdim = default_obsdim(data))::Int
     nobsdim = obs_dim(obsdim)
     # make sure we don't bounce between fallback methods
     typeof(nobsdim) <: ObsDim.Undefined && throw(MethodError(nobs, (data,)))
@@ -265,8 +270,8 @@ datasubset(A::SubArray; kw...) = A
     end
 end
 
-nobs{DIM}(A::AbstractArray, ::ObsDim.Constant{DIM}) = size(A, DIM)
-nobs{T,N}(A::AbstractArray{T,N}, ::ObsDim.Last) = size(A, N)
+nobs{DIM}(A::AbstractArray, ::ObsDim.Constant{DIM})::Int = size(A, DIM)
+nobs{T,N}(A::AbstractArray{T,N}, ::ObsDim.Last)::Int = size(A, N)
 
 getobs(A::SubArray) = copy(A)
 
@@ -289,6 +294,7 @@ end
 # Tuples
 
 function _check_nobs(tup::Tuple)
+    length(tup) == 0 && return
     n1 = nobs(tup[1])
     for i=2:length(tup)
         if nobs(tup[i]) != n1
@@ -298,6 +304,7 @@ function _check_nobs(tup::Tuple)
 end
 
 function _check_nobs(tup::Tuple, obsdim::ObsDimension)
+    length(tup) == 0 && return
     n1 = nobs(tup[1], obsdim)
     for i=2:length(tup)
         if nobs(tup[i], obsdim) != n1
@@ -306,8 +313,10 @@ function _check_nobs(tup::Tuple, obsdim::ObsDimension)
     end
 end
 
-function _check_nobs{O<:ObsDimension}(tup::Tuple, obsdims::NTuple{O})
+function _check_nobs(tup::Tuple, obsdims::Tuple)
+    length(tup) == 0 && return
     length(tup) == length(obsdims) || throw(DimensionMismatch("number of elements in obsdim doesn't match"))
+    all(map(_-> typeof(_) <: ObsDimension, obsdims)) || throw(MethodError(_check_nobs, (tup, obsdims)))
     n1 = nobs(tup[1], obsdims[1])
     for i=2:length(tup)
         if nobs(tup[i], obsdims[i]) != n1
@@ -316,19 +325,19 @@ function _check_nobs{O<:ObsDimension}(tup::Tuple, obsdims::NTuple{O})
     end
 end
 
-function nobs(tup::Tuple)
+function nobs(tup::Tuple)::Int
     _check_nobs(tup)
-    nobs(tup[1])
+    length(tup) == 0 ? 0 : nobs(tup[1])
 end
 
-function nobs(tup::Tuple, obsdim::ObsDimension)
+function nobs(tup::Tuple, obsdim::ObsDimension)::Int
     _check_nobs(tup, obsdim)
-    nobs(tup[1], obsdim)
+    length(tup) == 0 ? 0 : nobs(tup[1], obsdim)
 end
 
-function nobs(tup::Tuple, obsdims::NTuple)
+function nobs(tup::Tuple, obsdims::Tuple)::Int
     _check_nobs(tup, obsdims)
-    nobs(tup[1], obsdims[1])
+    length(tup) == 0 ? 0 : nobs(tup[1], obsdims[1])
 end
 
 getobs(tup::Tuple) = map(getobs, tup)
@@ -343,14 +352,15 @@ function getobs(tup::Tuple, indices, obsdim::ObsDimension)
     map(data -> getobs(data, indices, obsdim), tup)
 end
 
-function getobs(tup::Tuple, indices, obsdims::NTuple)
-    _check_nobs(tup, obsdims)
-    (map(_ -> getobs(_[1], indices, _[2]), zip(tup,obsdims))...)
+@generated function getobs(tup::Tuple, indices, obsdims::Tuple)
+    N = length(obsdims.types)
+    quote
+        _check_nobs(tup, obsdims)
+        $(Expr(:tuple, (:(getobs(tup[$i], indices, obsdims[$i])) for i in 1:N)...))
+        # This line generates a tuple of N elements:
+        # (getobs(tup[1], indices, obsdims[1]), getobs(tup[2], indi...
+    end
 end
-
-# specialized for empty tuples
-nobs(tup::Tuple{}, args...) = 0
-getobs(tup::Tuple{}, args...) = ()
 
 # call with a tuple for more than one arg
 for f in (:eachobs, :infinite_obs)
@@ -411,7 +421,7 @@ function _compute_batch_settings(source, size::Int = -1, count::Int = -1)
     else
         # try to use both (usually to use a subset of the observations)
         max_batchcount = floor(Int, num_observations / size)
-        count <= max_batchcount || throw(DimensionMismatch("Specified number of partitions is not possible with specified size"))
+        count <= max_batchcount || throw(DimensionMismatch("Specified number of partitions is not possible with the specified size"))
     end
 
     # check if the settings will result in all data points being used
