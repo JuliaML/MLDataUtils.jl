@@ -41,18 +41,22 @@ export
 
     DataSubset,
     datasubset,
+    shuffled,
 
     repeatedly,
 
     eachobs,
     eachbatch,
-    shuffled,
     batches,
     splitobs,
     kfolds,
     leaveout,
 
-    ObsDim
+    ObsDim,
+
+    # deprecation
+    partitiondata,
+    splitdata
 
 include("feature_scaling.jl")
 include("basis_expansion.jl")
@@ -62,6 +66,11 @@ include("accesspattern/obsdim.jl")
 include("accesspattern/dataprovider.jl")
 include("accesspattern/datasubset.jl")
 include("accesspattern/kfolds.jl")
+
+@deprecate partitiondata(X; at=0.5) splitobs(shuffleobs(X); at=at)
+@deprecate partitiondata(X,y; at=0.5) splitobs(shuffleobs(X,y); at=at)
+@deprecate splitdata(X; at=0.5) splitobs(X; at=at)
+@deprecate splitdata(X,y; at=0.5) splitobs(X,y; at=at)
 
 end
 
