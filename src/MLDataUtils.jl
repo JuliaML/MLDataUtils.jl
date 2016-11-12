@@ -41,7 +41,7 @@ export
 
     DataSubset,
     datasubset,
-    shuffled,
+    shuffleobs,
 
     repeatedly,
 

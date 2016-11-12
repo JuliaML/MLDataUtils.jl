@@ -36,6 +36,12 @@ end
     @test MLDataUtils.obs_dim(:last)  === ObsDim.Last()
     @test MLDataUtils.obs_dim("End")  === ObsDim.Last()
     @test MLDataUtils.obs_dim("LAST") === ObsDim.Last()
+    @test MLDataUtils.obs_dim(:nothing) === ObsDim.Undefined()
+    @test MLDataUtils.obs_dim(:none) === ObsDim.Undefined()
+    @test MLDataUtils.obs_dim(:na) === ObsDim.Undefined()
+    @test MLDataUtils.obs_dim(:null) === ObsDim.Undefined()
+    @test MLDataUtils.obs_dim(:undefined) === ObsDim.Undefined()
+    @test MLDataUtils.obs_dim(nothing) === ObsDim.Undefined()
 end
 
 immutable SomeType end

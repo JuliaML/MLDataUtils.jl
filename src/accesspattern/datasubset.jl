@@ -1,22 +1,23 @@
 """
-    DataSubset(data, indices, [obsdim])
+    DataSubset(data, [indices], [obsdim])
 
 Description
 ============
 
 Abstraction for a subset of some `data` of arbitrary type.
 The main purpose for the existence of `DataSubset` is to delay
-the evaluation until an actual batch of data is needed.
-This is particularily useful if the data is not located in memory,
-but on the harddrive or an other remote location. In such a scenario
+the evaluation until an actual batch of data or single observation
+is needed for some computation.
+This is particularily useful when the data is not located in memory,
+but on the harddrive or some remote location. In such a scenario
 one wants to load the required data only when needed.
 
 The type is usually not constructed manually, but instead instantiated
-by calling `batches`, `shuffled`, or `splitobs`
+by calling `datsubset`, `shuffleobs`, or `splitobs`
 
-In the case `data` is some `Tuple`, the constructor will be mapped
+In case `data` is some `Tuple`, the constructor will be mapped
 over its elements. That means that the constructor returns a `Tuple`
-of `DataSubset` and instead of a `DataSubset` of `Tuple`
+of `DataSubset` and instead of a `DataSubset` of `Tuple`.
 
 Arguments
 ==========
@@ -24,32 +25,55 @@ Arguments
 - **`data`** : The object describing the dataset. Can be of any
     type as long as it implements `getobs` and `nobs`.
 
-- **`indices`** : A subtype of `AbstractVector` that denotes
-    which observations of `data` belong to this subset.
+- **`indices`** : Optional. The observation index or indices in
+    the original `data`. Can be of type Int or some subtype
+    `AbstractVector`.
 
-- **`obsdim`** : Optional. TODO
+- **`obsdim`** : Optional. If it makes sense for the type of `data`
+    `obsdim` can be used to specify which dimension of `data` denotes
+    the observations. It can be specified in a typestable manner as a
+    positional argument (see `?ObsDim`), or more conveniently as a
+    smart keyword argument.
 
 Methods
 ========
 
 - **`getindex`** : Returns the observation(s) of the given
-    index/indices as a new `DataSubset`
+    index/indices as a new `DataSubset`. No data is copied aside from
+    the required indices.
 
 - **`nobs`** : Returns the total number observations in the subset.
 
 - **`getobs`** : Returns the underlying data that the `DataSubset`
-    represents at the given indices.
+    represents at the given relative (to the subset) indices.
 
 Details
 ========
 
-For `DataSubset` to work on some data structure, the given variable
-`data` must implement the following interface:
+For `DataSubset` to work on some data structure, the desired type
+`MyType` must implement the following interface:
 
-- `getobs(data, i, [obsdim])` : Should return the observation(s) indexed
-    by `i`. In what form is up to the user.
+- `getobs(data::MyType, i, [obsdim::ObsDimension])` :
+    Should return the observation(s) indexed by `i`.
+    In what form is up to the user.
+    Note that `i` can be of type `Int` or `AbstractVector`.
 
-- `nobs(data, [obsdim])` : Should return the number of observations in `data`
+- `nobs(data::MyType, [obsdim::ObsDimension])` :
+    Should return the number of observations in `data`
+
+The following methods can also be provided and are optional:
+
+- `getobs(data::MyType)` :
+    By default this function is the identity function.
+    If that is not the behaviour that you want for your type,
+    you need to provide this method as well.
+
+- `datasubset(data::MyType, i, obsdim::ObsDimension)` ::
+    If your custom type has its own kind of subset type, you can
+    return it here. An example for such a case are `SubArray` for
+    representing a subset of some `AbstractArray`.
+    Note: If your type has no use for `obsdim` then dispatch on
+    `::ObsDim.Undefined` in the signature.
 
 Author(s)
 ==========
@@ -63,20 +87,34 @@ Examples
 ```julia
 X, y = load_iris()
 
+# The iris set has 150 observations and 4 features
+@assert size(X) == (4,150)
+
 # Represents the 80 observations as a DataSubset
 subset = DataSubset(X, 21:100)
 @assert nobs(subset) == 80
 @assert typeof(subset) <: DataSubset
 # getobs indexes into the subset
-@assert getobs(subset, 1:10) == view(X, :, 21:30)
+@assert getobs(subset, 1:10) == X[:, 21:30]
 
-# Also works for tuple of data
+# You can also work with data that uses some other dimension
+# to denote the observations.
+@assert size(X') == (150,4)
+subset = DataSubset(X', 21:100, obsdim = :first) # or "obsdim = 1"
+@assert nobs(subset) == 80
+
+# To specify the obsdim in a typestable way, use positional arguments
+# provided by the submodule `ObsDim`.
+@inferred DataSubset(X', 21:100, ObsDim.First())
+
+# Subsets also works for tuple of data. (useful for labeled data)
 subset = DataSubset((X,y), 1:100)
 @assert nobs(subset) == 100
 @assert typeof(subset) <: Tuple # Tuple of DataSubset
 
-# The lowercase version tries to avoid boxing for arrays
-# Here it instead creates a native SubArray
+# The lowercase version tries to avoid boxing into DataSubset
+# for types that provide a custom "subset", such as arrays.
+# Here it instead creates a native SubArray.
 subset = datasubset(X, 1:100)
 @assert nobs(subset) == 100
 @assert typeof(subset) <: SubArray
@@ -87,7 +125,7 @@ subset = datasubset((X,y), 1:100)
 @assert typeof(subset) <: Tuple # tuple of SubArray
 
 # Split dataset into training and test split
-train, test = splitobs(shuffled(X, y), at = 0.7)
+train, test = splitobs(shuffleobs(X, y), at = 0.7)
 @assert typeof(train) <: Tuple # of SubArray
 @assert typeof(test)  <: Tuple # of SubArray
 @assert nobs(train) == 105
@@ -117,9 +155,13 @@ end
 DataSubset{T,I,O}(data::T, indices::I, obsdim::O) =
     DataSubset{T,I,O}(data, indices, obsdim)
 
-default_obsdim(subset::DataSubset) = subset.obsdim
-
-Base.show(io::IO, subset::DataSubset) = print(io, "DataSubset{", typeof(subset.data), "}: " , nobs(subset), " observations")
+function Base.show(io::IO, subset::DataSubset)
+    if get(io, :compact, false)
+        print(io, "DataSubset{", typeof(subset.data), "} with " , nobs(subset), " observations")
+    else
+        print(io, summary(subset), "\n ", nobs(subset), " observations")
+    end
+end
 
 Base.length(subset::DataSubset) = length(subset.indices)
 
@@ -136,7 +178,9 @@ getobs(subset::DataSubset, idx) =
 getobs(subset::DataSubset) =
     getobs(subset.data, subset.indices, subset.obsdim)
 
-# compatibility with complex functions
+# compatibility with nested functions
+default_obsdim(subset::DataSubset) = subset.obsdim
+
 function nobs(subset::DataSubset, obsdim::ObsDimension)
     @assert obsdim === subset.obsdim
     nobs(subset)
@@ -153,14 +197,15 @@ end
     datasubset(data, [indices], [obsdim])
 
 Returns a lazy subset of the observations in `data` that correspond
-to the given `indices`. No data will be copied. If instead you want
-to get the observations of the given `indices` use `getobs`.
+to the given `indices`. No data will be copied expect of the indices.
+It is similar to calling `DataSubset(data, [indices], [obsdim])`,
+but returns a `SubArray` if the type of `data` is `Array` or `SubArray`.
+
+If instead you want to get the observations of the given `indices`
+in their native type, use `getobs`.
 
 The optional (keyword) parameter `obsdim` allows one to specify which
 dimension denotes the observations. see `ObsDim` for more detail.
-
-Similar to calling `DataSubset(data, [indices], [obsdim])`, but
-returns a `SubArray` if the type of `data` is `Array` or `SubArray`.
 
 see `DataSubset` for more information.
 """
@@ -216,6 +261,18 @@ end
 
 # --------------------------------------------------------------------
 
+"""
+    randobs(data, [n], [obsdim])
+
+Pick a random observation or batch of `n` random observations from
+`data`.
+
+The optional (keyword) parameter `obsdim` allows one to specify which
+dimension denotes the observations. see `ObsDim` for more detail.
+
+For this function to work, the type of `data` must implement `nobs`
+and `getobs`
+"""
 randobs(data, obsdim::Union{Tuple,ObsDimension}) =
     getobs(data, rand(1:nobs(data, obsdim)), obsdim)
 
@@ -372,7 +429,7 @@ end
 
 # call with a tuple for more than one arg (plus kws)
 for f in (:splitobs, :eachbatch, :batches, :infinite_batches,
-          :shuffled, :kfolds, :leaveout)
+          :shuffleobs, :kfolds, :leaveout)
     @eval function $f(s_1, s_rest...; kw...)
         tup = (s_1, s_rest...)
         $f(tup; kw...)
@@ -382,18 +439,26 @@ end
 # --------------------------------------------------------------------
 
 """
-    shuffled(data[...]; [obsdim])
+    shuffleobs(data[...]; [obsdim])
 
-Returns a lazy view into `data` with the order of the indices
-randomized. This is non-copy (only the indices are shuffled).
+Returns a lazy subset of `data` (using all observations),
+with the order of the indices randomized.
+This is non-copy (only the indices are shuffled).
 
 ```julia
-for (x,y) in eachobs(shuffled(X,Y))
+# Iterate through all observations in random order
+for (x,y) in eachobs(shuffleobs(X,Y))
     ...
 end
 ```
+
+The optional (keyword) parameter `obsdim` allows one to specify which
+dimension denotes the observations. see `ObsDim` for more detail.
+
+For this function to work, the type of `data` must implement `nobs`
+and `getobs`
 """
-shuffled(data; kw...) = datasubset(data, shuffle(1:nobs(data; kw...)); kw...)
+shuffleobs(data; kw...) = datasubset(data, shuffle(1:nobs(data; kw...)); kw...)
 
 # --------------------------------------------------------------------
 

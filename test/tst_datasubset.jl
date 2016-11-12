@@ -9,15 +9,18 @@ vars = (X, Xv, yv, XX, XXX, y)
 tuples = ((X,y), (X,Y), (XX,X,y), (XXX,XX,X,y))
 Xs = sprand(10,150,.5)
 ys = sprand(150,.5)
+# to compare if obs match
+X1 = hcat((1:150 for i = 1:10)...)'
+Y1 = collect(1:150)
 
 immutable EmptyType end
 
-@testset "nobs" begin
-    # test that fallback bouncing doesn't cause stackoverflow
-    @test_throws MethodError nobs(EmptyType())
-    @test_throws MethodError nobs(EmptyType(), obsdim = 1)
-    @test_throws MethodError nobs(EmptyType(), obsdim = :last)
+immutable CustomType end
+MLDataUtils.nobs(::CustomType) = 100
+MLDataUtils.getobs(::CustomType, i::Int) = i
+MLDataUtils.getobs(::CustomType, i::AbstractVector) = collect(i)
 
+@testset "nobs" begin
     @testset "Array, SparseArray, and Tuple" begin
         @test_throws DimensionMismatch nobs((X,XX,rand(100)))
         @test_throws DimensionMismatch nobs((X,X'))
@@ -65,18 +68,19 @@ immutable EmptyType end
         @test @inferred(nobs((X',X'), obsdim = :first)) === 150
         @test @inferred(nobs((X,X), obsdim = :first)) === 4
     end
+
+    @testset "custom types" begin
+        # test that fallback bouncing doesn't cause stackoverflow
+        @test_throws MethodError nobs(EmptyType())
+        @test_throws MethodError nobs(EmptyType(), obsdim = 1)
+        @test_throws MethodError nobs(EmptyType(), obsdim = :last)
+
+        @test_throws MethodError nobs(CustomType(), obsdim = 1)
+        @test nobs(CustomType()) === 100
+    end
 end
 
 @testset "getobs" begin
-    @test getobs(EmptyType()) === EmptyType()
-    @test_throws MethodError getobs(EmptyType(), obsdim = 1)
-    # test that fallback bouncing doesn't cause stackoverflow
-    @test_throws MethodError getobs(EmptyType(), 1)
-    @test_throws MethodError getobs(EmptyType(), 1:10)
-    @test_throws MethodError getobs(EmptyType(), 1, obsdim = :first)
-    @test_throws MethodError getobs(EmptyType(), 1, obsdim = 10)
-    @test_throws MethodError getobs(EmptyType(), 1:10, obsdim = :last)
-
     @testset "Array and Subarray" begin
         # interpreted as idx
         @test_throws ErrorException getobs(X, ObsDim.Undefined())
@@ -160,6 +164,8 @@ end
         # obsdim not defined without some idx
         @test_throws MethodError getobs((), obsdim=2)
         @test_throws MethodError getobs((X,yv), obsdim=2)
+        # bounds checking correctly
+        @test_throws BoundsError getobs((X,y), 151)
         # special case empty tuple
         @test @inferred(getobs(())) === ()
         @test @inferred(getobs((), ObsDim.Last())) === ()
@@ -207,6 +213,12 @@ end
             @test getobs((X',yt), i, obsdim=(1,2))  == (getindex(X',i,:), getindex(yt,:,i))
             @test getobs((X',yt), i, obsdim=(:first,:last))  == (getindex(X',i,:), getindex(yt,:,i))
             @test getobs((XX,X,y), i, obsdim=:last) == (getindex(XX,:,:,i), getindex(X,:,i), getindex(y,i))
+            # compare if obs match in tuple
+            x1, y1 = getobs((X1,Y1), i)
+            @test all(x1' .== y1)
+            x1, y1, z1 = getobs((X1,Y1,sparse(X1), i))
+            @test all(x1' .== y1)
+            @test all(x1 .== z1)
         end
         @test @inferred(getobs((X,y), 2)) == (getindex(X,:,2), y[2])
         @test_throws ErrorException @inferred(getobs((X,y), 2, obsdim=:last))
@@ -218,6 +230,27 @@ end
         @test @inferred(getobs((X,yv), 2)) == (getindex(X,:,2), y[2])
         @test @inferred(getobs((X,Y), 2)) == (getindex(X,:,2), getindex(Y,:,2))
         @test @inferred(getobs((XX,X,y), 2)) == (getindex(XX,:,:,2), getindex(X,:,2), y[2])
+    end
+
+    @testset "custom types" begin
+        @test getobs(EmptyType()) === EmptyType()
+        @test_throws MethodError getobs(EmptyType(), obsdim=1)
+        # test that fallback bouncing doesn't cause stackoverflow
+        @test_throws MethodError getobs(EmptyType(), 1)
+        @test_throws MethodError getobs(EmptyType(), 1:10)
+        @test_throws MethodError getobs(EmptyType(), 1, obsdim=:first)
+        @test_throws MethodError getobs(EmptyType(), 1, obsdim=10)
+        @test_throws MethodError getobs(EmptyType(), 1:10, obsdim=:last)
+
+        @test_throws MethodError getobs(CustomType(), obsdim=1)
+        @test_throws MethodError getobs(CustomType(), 4:40, obsdim=1)
+        @test getobs(CustomType(), 11) === 11
+        @test getobs(CustomType(), 4:40) == collect(4:40)
+        # No-op unless defined
+        @test getobs(CustomType()) === CustomType()
+        # No bounds checking here
+        @test getobs(CustomType(), 200) === 200
+        @test getobs(CustomType(), [2,200,1]) == [2,200,1]
     end
 end
 
@@ -243,7 +276,14 @@ end
             end
         end
     end
-    # test tuple obs index match
+    # test if obs in tuple match each other
+    for i = 1:30
+        @test 0 < randobs(CustomType()) <= 150
+        x1, y1 = randobs((X1,Y1))
+        @test all(x1 .== y1)
+        x1, y1 = randobs((X1,Y1), 5)
+        @test all(x1' .== y1)
+    end
 end
 
 @testset "DataSubset constructor" begin
@@ -251,7 +291,7 @@ end
         @test_throws DimensionMismatch DataSubset((rand(2,10),rand(9)))
         @test_throws DimensionMismatch DataSubset((rand(2,10),rand(9)),1:2)
         @test_throws DimensionMismatch DataSubset((rand(2,10),rand(4,9,10),rand(9)))
-        for var in (vars..., tuples...)
+        for var in (vars..., tuples..., CustomType())
             @test_throws BoundsError DataSubset(var, -1:100)
             @test_throws BoundsError DataSubset(var, 1:151)
             @test_throws BoundsError DataSubset(var, [1, 10, 0, 3])
@@ -261,9 +301,12 @@ end
     end
 
     @testset "Array, SubArray, SparseArray" begin
+        @test nobs(DataSubset(X, obsdim = 1)) == 4
+        @test nobs(DataSubset(X, 1:3, obsdim = 1)) == 3
         for var in (Xs, ys, vars...)
             subset = @inferred(DataSubset(var))
             println(subset) # make sure it doesn't crash
+            println([subset,subset]) # make sure it doesn't crash
             @test subset.data === var
             @test subset.indices === 1:150
             @test typeof(subset) <: DataSubset
@@ -287,6 +330,23 @@ end
                 @test nobs(subset[1:1]) == nobs(datasubset(var, idx[1:1]))
             end
         end
+    end
+
+    @testset "custom types" begin
+        @test_throws MethodError DataSubset(EmptyType())
+        @test_throws MethodError DataSubset(EmptyType(), 1:10)
+        @test_throws MethodError DataSubset(EmptyType(), 1:10, ObsDim.First())
+        @test_throws MethodError DataSubset(CustomType(), obsdim=1)
+        @test_throws MethodError DataSubset(CustomType(), obsdim=:last)
+        @test_throws MethodError DataSubset(CustomType(), 2:10, obsdim=1)
+        @test_throws MethodError DataSubset(CustomType(), 2:10, obsdim=:last)
+        @test_throws BoundsError getobs(DataSubset(CustomType(), 11:20), 11)
+        @test typeof(@inferred(DataSubset(CustomType()))) <: DataSubset
+        @test nobs(DataSubset(CustomType())) === 100
+        @test nobs(DataSubset(CustomType(), 11:20)) === 10
+        @test getobs(DataSubset(CustomType())) == collect(1:100)
+        @test getobs(DataSubset(CustomType(),11:20),10) == 20
+        @test getobs(DataSubset(CustomType(),11:20),[3,5]) == [13,15]
     end
 end
 
@@ -413,7 +473,30 @@ end
             @test @inferred(datasubset((Xs,Xs),i)) === (DataSubset(Xs,i), DataSubset(Xs,i))
             @test @inferred(datasubset((ys,Xs),i)) === (DataSubset(ys,i), DataSubset(Xs,i))
             @test @inferred(datasubset((XX,Xs,y),i)) === (view(XX,:,:,i),DataSubset(Xs,i),view(y,i))
+            # compare if obs match in tuple
+            x1, y1 = getobs(datasubset((X1,Y1), i))
+            @test all(x1' .== y1)
+            x1, y1, z1 = getobs(datasubset((X1,Y1,sparse(X1)), i))
+            @test all(x1' .== y1)
+            @test all(x1 .== z1)
         end
+    end
+
+    @testset "custom types" begin
+        @test_throws MethodError datasubset(EmptyType())
+        @test_throws MethodError datasubset(EmptyType(), 1:10)
+        @test_throws MethodError datasubset(EmptyType(), 1:10, ObsDim.First())
+        @test_throws MethodError datasubset(CustomType(), obsdim=1)
+        @test_throws MethodError datasubset(CustomType(), obsdim=:last)
+        @test_throws MethodError datasubset(CustomType(), 2:10, obsdim=1)
+        @test_throws MethodError datasubset(CustomType(), 2:10, obsdim=:last)
+        @test_throws BoundsError getobs(datasubset(CustomType(), 11:20), 11)
+        @test typeof(@inferred(datasubset(CustomType()))) <: DataSubset
+        @test nobs(datasubset(CustomType())) === 100
+        @test nobs(datasubset(CustomType(), 11:20)) === 10
+        @test getobs(datasubset(CustomType())) == collect(1:100)
+        @test getobs(datasubset(CustomType(), 11:20), 10) == 20
+        @test getobs(datasubset(CustomType(), 11:20), [3,5]) == [13,15]
     end
 end
 

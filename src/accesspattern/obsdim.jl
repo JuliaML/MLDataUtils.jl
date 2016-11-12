@@ -46,6 +46,7 @@ end
 
 obs_dim(dim) = throw(ArgumentError("Unknown way to specify a obsdim: $dim"))
 obs_dim(dim::ObsDimension) = dim
+obs_dim(::Void) = ObsDim.Undefined()
 obs_dim(dim::Int) = ObsDim.Constant(dim)
 obs_dim(dim::String) = obs_dim(Symbol(lowercase(dim)))
 obs_dim(dims::Tuple) = map(obs_dim, dims)
@@ -54,6 +55,8 @@ function obs_dim(dim::Symbol)
         ObsDim.First()
     elseif dim == Symbol("end") || dim == :last
         ObsDim.Last()
+    elseif dim == Symbol("nothing") || dim == :none || dim == :null || dim == :na || dim == :undefined
+        ObsDim.Undefined()
     else
         throw(ArgumentError("Unknown way to specify a obsdim: $dim"))
     end
