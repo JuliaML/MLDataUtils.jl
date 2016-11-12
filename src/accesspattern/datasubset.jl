@@ -135,7 +135,7 @@ train, test = splitobs(shuffleobs(X, y), at = 0.7)
 see also
 =========
 
-`datasubset`, `splitobs`, `KFolds`, `batches`, `eachbatch`, `shuffled`, `eachobs`, `getobs`
+`datasubset`, `splitobs`, `KFolds`, `batches`, `eachbatch`, `shuffleobs`, `eachobs`, `getobs`
 """
 immutable DataSubset{T, I<:Union{Int,AbstractVector}, O<:ObsDimension}
     data::T
@@ -197,12 +197,12 @@ end
     datasubset(data, [indices], [obsdim])
 
 Returns a lazy subset of the observations in `data` that correspond
-to the given `indices`. No data will be copied expect of the indices.
+to the given `indices`. No data will be copied except of the indices.
 It is similar to calling `DataSubset(data, [indices], [obsdim])`,
 but returns a `SubArray` if the type of `data` is `Array` or `SubArray`.
 
-If instead you want to get the observations of the given `indices`
-in their native type, use `getobs`.
+If instead you want to get the subset of observations corresponding
+to the given `indices` in their native type, use `getobs`.
 
 The optional (keyword) parameter `obsdim` allows one to specify which
 dimension denotes the observations. see `ObsDim` for more detail.
@@ -251,9 +251,9 @@ for fun in (:DataSubset, :datasubset)
             N = length(obsdims.types)
             quote
                 _check_nobs(tup, obsdims)
-                $(Expr(:tuple, (:(($($fun))(tup[$i], indices, obsdims[$i])) for i in 1:N)...))
                 # This line generates a tuple of N elements:
                 # (datasubset(tup[1], indices, obsdims[1]), datasu...
+                $(Expr(:tuple, (:(($($fun))(tup[$i], indices, obsdims[$i])) for i in 1:N)...))
             end
         end
     end
@@ -264,7 +264,7 @@ end
 """
     randobs(data, [n], [obsdim])
 
-Pick a random observation or batch of `n` random observations from
+Pick a random observation or a batch of `n` random observations from
 `data`.
 
 The optional (keyword) parameter `obsdim` allows one to specify which
@@ -312,6 +312,11 @@ typealias NativeArray{T,N} Union{Array{T,N},SubArray{T,N}}
 
 datasubset(A::SubArray; kw...) = A
 
+# catch the undefined settin for consistencyg.
+# should never happen by accident
+datasubset(A::NativeArray, idx, obsdim::ObsDim.Undefined) =
+    throw(MethodError(datasubset, (A, idx, obsdim)))
+
 @generated function datasubset{T,N}(A::NativeArray{T,N}, idx, obsdim::ObsDimension)
     @assert N > 0
     if N == 1 && idx <: Integer
@@ -331,6 +336,11 @@ nobs{DIM}(A::AbstractArray, ::ObsDim.Constant{DIM})::Int = size(A, DIM)
 nobs{T,N}(A::AbstractArray{T,N}, ::ObsDim.Last)::Int = size(A, N)
 
 getobs(A::SubArray) = copy(A)
+
+# catch the undefined settin for consistencyg.
+# should never happen by accident
+getobs(A::AbstractArray, idx, obsdim::ObsDim.Undefined) =
+    throw(MethodError(getobs, (A, idx, obsdim)))
 
 @generated function getobs{T,N}(A::AbstractArray{T,N}, idx, obsdim::ObsDimension)
     @assert N > 0
@@ -413,39 +423,42 @@ end
     N = length(obsdims.types)
     quote
         _check_nobs(tup, obsdims)
-        $(Expr(:tuple, (:(getobs(tup[$i], indices, obsdims[$i])) for i in 1:N)...))
         # This line generates a tuple of N elements:
         # (getobs(tup[1], indices, obsdims[1]), getobs(tup[2], indi...
+        $(Expr(:tuple, (:(getobs(tup[$i], indices, obsdims[$i])) for i in 1:N)...))
     end
 end
+
+# --------------------------------------------------------------------
 
 # call with a tuple for more than one arg
-for f in (:eachobs, :infinite_obs)
-    @eval function $f(s_1, s_rest...)
-        tup = (s_1, s_rest...)
-        $f(tup)
+for f in (:shuffleobs, :eachobs, :infinite_obs)
+    @eval function $f(d1, dN...; obsdim=default_obsdim((d1,dN...)))
+        $(Symbol(:_,f))((d1, dN...), obs_dim(obsdim))
     end
 end
 
-# call with a tuple for more than one arg (plus kws)
+# call with a tuple for more than one arg (plus kws other than obsdim)
 for f in (:splitobs, :eachbatch, :batches, :infinite_batches,
-          :shuffleobs, :kfolds, :leaveout)
-    @eval function $f(s_1, s_rest...; kw...)
-        tup = (s_1, s_rest...)
-        $f(tup; kw...)
+          :kfolds, :leaveout)
+    @eval function $f(d1, dN...; kw...)
+        $f((d1,dN...); kw...)
     end
 end
 
 # --------------------------------------------------------------------
 
 """
-    shuffleobs(data[...]; [obsdim])
+    shuffleobs(data[...], [obsdim])
 
 Returns a lazy subset of `data` (using all observations),
-with the order of the indices randomized.
+with only the order of the indices randomized.
 This is non-copy (only the indices are shuffled).
 
 ```julia
+# For Arrays the subset will be of type SubArray
+@assert typeof(shuffleobs(rand(4,10))) <: SubArray
+
 # Iterate through all observations in random order
 for (x,y) in eachobs(shuffleobs(X,Y))
     ...
@@ -458,7 +471,11 @@ dimension denotes the observations. see `ObsDim` for more detail.
 For this function to work, the type of `data` must implement `nobs`
 and `getobs`
 """
-shuffleobs(data; kw...) = datasubset(data, shuffle(1:nobs(data; kw...)); kw...)
+shuffleobs(data; obsdim = default_obsdim(data)) =
+    _shuffleobs(data, obs_dim(obsdim))
+
+_shuffleobs(data, obsdim = default_obsdim(data)) =
+    datasubset(data, shuffle(1:nobs(data, obsdim)), obsdim)
 
 # --------------------------------------------------------------------
 
@@ -502,30 +519,33 @@ end
 """
     splitobs(data[...]; [at = 0.7], [obsdim])
 
-Splits the data into multiple subsets. Not that this function will
-performs the splits statically and not perform any randomization.
+Splits the data into multiple subsets. Note that this function will
+perform the splits statically and thus not perform any randomization.
 The function creates a vector `DataSubset` in which the first
 N-1 elements/subsets contain the fraction of observations of `data`
 that is specified by `at`.
 
-For example if `at` is a Float64 then the vector contains two elements.
-In the following code the first subset `train` will contain 70% of the
-observations and the second subset `test` the rest.
+For example, if `at` is a Float64 then the return-value will be a
+vector with two elements (i.e. subsets), in which the first element
+contains the fracion of observations specified by `at` and the
+second element contains the rest.
+In the following code the first subset `train` will contain the
+first 70% of the observations and the second subset `test` the rest.
 
 ```julia
 train, test = splitobs(X, at = 0.7)
 ```
 
 If `at` is a tuple of `Float64` then additional subsets will be created.
-In this example `train` will have 50% of the observations, `val` will
-have 30% and `test` the other 20%
+In this example `train` will have the first 50% of the observations,
+`val` will have next 30%, and `test` the last 20%
 
 ```julia
 train, val, test = splitobs(X, at = (0.5, 0.3))
 ```
 
 It is also possible to call it with multiple data arguments,
-which all have to have the same number of total observations.
+which all must have the same number of total observations.
 This is useful for labeled data.
 
 ```julia
@@ -534,10 +554,11 @@ train, test = splitobs(X, y, at = 0.7)
 ```
 
 If the observations should be randomly assigned to a subset,
-then you can combine the function with `shuffled`
+then you can combine the function with `shuffleobs`
 
 ```julia
-train, test = splitobs(shuffled(X,y), at = 0.7)
+# This time observations are randomly assigned.
+train, test = splitobs(shuffleobs(X,y), at = 0.7)
 ```
 
 see `DataSubset` for more info, or `batches` for equally sized paritions
@@ -546,14 +567,14 @@ function splitobs{T}(data; at::T = 0.7, obsdim = default_obsdim(data))
     _splitobs(data, at, obs_dim(obsdim))
 end
 
-function _splitobs(data, at::AbstractFloat, obsdim)
+function _splitobs(data, at::AbstractFloat, obsdim = default_obsdim(data))
     # partition into 2 sets
     n = nobs(data, obsdim)
     n1 = clamp(round(Int, at*n), 1, n)
     [datasubset(data, idx, obsdim) for idx in (1:n1, n1+1:n)]
 end
 
-function _splitobs{T<:AbstractFloat}(data, at::Union{NTuple{T},AbstractVector{T}}, obsdim)
+function _splitobs{T<:AbstractFloat}(data, at::Union{NTuple{T},AbstractVector{T}}, obsdim = default_obsdim(data))
     # partition into length(a)+1 sets
     n = nobs(data, obsdim)
     nleft = n

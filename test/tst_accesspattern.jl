@@ -99,39 +99,6 @@ end
     @test i === 150
 end
 
-@testset "shuffled" begin
-    @test_throws DimensionMismatch shuffled(X, rand(149))
-
-    @testset "Array and SubArray" begin
-        for var in (X, Xv, yv, XX, XXX, y)
-            @test typeof(shuffled(var)) <: SubArray
-            @test size(shuffled(var)) == size(var)
-        end
-    end
-
-    @testset "Tuple of Array and SubArray" begin
-        for var in ((X,y), (X,yv), (Xv,y), (X,Y), (XX,X,y), (XXX,XX,X,y))
-            @test typeof(shuffled(var)) <: Tuple
-            @test all(map(_->(typeof(_)<:SubArray), shuffled(var)))
-            @test all(map(_->(nobs(_)===150), shuffled(var)))
-        end
-    end
-
-    @testset "SparseArray" begin
-        for var in (Xs, ys)
-            @test typeof(shuffled(var)) <: DataSubset
-            @test nobs(shuffled(var)) == nobs(var)
-        end
-    end
-
-    @testset "Tuple of SparseArray" begin
-        for var in ((Xs,ys), (X,ys), (Xs,y), (Xs,Xs), (XX,X,ys))
-            @test typeof(shuffled(var)) <: Tuple
-            @test nobs(shuffled(var)) == nobs(var)
-        end
-    end
-end
-
 @testset "_compute_batch_settings" begin
     @test MLDataUtils._compute_batch_settings(X) === (30,5)
     @test MLDataUtils._compute_batch_settings(Xv) === (30,5)

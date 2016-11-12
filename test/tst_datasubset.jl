@@ -74,7 +74,6 @@ MLDataUtils.getobs(::CustomType, i::AbstractVector) = collect(i)
         @test_throws MethodError nobs(EmptyType())
         @test_throws MethodError nobs(EmptyType(), obsdim = 1)
         @test_throws MethodError nobs(EmptyType(), obsdim = :last)
-
         @test_throws MethodError nobs(CustomType(), obsdim = 1)
         @test nobs(CustomType()) === 100
     end
@@ -497,6 +496,101 @@ end
         @test getobs(datasubset(CustomType())) == collect(1:100)
         @test getobs(datasubset(CustomType(), 11:20), 10) == 20
         @test getobs(datasubset(CustomType(), 11:20), [3,5]) == [13,15]
+    end
+end
+
+@testset "shuffleobs" begin
+    @test_throws DimensionMismatch shuffleobs(X, rand(149))
+    @test_throws DimensionMismatch shuffleobs(X, rand(149), obsdim=:last)
+    @test_throws DimensionMismatch shuffleobs((X, rand(149)))
+
+    @testset "typestability" begin
+        for var in vars
+            @test_throws MethodError MLDataUtils._shuffleobs(var, ObsDim.Undefined())
+            @test typeof(@inferred(shuffleobs(var))) <: SubArray
+            @test typeof(@inferred(MLDataUtils._shuffleobs(var))) <: SubArray
+            @test typeof(@inferred(MLDataUtils._shuffleobs(var, ObsDim.Last()))) <: SubArray
+            @test typeof(@inferred(MLDataUtils._shuffleobs(var, ObsDim.First()))) <: SubArray
+            @test_throws ErrorException @inferred(shuffleobs(var, obsdim=:last))
+            @test_throws ErrorException @inferred(shuffleobs(var, obsdim=1))
+        end
+        for tup in tuples
+            @test_throws MethodError MLDataUtils._shuffleobs(tup, ObsDim.Undefined())
+            @test typeof(@inferred(shuffleobs(tup...))) <: Tuple
+            @test typeof(@inferred(MLDataUtils._shuffleobs(tup))) <: Tuple
+            @test typeof(@inferred(MLDataUtils._shuffleobs(tup, ObsDim.Last()))) <: Tuple
+            @test_throws ErrorException @inferred(shuffleobs(tup, obsdim=:last))
+        end
+    end
+
+    @testset "Array and SubArray" begin
+        for var in vars
+            @test size(shuffleobs(var)) == size(var)
+            @test size(shuffleobs(var, obsdim=1)) == size(var)
+        end
+        # tests if all obs are still present and none duplicated
+        @test vec(sum(shuffleobs(X1),2)) == fill(11325,10)
+        @test vec(sum(shuffleobs(X1',obsdim=1),1)) == fill(11325,10)
+        @test sum(shuffleobs(Y1)) == 11325
+        @test sum(shuffleobs(Y1, obsdim=:first)) == 11325
+    end
+
+    @testset "Tuple of Array and SubArray" begin
+        for var in ((X,y), (X,yv), (Xv,y), (X,Y), (XX,X,y), (XXX,XX,X,y))
+            @test typeof(shuffleobs(var)) <: Tuple
+            @test all(map(_->(typeof(_)<:SubArray), shuffleobs(var)))
+            @test all(map(_->(nobs(_)===150), shuffleobs(var)))
+        end
+        # tests if all obs are still present and none duplicated
+        # also tests that both paramter are shuffled identically
+        x1, y1, z1 = shuffleobs(X1,Y1,X1)
+        @test vec(sum(x1,2)) == fill(11325,10)
+        @test vec(sum(z1,2)) == fill(11325,10)
+        @test sum(y1) == 11325
+        @test all(x1' .== y1)
+        @test all(z1' .== y1)
+        x1, y1 = shuffleobs(X1',Y1, obsdim=1)
+        @test vec(sum(x1,1)) == fill(11325,10)
+        @test sum(y1) == 11325
+        @test all(x1 .== y1)
+    end
+
+    @testset "SparseArray" begin
+        for var in (Xs, ys)
+            @test typeof(shuffleobs(var)) <: DataSubset
+            @test nobs(shuffleobs(var)) == nobs(var)
+            @test nobs(shuffleobs(var, obsdim=:first)) == nobs(var, obsdim=:first)
+        end
+        # tests if all obs are still present and none duplicated
+        @test vec(sum(getobs(shuffleobs(sparse(X1))),2)) == fill(11325,10)
+        @test vec(sum(getobs(shuffleobs(sparse(X1'),obsdim=1)),1)) == fill(11325,10)
+        @test sum(getobs(shuffleobs(sparse(Y1)))) == 11325
+        @test sum(getobs(shuffleobs(sparse(Y1), obsdim=:first))) == 11325
+    end
+
+    @testset "Tuple of SparseArray" begin
+        for var in ((Xs,ys), (X,ys), (Xs,y), (Xs,Xs), (XX,X,ys))
+            @test typeof(shuffleobs(var)) <: Tuple
+            @test nobs(shuffleobs(var)) == nobs(var)
+        end
+        # tests if all obs are still present and none duplicated
+        # also tests that both paramter are shuffled identically
+        x1, y1 = getobs(shuffleobs(sparse(X1),sparse(Y1)))
+        @test vec(sum(x1,2)) == fill(11325,10)
+        @test sum(y1) == 11325
+        @test all(x1' .== y1)
+        x1, y1 = getobs(shuffleobs(sparse(X1'),sparse(Y1), obsdim=1))
+        @test vec(sum(x1,1)) == fill(11325,10)
+        @test sum(y1) == 11325
+        @test all(x1 .== y1)
+    end
+
+    @testset "deprecated" begin
+        @test splitdata(X, y) == splitobs(X, y, at=0.5)
+        (xtr,ytr), (xte,yte) = partitiondata(X1, Y1)
+        @test nobs(xtr) == nobs(xte) == nobs(ytr) == nobs(yte) == 75
+        @test vec(sum(xtr,2) + sum(xte,2)) == fill(11325,10)
+        @test sum(ytr) + sum(yte) == 11325
     end
 end
 
