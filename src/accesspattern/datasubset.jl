@@ -433,25 +433,8 @@ end
 
 # --------------------------------------------------------------------
 
-# call with a tuple for more than one arg
-for f in (:shuffleobs, :infinite_obs)
-    @eval function $f(d1, dN...; obsdim=default_obsdim((d1,dN...)))
-        $(Symbol(:_,f))((d1, dN...), obs_dim(obsdim))
-    end
-end
-
-# call with a tuple for more than one arg (plus kws other than obsdim)
-for f in (:eachbatch, :batches, :infinite_batches,
-          :kfolds, :leaveout)
-    @eval function $f(d1, dN...; kw...)
-        $f((d1,dN...); kw...)
-    end
-end
-
-# --------------------------------------------------------------------
-
 """
-    shuffleobs(data[...], [obsdim])
+    shuffleobs(data, [obsdim])
 
 Returns a lazy subset of `data` (using all observations),
 with only the order of the indices randomized.
@@ -462,7 +445,7 @@ This is non-copy (only the indices are shuffled).
 @assert typeof(shuffleobs(rand(4,10))) <: SubArray
 
 # Iterate through all observations in random order
-for (x,y) in eachobs(shuffleobs(X,Y))
+for (x) in eachobs(shuffleobs(X))
     ...
 end
 ```
@@ -474,15 +457,16 @@ For this function to work, the type of `data` must implement `nobs`
 and `getobs`
 """
 shuffleobs(data; obsdim = default_obsdim(data)) =
-    _shuffleobs(data, obs_dim(obsdim))
+    shuffleobs(data, obs_dim(obsdim))
 
-_shuffleobs(data, obsdim = default_obsdim(data)) =
+function shuffleobs(data, obsdim)
     datasubset(data, shuffle(1:nobs(data, obsdim)), obsdim)
+end
 
 # --------------------------------------------------------------------
 
 """
-    splitobs(data[...]; [at = 0.7], [obsdim])
+    splitobs(data, [at = 0.7], [obsdim])
 
 Splits the data into multiple subsets. Note that this function will
 perform the splits statically and thus not perform any randomization.
@@ -509,13 +493,13 @@ In this example `train` will have the first 50% of the observations,
 train, val, test = splitobs(X, at = (0.5, 0.3))
 ```
 
-It is also possible to call it with multiple data arguments,
+It is also possible to call it with multiple data arguments as tuple,
 which all must have the same number of total observations.
 This is useful for labeled data.
 
 ```julia
-train, test = splitobs(X, y, at = 0.7)
-(x_train,y_train), (x_test,y_test) = splitobs(X, y, at = 0.7)
+train, test = splitobs((X, y), at = 0.7)
+(x_train,y_train), (x_test,y_test) = splitobs((X, y), at = 0.7)
 ```
 
 If the observations should be randomly assigned to a subset,
@@ -523,27 +507,40 @@ then you can combine the function with `shuffleobs`
 
 ```julia
 # This time observations are randomly assigned.
-train, test = splitobs(shuffleobs(X,y), at = 0.7)
+train, test = splitobs(shuffleobs((X,y)), at = 0.7)
+```
+
+When working with arrays one may want to choose which dimension
+represents the observations. By default the last dimension is assumed,
+but this can be overwritten.
+
+```julia
+# Here we say each row represents an observation
+train, test = splitobs(X, obsdim = 1)
+```
+
+The functions also provide a type-stable API
+
+```julia
+# By avoiding keyword arguments, the compiler can infer the return type
+train, test = splitobs((X,y), 0.7)
+train, test = splitobs((X,y), 0.7, ObsDim.First())
 ```
 
 see `DataSubset` for more info.
 """
 splitobs(data; at = 0.7, obsdim = default_obsdim(data)) =
-    _splitobs(data, at, obs_dim(obsdim))
-
-# typestable return-value if called with defaults
-splitobs(d1, dN...; at = 0.7, obsdim = default_obsdim((d1,dN...))) =
-    _splitobs((d1, dN...), at, obs_dim(obsdim))
+    splitobs(data, at, obs_dim(obsdim))
 
 # partition into 2 sets
-function _splitobs(data, at::AbstractFloat, obsdim=default_obsdim(data))
+function splitobs(data, at::AbstractFloat, obsdim=default_obsdim(data))
     n = nobs(data, obsdim)
     n1 = clamp(round(Int, at*n), 1, n)
     [datasubset(data, idx, obsdim) for idx in (1:n1, n1+1:n)]
 end
 
 # partition into length(at)+1 sets
-function _splitobs{T<:AbstractFloat}(data, at::Union{NTuple{T},AbstractVector{T}}, obsdim=default_obsdim(data))
+function splitobs{T<:AbstractFloat}(data, at::Union{NTuple{T},AbstractVector{T}}, obsdim=default_obsdim(data))
     n = nobs(data, obsdim)
     nleft = n
     lst = UnitRange{Int}[]

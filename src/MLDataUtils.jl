@@ -72,9 +72,9 @@ include("accesspattern/dataprovider.jl")
 include("accesspattern/kfolds.jl")
 
 @deprecate partitiondata(X; at=0.5) splitobs(shuffleobs(X); at=at)
-@deprecate partitiondata(X,y; at=0.5) splitobs(shuffleobs(X,y); at=at)
+@deprecate partitiondata(X,y; at=0.5) splitobs(shuffleobs((X,y)); at=at)
 @deprecate splitdata(X; at=0.5) splitobs(X; at=at)
-@deprecate splitdata(X,y; at=0.5) splitobs(X,y; at=at)
+@deprecate splitdata(X,y; at=0.5) splitobs((X,y); at=at)
 
 end
 

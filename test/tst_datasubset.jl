@@ -500,25 +500,22 @@ end
 end
 
 @testset "shuffleobs" begin
-    @test_throws DimensionMismatch shuffleobs(X, rand(149))
-    @test_throws DimensionMismatch shuffleobs(X, rand(149), obsdim=:last)
     @test_throws DimensionMismatch shuffleobs((X, rand(149)))
+    @test_throws DimensionMismatch shuffleobs((X, rand(149)), obsdim=:last)
 
     @testset "typestability" begin
         for var in vars
-            @test_throws MethodError MLDataUtils._shuffleobs(var, ObsDim.Undefined())
+            @test_throws MethodError shuffleobs(var, ObsDim.Undefined())
             @test typeof(@inferred(shuffleobs(var))) <: SubArray
-            @test typeof(@inferred(MLDataUtils._shuffleobs(var))) <: SubArray
-            @test typeof(@inferred(MLDataUtils._shuffleobs(var, ObsDim.Last()))) <: SubArray
-            @test typeof(@inferred(MLDataUtils._shuffleobs(var, ObsDim.First()))) <: SubArray
+            @test typeof(@inferred(shuffleobs(var, ObsDim.Last()))) <: SubArray
+            @test typeof(@inferred(shuffleobs(var, ObsDim.First()))) <: SubArray
             @test_throws ErrorException @inferred(shuffleobs(var, obsdim=:last))
             @test_throws ErrorException @inferred(shuffleobs(var, obsdim=1))
         end
         for tup in tuples
-            @test_throws MethodError MLDataUtils._shuffleobs(tup, ObsDim.Undefined())
-            @test typeof(@inferred(shuffleobs(tup...))) <: Tuple
-            @test typeof(@inferred(MLDataUtils._shuffleobs(tup))) <: Tuple
-            @test typeof(@inferred(MLDataUtils._shuffleobs(tup, ObsDim.Last()))) <: Tuple
+            @test_throws MethodError shuffleobs(tup, ObsDim.Undefined())
+            @test typeof(@inferred(shuffleobs(tup))) <: Tuple
+            @test typeof(@inferred(shuffleobs(tup, ObsDim.Last()))) <: Tuple
             @test_throws ErrorException @inferred(shuffleobs(tup, obsdim=:last))
         end
     end
@@ -529,7 +526,6 @@ end
             @test size(shuffleobs(var, obsdim=1)) == size(var)
         end
         # tests if all obs are still present and none duplicated
-        @test vec(sum(MLDataUtils._shuffleobs(X1),2)) == fill(11325,10)
         @test vec(sum(shuffleobs(X1),2)) == fill(11325,10)
         @test vec(sum(shuffleobs(X1',obsdim=1),1)) == fill(11325,10)
         @test sum(shuffleobs(Y1)) == 11325
@@ -544,13 +540,13 @@ end
         end
         # tests if all obs are still present and none duplicated
         # also tests that both paramter are shuffled identically
-        x1, y1, z1 = shuffleobs(X1,Y1,X1)
+        x1, y1, z1 = shuffleobs((X1,Y1,X1))
         @test vec(sum(x1,2)) == fill(11325,10)
         @test vec(sum(z1,2)) == fill(11325,10)
         @test sum(y1) == 11325
         @test all(x1' .== y1)
         @test all(z1' .== y1)
-        x1, y1 = shuffleobs(X1',Y1, obsdim=1)
+        x1, y1 = shuffleobs((X1',Y1), obsdim=1)
         @test vec(sum(x1,1)) == fill(11325,10)
         @test sum(y1) == 11325
         @test all(x1 .== y1)
@@ -576,11 +572,11 @@ end
         end
         # tests if all obs are still present and none duplicated
         # also tests that both paramter are shuffled identically
-        x1, y1 = getobs(shuffleobs(sparse(X1),sparse(Y1)))
+        x1, y1 = getobs(shuffleobs((sparse(X1),sparse(Y1))))
         @test vec(sum(x1,2)) == fill(11325,10)
         @test sum(y1) == 11325
         @test all(x1' .== y1)
-        x1, y1 = getobs(shuffleobs(sparse(X1'),sparse(Y1), obsdim=1))
+        x1, y1 = getobs(shuffleobs((sparse(X1'),sparse(Y1)), obsdim=1))
         @test vec(sum(x1,1)) == fill(11325,10)
         @test sum(y1) == 11325
         @test all(x1 .== y1)
@@ -588,45 +584,42 @@ end
 end
 
 @testset "splitobs" begin
-    @test_throws DimensionMismatch splitobs(X, rand(149))
-    @test_throws DimensionMismatch splitobs(X, rand(149), obsdim=:last)
     @test_throws DimensionMismatch splitobs((X, rand(149)))
+    @test_throws DimensionMismatch splitobs((X, rand(149)), obsdim=:last)
 
     @testset "typestability" begin
         for var in vars
-            @test_throws MethodError MLDataUtils._splitobs(var, 0.5, ObsDim.Undefined())
+            @test_throws MethodError splitobs(var, 0.5, ObsDim.Undefined())
             @test typeof(@inferred(splitobs(var))) <: Vector
             @test eltype(@inferred(splitobs(var))) <: SubArray
-            @test typeof(@inferred(MLDataUtils._splitobs(var, 0.5))) <: Vector
-            @test typeof(@inferred(MLDataUtils._splitobs(var, (0.5,0.2)))) <: Vector
-            @test eltype(@inferred(MLDataUtils._splitobs(var, 0.5))) <: SubArray
-            @test eltype(@inferred(MLDataUtils._splitobs(var, (0.5,0.2)))) <: SubArray
-            @test typeof(@inferred(MLDataUtils._splitobs(var, 0.5, ObsDim.Last()))) <: Vector
-            @test typeof(@inferred(MLDataUtils._splitobs(var, 0.5, ObsDim.First()))) <: Vector
-            @test eltype(@inferred(MLDataUtils._splitobs(var, 0.5, ObsDim.First()))) <: SubArray
+            @test typeof(@inferred(splitobs(var, 0.5))) <: Vector
+            @test typeof(@inferred(splitobs(var, (0.5,0.2)))) <: Vector
+            @test eltype(@inferred(splitobs(var, 0.5))) <: SubArray
+            @test eltype(@inferred(splitobs(var, (0.5,0.2)))) <: SubArray
+            @test typeof(@inferred(splitobs(var, 0.5, ObsDim.Last()))) <: Vector
+            @test typeof(@inferred(splitobs(var, 0.5, ObsDim.First()))) <: Vector
+            @test eltype(@inferred(splitobs(var, 0.5, ObsDim.First()))) <: SubArray
             @test_throws ErrorException @inferred(splitobs(var, at=0.5))
             @test_throws ErrorException @inferred(splitobs(var, obsdim=:last))
             @test_throws ErrorException @inferred(splitobs(var, obsdim=1))
         end
         for tup in tuples
-            @test_throws MethodError MLDataUtils._splitobs(tup, 0.5, ObsDim.Undefined())
-            @test typeof(@inferred(splitobs(tup...))) <: Vector
-            @test eltype(@inferred(splitobs(tup...))) <: Tuple
-            @test typeof(@inferred(MLDataUtils._splitobs(tup, 0.5))) <: Vector
-            @test typeof(@inferred(MLDataUtils._splitobs(tup, (0.5,0.2)))) <: Vector
-            @test eltype(@inferred(MLDataUtils._splitobs(tup, 0.5))) <: Tuple
-            @test eltype(@inferred(MLDataUtils._splitobs(tup, (0.5,0.2)))) <: Tuple
-            @test typeof(@inferred(MLDataUtils._splitobs(tup, 0.5, ObsDim.Last()))) <: Vector
-            @test eltype(@inferred(MLDataUtils._splitobs(tup, 0.5, ObsDim.Last()))) <: Tuple
+            @test_throws MethodError splitobs(tup, 0.5, ObsDim.Undefined())
+            @test typeof(@inferred(splitobs(tup, 0.5))) <: Vector
+            @test typeof(@inferred(splitobs(tup, (0.5,0.2)))) <: Vector
+            @test eltype(@inferred(splitobs(tup, 0.5))) <: Tuple
+            @test eltype(@inferred(splitobs(tup, (0.5,0.2)))) <: Tuple
+            @test typeof(@inferred(splitobs(tup, 0.5, ObsDim.Last()))) <: Vector
+            @test eltype(@inferred(splitobs(tup, 0.5, ObsDim.Last()))) <: Tuple
             @test_throws ErrorException @inferred(splitobs(tup, obsdim=:last))
         end
     end
 
     @testset "Array, SparseArray, and SubArray" begin
         for var in (Xs, ys, vars...)
-            @test splitobs(var) == MLDataUtils._splitobs(var, 0.7, ObsDim.Last())
-            @test splitobs(var, at=0.5) == MLDataUtils._splitobs(var, 0.5, ObsDim.Last())
-            @test splitobs(var, obsdim=1) == MLDataUtils._splitobs(var, 0.7, ObsDim.First())
+            @test splitobs(var) == splitobs(var, 0.7, ObsDim.Last())
+            @test splitobs(var, at=0.5) == splitobs(var, 0.5, ObsDim.Last())
+            @test splitobs(var, obsdim=1) == splitobs(var, 0.7, ObsDim.First())
             @test nobs.(splitobs(var)) == [105,45]
             @test nobs.(splitobs(var, at=(.2,.3))) == [30,45,75]
             @test nobs.(splitobs(var, at=(.2,.3), obsdim=:last)) == [30,45,75]
@@ -658,7 +651,7 @@ end
         @test nobs.(splitobs((X',y), obsdim=1),obsdim=1) == [105,45]
         # tests if all obs are still present and none duplicated
         # also tests that both paramter are split disjoint
-        train,test = splitobs(X1,Y1,X1)
+        train,test = splitobs((X1,Y1,X1))
         @test vec(sum(train[1],2)+sum(test[1],2)) == fill(11325,10)
         @test vec(sum(train[3],2)+sum(test[3],2)) == fill(11325,10)
         @test sum(train[2]) + sum(test[2]) == 11325
@@ -666,14 +659,14 @@ end
         @test all(train[3]' .== train[2])
         @test all(test[1]' .== test[2])
         @test all(test[3]' .== test[2])
-        train,test = splitobs(X1',Y1, obsdim=1)
+        train,test = splitobs((X1',Y1), obsdim=1)
         @test vec(sum(train[1],1)) == fill(5565,10)
         @test vec(sum(test[1],1)) == fill(5760,10)
         @test sum(train[2]) == 5565
         @test sum(test[2]) == 5760
         @test all(train[1] .== train[2])
         @test all(test[1] .== test[2])
-        train,test = splitobs(sparse(X1),Y1,at=0.2)
+        train,test = splitobs((sparse(X1),Y1),at=0.2)
         @test vec(sum(getobs(train[1]),2)+sum(getobs(test[1]),2)) == fill(11325,10)
         @test sum(train[2]) + sum(test[2]) == 11325
         @test all(getobs(train[1])' .== train[2])
@@ -682,7 +675,7 @@ end
 end
 
 @testset "deprecated" begin
-    @test splitdata(X, y) == splitobs(X, y, at=0.5)
+    @test splitdata(X, y) == splitobs((X, y), at=0.5)
     (xtr,ytr), (xte,yte) = partitiondata(X1, Y1)
     @test nobs(xtr) == nobs(xte) == nobs(ytr) == nobs(yte) == 75
     @test vec(sum(xtr,2) + sum(xte,2)) == fill(11325,10)
