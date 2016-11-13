@@ -151,28 +151,7 @@ Base.length(iter::EachObs) = iter.count
 nobs(iter::EachObs) = length(iter)
 Base.getindex{T<:Union{AbstractVector,Int}}(iter::EachObs, idx::T) = datasubset(iter.data, idx)
 
-"""
-    eachobs(data[...])
-
-Iterate over a data source using a `DataIterator` called `EachObs`
-
-```julia
-for x in eachobs(X)
-    # ...
-end
-```
-
-Multiple variables are supported (e.g. for labeled data)
-
-```julia
-for (x,y) in eachobs(X,Y)
-    # ...
-end
-```
-
-see `EachObs` for more info
-"""
-eachobs(data) = EachObs(data, nobs(data))
+#eachobs(data) = EachObs(data, nobs(data))
 
 # --------------------------------------------------------------------
 

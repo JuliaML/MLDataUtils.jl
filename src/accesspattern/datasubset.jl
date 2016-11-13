@@ -18,6 +18,8 @@ function getobs(data, idx; obsdim = default_obsdim(data))
     getobs(data, idx, nobsdim)
 end
 
+# --------------------------------------------------------------------
+
 """
     DataSubset(data, [indices], [obsdim])
 
@@ -432,7 +434,7 @@ end
 # --------------------------------------------------------------------
 
 # call with a tuple for more than one arg
-for f in (:shuffleobs, :eachobs, :infinite_obs)
+for f in (:shuffleobs, :infinite_obs)
     @eval function $f(d1, dN...; obsdim=default_obsdim((d1,dN...)))
         $(Symbol(:_,f))((d1, dN...), obs_dim(obsdim))
     end
@@ -476,43 +478,6 @@ shuffleobs(data; obsdim = default_obsdim(data)) =
 
 _shuffleobs(data, obsdim = default_obsdim(data)) =
     datasubset(data, shuffle(1:nobs(data, obsdim)), obsdim)
-
-# --------------------------------------------------------------------
-
-default_batch_size(source) = clamp(div(nobs(source), 5), 1, 100)
-
-"""
-Helper function to compute sensible and compatible values for the
-`size` and `count`
-"""
-function _compute_batch_settings(source, size::Int = -1, count::Int = -1)
-    num_observations = nobs(source)::Int
-    @assert num_observations > 0
-    size  <= num_observations || throw(BoundsError(source,size))
-    count <= num_observations || throw(BoundsError(source,count))
-    if size <= 0 && count <= 0
-        # no batch settings specified, use default size and as many batches as possible
-        size = default_batch_size(source)::Int
-        count = floor(Int, num_observations / size)
-    elseif size <= 0
-        # use count to determine size. try use all observations
-        size = floor(Int, num_observations / count)
-    elseif count <= 0
-        # use size and as many batches as possible
-        count = floor(Int, num_observations / size)
-    else
-        # try to use both (usually to use a subset of the observations)
-        max_batchcount = floor(Int, num_observations / size)
-        count <= max_batchcount || throw(DimensionMismatch("Specified number of partitions is not possible with the specified size"))
-    end
-
-    # check if the settings will result in all data points being used
-    unused = num_observations % size
-    if unused > 0
-        info("The specified values for size and/or count will result in $unused unused data points")
-    end
-    size::Int, count::Int
-end
 
 # --------------------------------------------------------------------
 
@@ -577,7 +542,7 @@ function _splitobs(data, at::AbstractFloat, obsdim=default_obsdim(data))
     [datasubset(data, idx, obsdim) for idx in (1:n1, n1+1:n)]
 end
 
-# partition into length(a)+1 sets
+# partition into length(at)+1 sets
 function _splitobs{T<:AbstractFloat}(data, at::Union{NTuple{T},AbstractVector{T}}, obsdim=default_obsdim(data))
     n = nobs(data, obsdim)
     nleft = n

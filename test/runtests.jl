@@ -6,6 +6,7 @@ using Base.Test
 tests = [
     "tst_obsdim.jl"
     "tst_datasubset.jl"
+    "tst_dataview.jl"
 #    "tst_accesspattern.jl"
 #    "tst_kfolds.jl"
 #    "tst_noisy_function.jl"

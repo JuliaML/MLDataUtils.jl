@@ -32,27 +32,30 @@ export
     predict,
     predict!,
 
-    DataIterator,
-        ObsIterator,
-            EachObs,
-        BatchIterator,
-            EachBatch,
-        KFolds,
+    ObsDim,
 
     DataSubset,
     datasubset,
     shuffleobs,
-
-    repeatedly,
-
-    eachobs,
-    eachbatch,
-    batches,
     splitobs,
+
+#    AbstractDataProvider,
+        DataView,
+            ObsView,
+#        DataProvider,
+#            ObsProvider,
+#                InfiniteObs,
+#            BatchProvider,
+#                InfiniteBatches,
+
+    obsview,
+    eachobs,
+
+    eachbatch,
+
+    KFolds,
     kfolds,
     leaveout,
-
-    ObsDim,
 
     # deprecation
     partitiondata,
@@ -63,8 +66,9 @@ include("basis_expansion.jl")
 include("noisy_function.jl")
 include("datasets.jl")
 include("accesspattern/obsdim.jl")
-include("accesspattern/dataprovider.jl")
 include("accesspattern/datasubset.jl")
+include("accesspattern/dataview.jl")
+include("accesspattern/dataprovider.jl")
 include("accesspattern/kfolds.jl")
 
 @deprecate partitiondata(X; at=0.5) splitobs(shuffleobs(X); at=at)
