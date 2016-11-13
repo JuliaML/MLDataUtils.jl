@@ -1,3 +1,23 @@
+getobs(data) = data
+
+# fallback methods discards unused obsdim
+nobs(data, ::ObsDim.Undefined)::Int = nobs(data)
+getobs(data, idx, ::ObsDim.Undefined) = getobs(data, idx)
+
+function nobs(data; obsdim = default_obsdim(data))::Int
+    nobsdim = obs_dim(obsdim)
+    # make sure we don't bounce between fallback methods
+    typeof(nobsdim) <: ObsDim.Undefined && throw(MethodError(nobs, (data,)))
+    nobs(data, nobsdim)
+end
+
+function getobs(data, idx; obsdim = default_obsdim(data))
+    nobsdim = obs_dim(obsdim)
+    # make sure we don't bounce between fallback methods
+    typeof(nobsdim) <: ObsDim.Undefined && throw(MethodError(getobs, (data,idx)))
+    getobs(data, idx, nobsdim)
+end
+
 """
     DataSubset(data, [indices], [obsdim])
 
@@ -285,26 +305,6 @@ randobs(data, n, obsdim::Union{Tuple,ObsDimension}) =
 randobs(data, n; obsdim = default_obsdim(data)) =
     randobs(data, n, obs_dim(obsdim))
 
-getobs(data) = data
-
-# fallback methods discards unused obsdim
-nobs(data, ::ObsDim.Undefined)::Int = nobs(data)
-getobs(data, idx, ::ObsDim.Undefined) = getobs(data, idx)
-
-function nobs(data; obsdim = default_obsdim(data))::Int
-    nobsdim = obs_dim(obsdim)
-    # make sure we don't bounce between fallback methods
-    typeof(nobsdim) <: ObsDim.Undefined && throw(MethodError(nobs, (data,)))
-    nobs(data, nobsdim)
-end
-
-function getobs(data, idx; obsdim = default_obsdim(data))
-    nobsdim = obs_dim(obsdim)
-    # make sure we don't bounce between fallback methods
-    typeof(nobsdim) <: ObsDim.Undefined && throw(MethodError(getobs, (data,idx)))
-    getobs(data, idx, nobsdim)
-end
-
 # --------------------------------------------------------------------
 # Arrays
 
@@ -312,7 +312,7 @@ typealias NativeArray{T,N} Union{Array{T,N},SubArray{T,N}}
 
 datasubset(A::SubArray; kw...) = A
 
-# catch the undefined settin for consistencyg.
+# catch the undefined setting for consistency.
 # should never happen by accident
 datasubset(A::NativeArray, idx, obsdim::ObsDim.Undefined) =
     throw(MethodError(datasubset, (A, idx, obsdim)))
@@ -337,7 +337,7 @@ nobs{T,N}(A::AbstractArray{T,N}, ::ObsDim.Last)::Int = size(A, N)
 
 getobs(A::SubArray) = copy(A)
 
-# catch the undefined settin for consistencyg.
+# catch the undefined setting for consistency.
 # should never happen by accident
 getobs(A::AbstractArray, idx, obsdim::ObsDim.Undefined) =
     throw(MethodError(getobs, (A, idx, obsdim)))
@@ -439,7 +439,7 @@ for f in (:shuffleobs, :eachobs, :infinite_obs)
 end
 
 # call with a tuple for more than one arg (plus kws other than obsdim)
-for f in (:splitobs, :eachbatch, :batches, :infinite_batches,
+for f in (:eachbatch, :batches, :infinite_batches,
           :kfolds, :leaveout)
     @eval function $f(d1, dN...; kw...)
         $f((d1,dN...); kw...)
@@ -561,21 +561,24 @@ then you can combine the function with `shuffleobs`
 train, test = splitobs(shuffleobs(X,y), at = 0.7)
 ```
 
-see `DataSubset` for more info, or `batches` for equally sized paritions
+see `DataSubset` for more info.
 """
-function splitobs{T}(data; at::T = 0.7, obsdim = default_obsdim(data))
+splitobs(data; at = 0.7, obsdim = default_obsdim(data)) =
     _splitobs(data, at, obs_dim(obsdim))
-end
 
-function _splitobs(data, at::AbstractFloat, obsdim = default_obsdim(data))
-    # partition into 2 sets
+# typestable return-value if called with defaults
+splitobs(d1, dN...; at = 0.7, obsdim = default_obsdim((d1,dN...))) =
+    _splitobs((d1, dN...), at, obs_dim(obsdim))
+
+# partition into 2 sets
+function _splitobs(data, at::AbstractFloat, obsdim=default_obsdim(data))
     n = nobs(data, obsdim)
     n1 = clamp(round(Int, at*n), 1, n)
     [datasubset(data, idx, obsdim) for idx in (1:n1, n1+1:n)]
 end
 
-function _splitobs{T<:AbstractFloat}(data, at::Union{NTuple{T},AbstractVector{T}}, obsdim = default_obsdim(data))
-    # partition into length(a)+1 sets
+# partition into length(a)+1 sets
+function _splitobs{T<:AbstractFloat}(data, at::Union{NTuple{T},AbstractVector{T}}, obsdim=default_obsdim(data))
     n = nobs(data, obsdim)
     nleft = n
     lst = UnitRange{Int}[]
