@@ -310,16 +310,17 @@ randobs(data, n; obsdim = default_obsdim(data)) =
 # --------------------------------------------------------------------
 # Arrays
 
-typealias NativeArray{T,N} Union{Array{T,N},SubArray{T,N}}
-
 datasubset(A::SubArray; kw...) = A
 
 # catch the undefined setting for consistency.
 # should never happen by accident
-datasubset(A::NativeArray, idx, obsdim::ObsDim.Undefined) =
+datasubset(A::AbstractArray, idx, obsdim::ObsDim.Undefined) =
     throw(MethodError(datasubset, (A, idx, obsdim)))
 
-@generated function datasubset{T,N}(A::NativeArray{T,N}, idx, obsdim::ObsDimension)
+datasubset(A::AbstractSparseArray, idx, obsdim::ObsDimension) =
+    DataSubset(A, idx, obsdim)
+
+@generated function datasubset{T,N}(A::AbstractArray{T,N}, idx, obsdim::ObsDimension)
     @assert N > 0
     if N == 1 && idx <: Integer
         :(A[idx])
@@ -540,7 +541,7 @@ function splitobs(data, at::AbstractFloat, obsdim=default_obsdim(data))
 end
 
 # partition into length(at)+1 sets
-function splitobs{T<:AbstractFloat}(data, at::Union{NTuple{T},AbstractVector{T}}, obsdim=default_obsdim(data))
+function splitobs{T<:AbstractFloat}(data, at::NTuple{T}, obsdim=default_obsdim(data))
     n = nobs(data, obsdim)
     nleft = n
     lst = UnitRange{Int}[]

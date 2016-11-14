@@ -286,10 +286,11 @@ end
 end
 
 @testset "DataSubset constructor" begin
+    @test_throws DimensionMismatch DataSubset((rand(2,10),rand(9)))
+    @test_throws DimensionMismatch DataSubset((rand(2,10),rand(9)),1:2)
+    @test_throws DimensionMismatch DataSubset((rand(2,10),rand(4,9,10),rand(9)))
+
     @testset "bounds check" begin
-        @test_throws DimensionMismatch DataSubset((rand(2,10),rand(9)))
-        @test_throws DimensionMismatch DataSubset((rand(2,10),rand(9)),1:2)
-        @test_throws DimensionMismatch DataSubset((rand(2,10),rand(4,9,10),rand(9)))
         for var in (vars..., tuples..., CustomType())
             @test_throws BoundsError DataSubset(var, -1:100)
             @test_throws BoundsError DataSubset(var, 1:151)
@@ -297,6 +298,19 @@ end
             @test_throws BoundsError DataSubset(var, [1, 10, -10, 3])
             @test_throws BoundsError DataSubset(var, [1, 10, 180, 3])
         end
+    end
+
+    @testset "Tuple unrolling" begin
+        @test_throws DimensionMismatch DataSubset((X,X), 1:150, (ObsDim.Last(), ObsDim.Last(), ObsDim.Last()))
+        @test_throws DimensionMismatch DataSubset((X,X), 1:150, (ObsDim.Last(),))
+        @test typeof(@inferred(DataSubset((X,X)))) <: Tuple
+        @test eltype(@inferred(DataSubset((X,X)))) <: DataSubset
+        @test typeof(@inferred(DataSubset((X,X), 1:150, (ObsDim.Last(), ObsDim.Last())))) <: Tuple
+        @test eltype(@inferred(DataSubset((X,X), 1:150, (ObsDim.Last(), ObsDim.Last())))) <: DataSubset
+        s1, s2 = @inferred(DataSubset((X',X), 1:150, (ObsDim.First(),ObsDim.Last())))
+        @test s1.obsdim == ObsDim.First()
+        @test s2.obsdim == ObsDim.Last()
+        @test nobs(s1) == nobs(s2)
     end
 
     @testset "Array, SubArray, SparseArray" begin
@@ -513,7 +527,6 @@ end
             @test_throws ErrorException @inferred(shuffleobs(var, obsdim=1))
         end
         for tup in tuples
-            @test_throws MethodError shuffleobs(tup, ObsDim.Undefined())
             @test typeof(@inferred(shuffleobs(tup))) <: Tuple
             @test typeof(@inferred(shuffleobs(tup, ObsDim.Last()))) <: Tuple
             @test_throws ErrorException @inferred(shuffleobs(tup, obsdim=:last))
@@ -534,6 +547,8 @@ end
 
     @testset "Tuple of Array and SubArray" begin
         for var in ((X,yv), (Xv,y), tuples...)
+            @test_throws MethodError shuffleobs(var, ObsDim.Undefined())
+            @test_throws MethodError shuffleobs(var...)
             @test typeof(shuffleobs(var)) <: Tuple
             @test all(map(_->(typeof(_)<:SubArray), shuffleobs(var)))
             @test all(map(_->(nobs(_)===150), shuffleobs(var)))
@@ -567,6 +582,8 @@ end
 
     @testset "Tuple of SparseArray" begin
         for var in ((Xs,ys), (X,ys), (Xs,y), (Xs,Xs), (XX,X,ys))
+            @test_throws MethodError shuffleobs(var, ObsDim.Undefined())
+            @test_throws MethodError shuffleobs(var...)
             @test typeof(shuffleobs(var)) <: Tuple
             @test nobs(shuffleobs(var)) == nobs(var)
         end
@@ -604,7 +621,6 @@ end
             @test_throws ErrorException @inferred(splitobs(var, obsdim=1))
         end
         for tup in tuples
-            @test_throws MethodError splitobs(tup, 0.5, ObsDim.Undefined())
             @test typeof(@inferred(splitobs(tup, 0.5))) <: Vector
             @test typeof(@inferred(splitobs(tup, (0.5,0.2)))) <: Vector
             @test eltype(@inferred(splitobs(tup, 0.5))) <: Tuple
@@ -641,6 +657,9 @@ end
 
     @testset "Tuple of Array, SparseArray, and SubArray" begin
         for tup in ((Xs,ys), (X,ys), (Xs,y), (Xs,Xs), (XX,X,ys), (X,yv), (Xv,y), tuples...)
+            @test_throws MethodError splitobs(tup, 0.5, ObsDim.Undefined())
+            @test_throws MethodError splitobs(tup..., 0.5)
+            @test_throws MethodError splitobs(tup...)
             @test all(map(_->(typeof(_)<:Tuple), splitobs(tup)))
             @test all(map(_->(typeof(_)<:Tuple), splitobs(tup,at=0.5)))
             @test nobs.(splitobs(tup)) == [105,45]

@@ -16,8 +16,8 @@ getobs(A::DataView) = getobs.(collect(A))
 getobs(A::DataView, i) = getobs(A[i])
 
 # if subsetting a DataView, then DataView the subset instead.
-for fun in (:DataSubset, :datasubset)
-    @eval @generated function ($fun){T<:DataView}(A::T, i, obsdim)
+for fun in (:DataSubset, :datasubset), O in (ObsDimension, Tuple)
+    @eval @generated function ($fun){T<:DataView}(A::T, i, obsdim::$O)
         quote
             @assert obsdim == A.obsdim
             ($(T.name.name))(($($fun))(parent(A), i, obsdim), obsdim)
