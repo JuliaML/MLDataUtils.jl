@@ -42,6 +42,7 @@ export
 #    AbstractDataProvider,
         DataView,
             ObsView,
+            BatchView,
 #        DataProvider,
 #            ObsProvider,
 #                InfiniteObs,

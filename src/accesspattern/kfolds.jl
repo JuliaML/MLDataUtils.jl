@@ -71,7 +71,7 @@ see also
 
 `kfolds`, `leaveout`, `DataIterator`, `DataSubset`
 """
-immutable KFolds{T} <: DataIterator{T}
+immutable KFolds{T}
     data::T
     indices::Vector{Int}
     sizes::Vector{Int}
