@@ -102,7 +102,7 @@ for (x,y) in ObsView(X,Y)
 end
 
 # same but in random order
-for (x,y) in ObsView(shuffleobs(X,Y))
+for (x,y) in ObsView(shuffleobs((X,Y)))
     @assert typeof(x) <: SubArray{Float64,1}
     @assert typeof(y) <: String
 end
@@ -111,7 +111,7 @@ end
 see also
 =========
 
-`obsview`, `BatchView`, `shuffleobs`, `getobs`, `nobs`, `DataSubset`
+`eachobs`, `BatchView`, `shuffleobs`, `getobs`, `nobs`, `DataSubset`
 """
 immutable ObsView{TData,TElem,O} <: DataView{TData,TElem}
     data::TData
@@ -140,6 +140,7 @@ Base.getindex(A::ObsView, i::AbstractVector) = ObsView(datasubset(A.data, i, A.o
 # compatibility with nested functions
 default_obsdim(A::ObsView) = A.obsdim
 
+# for proper dispatch to trump the abstract arrays one
 for T in (ObsDim.Constant,ObsDim.Last,Tuple)
     @eval function nobs(A::ObsView, obsdim::$T)
         @assert obsdim === A.obsdim
@@ -152,8 +153,7 @@ for T in (ObsDim.Constant,ObsDim.Last,Tuple)
 end
 
 """
-    obsview(data[...]; [obsdim])
-    eachobs(data[...]; [obsdim])
+    eachobs(data, [obsdim])
 
 Creates a view of `data` that allows to treat it as a vector of
 observations. Any computation is delayed until `getindex` is called,
@@ -161,7 +161,22 @@ and even `getindex` returns a lazy subset of the observation.
 
 ```julia
 X = rand(4,100)
-A = obsview(X)
+A = eachobs(X)
+@assert typeof(A) <: ObsView <: AbstractVector
+@assert eltype(A) <: SubArray{Float64,1}
+@assert length(A) == 100
+@assert size(A[1]) == (4,)
+```
+
+In the case of arrays it is assumed that the observations are
+represented by the last array dimension.
+This can be overwritten.
+
+```julia
+# This time flip the dimensions of the matrix
+X = rand(100,4)
+A = eachobs(X, obsdim=1)
+# The behaviour remains the same as before
 @assert typeof(A) <: ObsView <: AbstractVector
 @assert eltype(A) <: SubArray{Float64,1}
 @assert length(A) == 100
@@ -169,8 +184,7 @@ A = obsview(X)
 ```
 
 This is especially useful for iterating through a dataset one
-observation at a time. The synonym `eachobs` may be more readable in
-such cases.
+observation at a time.
 
 ```julia
 for x in eachobs(X)
@@ -181,20 +195,18 @@ end
 Multiple variables are supported (e.g. for labeled data)
 
 ```julia
-for (x,y) in eachobs(X,Y)
+for (x,y) in eachobs((X,Y))
     # ...
 end
 ```
 
-see `ObsView` for more info.
+Note that `eachobs` is just a synonym for `ObsView`,
+see `?ObsView` for more info.
 """
-obsview(data; obsdim = default_obsdim(data)) =
+eachobs(data; obsdim = default_obsdim(data)) =
     ObsView(data, obs_dim(obsdim))
 
-obsview(d1, dN...; obsdim = default_obsdim((d1,dN...))) =
-    ObsView((d1, dN...), obs_dim(obsdim))
-
-const eachobs = obsview
+eachobs(data, obsdim) = ObsView(data, obsdim)
 
 # --------------------------------------------------------------------
 

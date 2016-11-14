@@ -1,6 +1,4 @@
 @testset "ObsView" begin
-    @test obsview == eachobs
-
     @testset "constructor" begin
         @test_throws DimensionMismatch ObsView((rand(2,10),rand(9)))
         @test_throws DimensionMismatch ObsView((rand(2,10),rand(9)))
@@ -11,26 +9,32 @@
         @test_throws MethodError ObsView(EmptyType(), ObsDim.Last())
         @test_throws MethodError ObsView((EmptyType(),EmptyType()))
         @test_throws MethodError ObsView(CustomType(), ObsDim.Last())
-        @test_throws MethodError obsview(EmptyType(), obsdim=1)
-        @test_throws MethodError obsview((EmptyType(),EmptyType()))
+        @test_throws MethodError eachobs(EmptyType(), obsdim=1)
+        @test_throws MethodError eachobs((EmptyType(),EmptyType()))
         for var in (vars..., tuples..., Xs, ys)
+            @test_throws MethodError eachobs(var...)
+            @test_throws MethodError eachobs(var..., obsdim=:last)
             @test @inferred(parent(ObsView(var))) === var
             A = ObsView(var)
             @test ObsView(A) === A
+            @test @inferred(eachobs(var)) == A
         end
+        A = ObsView(X',obsdim=1)
+        @test A == @inferred(eachobs(X',ObsDim.First()))
+        @test A == eachobs(X',obsdim=:first)
     end
 
     @testset "typestability" begin
-        @test_throws ErrorException @inferred(obsview(X, obsdim=2))
+        @test_throws ErrorException @inferred(eachobs(X, obsdim=2))
         for var in (vars..., tuples..., Xs, ys)
             @test typeof(@inferred(ObsView(var))) <: ObsView
             @test typeof(@inferred(ObsView(var, ObsDim.Last()))) <: ObsView
-            @test typeof(@inferred(obsview(var))) <: ObsView
-            @test_throws ErrorException @inferred(obsview(var, obsdim=:last))
+            @test typeof(@inferred(eachobs(var))) <: ObsView
+            @test_throws ErrorException @inferred(eachobs(var, obsdim=:last))
         end
         for tup in tuples
-            @test typeof(@inferred(obsview(tup...))) <: ObsView
-            @test_throws ErrorException @inferred(obsview(tup..., obsdim=:last))
+            @test typeof(@inferred(eachobs(tup))) <: ObsView
+            @test_throws ErrorException @inferred(eachobs(tup, obsdim=:last))
         end
         @test typeof(@inferred(ObsView(CustomType()))) <: ObsView
         @test typeof(@inferred(ObsView(CustomType(), ObsDim.Undefined()))) <: ObsView
@@ -88,9 +92,12 @@
     end
 
     @testset "iteration" begin
+        count = 0
         for (i,x) in enumerate(eachobs(X1))
             @test all(i .== x)
+            count += 1
         end
+        @test count == 150
     end
 end
 

@@ -66,6 +66,7 @@ MLDataUtils.getobs(::CustomType, i::AbstractVector) = collect(i)
         @test @inferred(nobs((X,y), obsdim = :last)) === 150
         @test @inferred(nobs((X',y), obsdim = :first)) === 150
         @test @inferred(nobs((X',X'), obsdim = :first)) === 150
+        @test @inferred(nobs((X',X), obsdim = (:first,:last))) === 150
         @test @inferred(nobs((X,X), obsdim = :first)) === 4
     end
 

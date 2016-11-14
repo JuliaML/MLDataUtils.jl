@@ -48,9 +48,7 @@ export
 #            BatchProvider,
 #                InfiniteBatches,
 
-    obsview,
     eachobs,
-
     eachbatch,
 
     KFolds,
