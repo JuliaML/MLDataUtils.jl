@@ -21,6 +21,9 @@ MLDataUtils.getobs(::CustomType, i::Int) = i
 MLDataUtils.getobs(::CustomType, i::AbstractVector) = collect(i)
 
 @testset "nobs" begin
+    @test_throws MethodError nobs(X,X)
+    @test_throws MethodError nobs(X,y)
+
     @testset "Array, SparseArray, and Tuple" begin
         @test_throws DimensionMismatch nobs((X,XX,rand(100)))
         @test_throws DimensionMismatch nobs((X,X'))
@@ -55,27 +58,42 @@ MLDataUtils.getobs(::CustomType, i::AbstractVector) = collect(i)
         @test_throws ArgumentError nobs(X, obsdim = 1.0)
         @test_throws ArgumentError nobs(X, obsdim = :one)
         @test_throws MethodError nobs(X, obsdim = ObsDim.Undefined())
+        @test_throws DimensionMismatch nobs((X',X), (ObsDim.First(),ObsDim.Last(),ObsDim.Last()))
+        @test_throws DimensionMismatch nobs((X',X), (ObsDim.First(),))
+        @test_throws DimensionMismatch nobs((X',X), obsdim=(1,2,2))
         @test @inferred(nobs(X, ObsDim.Undefined())) === 150 # fallback
         @test @inferred(nobs(Xs, obsdim = 1)) === 10
         @test @inferred(nobs(Xs, obsdim = :first)) === 10
         @test @inferred(nobs(XXX, obsdim = 1)) === 3
+        @test @inferred(nobs(XXX, ObsDim.First())) === 3
         @test @inferred(nobs(XXX, obsdim = :first)) === 3
         @test @inferred(nobs(XXX, obsdim = 2)) === 20
         @test @inferred(nobs(XXX, obsdim = 3)) === 30
+        @test @inferred(nobs(XXX, ObsDim.Constant(3))) === 30
         @test @inferred(nobs(XXX, obsdim = 4)) === 150
         @test @inferred(nobs((X,y), obsdim = :last)) === 150
         @test @inferred(nobs((X',y), obsdim = :first)) === 150
         @test @inferred(nobs((X',X'), obsdim = :first)) === 150
         @test @inferred(nobs((X',X), obsdim = (:first,:last))) === 150
+        @test @inferred(nobs((X',X), obsdim = (1,2))) === 150
+        @test @inferred(nobs((X',X,X), obsdim = (1,2,2))) === 150
+        @test @inferred(nobs((X',X,X), obsdim = (1,2,:last))) === 150
+        @test @inferred(nobs((X',X), (ObsDim.First(),ObsDim.Last()))) === 150
         @test @inferred(nobs((X,X), obsdim = :first)) === 4
     end
 
     @testset "custom types" begin
         # test that fallback bouncing doesn't cause stackoverflow
         @test_throws MethodError nobs(EmptyType())
+        @test_throws MethodError nobs(EmptyType(), ObsDim.Undefined())
+        @test_throws MethodError nobs(EmptyType(), ObsDim.Last())
+        @test_throws MethodError nobs(EmptyType(), (ObsDim.Last(),ObsDim.Last()))
         @test_throws MethodError nobs(EmptyType(), obsdim = 1)
+        @test_throws MethodError nobs(EmptyType(), obsdim = (1,1))
         @test_throws MethodError nobs(EmptyType(), obsdim = :last)
+        # test types that don't use the obsdim
         @test_throws MethodError nobs(CustomType(), obsdim = 1)
+        @test_throws MethodError nobs(CustomType(), ObsDim.Last())
         @test nobs(CustomType()) === 100
     end
 end
@@ -96,39 +114,40 @@ end
         @test_throws BoundsError getobs(X, 151, obsdim = 2)
         @test_throws BoundsError getobs(X, 151, obsdim = 1)
         @test_throws BoundsError getobs(X, 5, obsdim = 1)
-        @test typeof(getobs(Xv)) <: Array
-        @test typeof(getobs(yv)) <: Array
+        @test typeof(@inferred(getobs(Xv))) <: Array
+        @test typeof(@inferred(getobs(yv))) <: Array
+        @test all(getobs(Xv) .== X)
+        @test all(getobs(yv) .== y)
         @test @inferred(getobs(X))   === X
         @test @inferred(getobs(XX))  === XX
         @test @inferred(getobs(XXX)) === XXX
         @test @inferred(getobs(y))   === y
-        @test all(getobs(Xv) .== X)
-        @test all(getobs(yv) .== y)
         @test @inferred(getobs(X, 45)) == getobs(X', 45, obsdim = 1)
         @test @inferred(getobs(X, 3:10)) == getobs(X', 3:10, obsdim = 1)'
         for i in (2, 2:20, [2,1,4])
-            @test @inferred(getobs(XX, i, ObsDim.First())) == getindex(XX,i,:,:)
-            @test @inferred(getobs(XX, i, ObsDim.Last())) == getindex(XX,:,:,i)
             @test_throws ErrorException @inferred(getobs(XX, i, obsdim = 1))
             @test_throws ErrorException @inferred(getobs(XX, i, obsdim = :last))
-            @test getobs(XX, i, obsdim = 1) == getindex(XX,i,:,:)
-            @test getobs(XX, i, obsdim = :first) == getindex(XX,i,:,:)
-            @test getobs(XX, i, obsdim = 2) == getindex(XX,:,i,:)
-            @test getobs(XX, i, obsdim = :last) == getindex(XX,:,:,i)
+            @test @inferred(getobs(XX, i, ObsDim.First())) == getindex(XX,i,:,:)
+            @test @inferred(getobs(XX, i, ObsDim.Constant(2))) == getindex(XX,:,i,:)
+            @test @inferred(getobs(XX, i, ObsDim.Last())) == getindex(XX,:,:,i)
+            @test getobs(XX, i, obsdim = 1) == XX[i,:,:]
+            @test getobs(XX, i, obsdim = :first) == XX[i,:,:]
+            @test getobs(XX, i, obsdim = 2) == XX[:,i,:]
+            @test getobs(XX, i, obsdim = :last) == XX[:,:,i]
         end
         for i in (2, 1:150, 2:10, [2,5,7], [2,1])
             @test_throws MethodError getobs(X, i, ObsDim.Undefined())
             @test_throws DimensionMismatch getobs(X, i, obsdim = 12)
             @test typeof(getobs(Xv, i)) <: Array
             @test typeof(getobs(yv, i)) <: ((typeof(i) <: Int) ? String : Array)
-            @test all(getobs(Xv,i) .== getindex(X,:,i))
-            @test @inferred(getobs(Xv,i))   == getindex(X,:,i)
-            @test @inferred(getobs(X,i))   == getindex(X,:,i)
-            @test @inferred(getobs(XX,i))  == getindex(XX,:,:,i)
-            @test @inferred(getobs(XXX,i)) == getindex(XXX,:,:,:,i)
-            @test @inferred(getobs(y,i))   == ((typeof(i) <: Int) ? y[i] : getindex(y,i))
-            @test @inferred(getobs(yv,i))  == ((typeof(i) <: Int) ? y[i] : getindex(y,i))
-            @test @inferred(getobs(Y,i))   == getindex(Y,:,i)
+            @test all(getobs(Xv,i) .== X[:,i])
+            @test @inferred(getobs(Xv,i))  == X[:,i]
+            @test @inferred(getobs(X,i))   == X[:,i]
+            @test @inferred(getobs(XX,i))  == XX[:,:,i]
+            @test @inferred(getobs(XXX,i)) == XXX[:,:,:,i]
+            @test @inferred(getobs(y,i))   == ((typeof(i) <: Int) ? y[i] : y[i])
+            @test @inferred(getobs(yv,i))  == ((typeof(i) <: Int) ? y[i] : y[i])
+            @test @inferred(getobs(Y,i))   == Y[:,i]
         end
     end
 
@@ -167,10 +186,10 @@ end
         # bounds checking correctly
         @test_throws BoundsError getobs((X,y), 151)
         # special case empty tuple
+        @test_throws ErrorException @inferred(getobs((), 10, obsdim = 1))
         @test @inferred(getobs(())) === ()
         @test @inferred(getobs((), ObsDim.Last())) === ()
         @test @inferred(getobs((), 10)) === ()
-        @test_throws ErrorException @inferred(getobs((), 10, obsdim = 1))
         @test getobs((), 10, obsdim = 1) === ()
         @test @inferred(getobs((X,y))) === (X,y)
         @test @inferred(getobs((X,yv))) == (X,y)
@@ -193,26 +212,26 @@ end
             @test_throws DimensionMismatch getobs((X,y), i, obsdim=(2,1,1))
             @test_throws DimensionMismatch getobs((XX,X,y), i, obsdim=(2,2,1))
             @test_throws DimensionMismatch getobs((XX,X,y), i, obsdim=(3,2))
-            @test @inferred(getobs((X,y), i))  == (getindex(X,:,i), getindex(y,i))
-            @test @inferred(getobs((X,yv), i)) == (getindex(X,:,i), getindex(y,i))
-            @test @inferred(getobs((Xv,y), i)) == (getindex(X,:,i), getindex(y,i))
-            @test @inferred(getobs((X,Y), i))  == (getindex(X,:,i), getindex(Y,:,i))
-            @test @inferred(getobs((X,yt), i)) == (getindex(X,:,i), getindex(yt,:,i))
-            @test @inferred(getobs((XX,X,y), i)) == (getindex(XX,:,:,i), getindex(X,:,i), getindex(y,i))
+            @test @inferred(getobs((X,y), i))  == (X[:,i], y[i])
+            @test @inferred(getobs((X,yv), i)) == (X[:,i], y[i])
+            @test @inferred(getobs((Xv,y), i)) == (X[:,i], y[i])
+            @test @inferred(getobs((X,Y), i))  == (X[:,i], Y[:,i])
+            @test @inferred(getobs((X,yt), i)) == (X[:,i], yt[:,i])
+            @test @inferred(getobs((XX,X,y), i)) == (XX[:,:,i], X[:,i], y[i])
             @test_throws ErrorException @inferred(getobs((XX,X,y), i, obsdim=(3,2,1)))
-            @test getobs((XX,X,y), i, obsdim=(3,2,1)) == (getindex(XX,:,:,i), getindex(X,:,i), getindex(y,i))
-            @test getobs((X, y), i, obsdim=:last)  == (getindex(X,:,i), getindex(y,i))
-            @test getobs((X',y), i, obsdim=:first) == (getindex(X',i,:), getindex(y,i))
-            @test getobs((X,yv), i, obsdim=:last)  == (getindex(X,:,i), getindex(y,i))
-            @test getobs((Xv,y), i, obsdim=:last)  == (getindex(X,:,i), getindex(y,i))
-            @test getobs((X, Y), i, obsdim=:last)  == (getindex(X,:,i), getindex(Y,:,i))
-            @test getobs((X',y), i, obsdim=:first)  == (getindex(X',i,:), getindex(y,i))
-            @test getobs((X, y), i, obsdim=(:last,:last))  == (getindex(X,:,i), getindex(y,i))
-            @test getobs((X, y), i, obsdim=(2,1))  == (getindex(X,:,i), getindex(y,i))
-            @test getobs((X',y), i, obsdim=(1,1))  == (getindex(X',i,:), getindex(y,i))
-            @test getobs((X',yt), i, obsdim=(1,2))  == (getindex(X',i,:), getindex(yt,:,i))
-            @test getobs((X',yt), i, obsdim=(:first,:last))  == (getindex(X',i,:), getindex(yt,:,i))
-            @test getobs((XX,X,y), i, obsdim=:last) == (getindex(XX,:,:,i), getindex(X,:,i), getindex(y,i))
+            @test getobs((XX,X,y), i, obsdim=(3,2,1)) == (XX[:,:,i], X[:,i], y[i])
+            @test getobs((X, y), i, obsdim=:last)  == (X[:,i], y[i])
+            @test getobs((X',y), i, obsdim=:first) == (X'[i,:], y[i])
+            @test getobs((X,yv), i, obsdim=:last)  == (X[:,i], y[i])
+            @test getobs((Xv,y), i, obsdim=:last)  == (X[:,i], y[i])
+            @test getobs((X, Y), i, obsdim=:last)  == (X[:,i], Y[:,i])
+            @test getobs((X',y), i, obsdim=:first)  == (X'[i,:], y[i])
+            @test getobs((X, y), i, obsdim=(:last,:last))  == (X[:,i], y[i])
+            @test getobs((X, y), i, obsdim=(2,1))  == (X[:,i], y[i])
+            @test getobs((X',y), i, obsdim=(1,1))  == (X'[i,:], y[i])
+            @test getobs((X',yt), i, obsdim=(1,2))  == (X'[i,:], yt[:,i])
+            @test getobs((X',yt), i, obsdim=(:first,:last))  == (X'[i,:], yt[:,i])
+            @test getobs((XX,X,y), i, obsdim=:last) == (XX[:,:,i], X[:,i], y[i])
             # compare if obs match in tuple
             x1, y1 = getobs((X1,Y1), i)
             @test all(x1' .== y1)
@@ -220,22 +239,23 @@ end
             @test all(x1' .== y1)
             @test all(x1 .== z1)
         end
-        @test @inferred(getobs((X,y), 2)) == (getindex(X,:,2), y[2])
+        @test @inferred(getobs((X,y), 2)) == (X[:,2], y[2])
         @test_throws ErrorException @inferred(getobs((X,y), 2, obsdim=:last))
         @test_throws ErrorException @inferred(getobs((X,y), 2, obsdim=(:last,:first)))
-        @test getobs((X,y), 2, obsdim=:last) == (getindex(X,:,2), y[2])
-        @test getobs((X,y), 2, obsdim=(:last,:first)) == (getindex(X,:,2), y[2])
-        @test getobs((X,y), 2, obsdim=(2,:first)) == (getindex(X,:,2), y[2])
-        @test @inferred(getobs((Xv,y), 2)) == (getindex(X,:,2), y[2])
-        @test @inferred(getobs((X,yv), 2)) == (getindex(X,:,2), y[2])
-        @test @inferred(getobs((X,Y), 2)) == (getindex(X,:,2), getindex(Y,:,2))
-        @test @inferred(getobs((XX,X,y), 2)) == (getindex(XX,:,:,2), getindex(X,:,2), y[2])
+        @test getobs((X,y), 2, obsdim=:last) == (X[:,2], y[2])
+        @test getobs((X,y), 2, obsdim=(:last,:first)) == (X[:,2], y[2])
+        @test getobs((X,y), 2, obsdim=(2,:first)) == (X[:,2], y[2])
+        @test @inferred(getobs((Xv,y), 2)) == (X[:,2], y[2])
+        @test @inferred(getobs((X,yv), 2)) == (X[:,2], y[2])
+        @test @inferred(getobs((X,Y), 2)) == (X[:,2], Y[:,2])
+        @test @inferred(getobs((XX,X,y), 2)) == (XX[:,:,2], X[:,2], y[2])
     end
 
     @testset "custom types" begin
         @test getobs(EmptyType()) === EmptyType()
         @test_throws MethodError getobs(EmptyType(), obsdim=1)
         # test that fallback bouncing doesn't cause stackoverflow
+        @test_throws MethodError getobs(EmptyType(), 1, ObsDim.Last())
         @test_throws MethodError getobs(EmptyType(), 1)
         @test_throws MethodError getobs(EmptyType(), 1:10)
         @test_throws MethodError getobs(EmptyType(), 1, obsdim=:first)
@@ -304,14 +324,31 @@ end
     @testset "Tuple unrolling" begin
         @test_throws DimensionMismatch DataSubset((X,X), 1:150, (ObsDim.Last(), ObsDim.Last(), ObsDim.Last()))
         @test_throws DimensionMismatch DataSubset((X,X), 1:150, (ObsDim.Last(),))
+        @test_throws DimensionMismatch DataSubset((X,X), (ObsDim.Last(), ObsDim.Last(), ObsDim.Last()))
+        @test_throws DimensionMismatch DataSubset((X,X), (ObsDim.Last(),))
         @test typeof(@inferred(DataSubset((X,X)))) <: Tuple
         @test eltype(@inferred(DataSubset((X,X)))) <: DataSubset
+        @test typeof(@inferred(DataSubset((X,X), ObsDim.Last()))) <: Tuple
+        @test eltype(@inferred(DataSubset((X,X), ObsDim.Last()))) <: DataSubset
+        @test typeof(@inferred(DataSubset((X,X), (ObsDim.Last(), ObsDim.Last())))) <: Tuple
+        @test eltype(@inferred(DataSubset((X,X), (ObsDim.Last(), ObsDim.Last())))) <: DataSubset
         @test typeof(@inferred(DataSubset((X,X), 1:150, (ObsDim.Last(), ObsDim.Last())))) <: Tuple
         @test eltype(@inferred(DataSubset((X,X), 1:150, (ObsDim.Last(), ObsDim.Last())))) <: DataSubset
-        s1, s2 = @inferred(DataSubset((X',X), 1:150, (ObsDim.First(),ObsDim.Last())))
-        @test s1.obsdim == ObsDim.First()
-        @test s2.obsdim == ObsDim.Last()
-        @test nobs(s1) == nobs(s2)
+        D1 = @inferred(DataSubset((X',X), (ObsDim.First(),ObsDim.Last())))
+        D2 = @inferred(DataSubset((X',X), 1:150, (ObsDim.First(),ObsDim.Last())))
+        D3 = DataSubset((X',X), obsdim = (1,:last))
+        D4 = DataSubset((X',X), 1:150, obsdim = (:first,:last))
+        for (s1,s2) in (D1,D2,D3,D4)
+            @test typeof(datasubset(s1,2:10)) <: DataSubset
+            @test @inferred(datasubset(s1,2:10)) == @inferred(s1[2:10])
+            @test @inferred(datasubset(s1,2:10)) == @inferred(DataSubset(s1,2:10))
+            @test s1.obsdim == ObsDim.First()
+            @test s2.obsdim == ObsDim.Last()
+            @test getobs(s1,2) == getobs(s2,2)
+            @test getobs(s1,9:10) == getobs(s2,9:10)'
+            @test getobs((s1,s2),9:10) == (getobs(s1,9:10),getobs(s2,9:10))
+            @test nobs(s1) == nobs(s2) == 150
+        end
     end
 
     @testset "Array, SubArray, SparseArray" begin
@@ -328,20 +365,22 @@ end
             @test @inferred(getobs(subset)) == getobs(var)
             @test @inferred(DataSubset(subset)) === subset
             @test @inferred(DataSubset(subset, 1:150)) === subset
-            @test subset[end] == datasubset(var, 150)
-            @test @inferred(subset[150]) == datasubset(var, 150)
-            @test @inferred(subset[20:25]) == datasubset(var, 20:25)
+            @test subset[end] == DataSubset(var, 150)
+            @test @inferred(subset[150]) == DataSubset(var, 150)
+            @test @inferred(subset[20:25]) == DataSubset(var, 20:25)
             for idx in (1:100, [1,10,150,3], [2])
+                @test DataSubset(var)[idx] == DataSubset(var, idx)
                 subset = @inferred(DataSubset(var, idx))
                 @test typeof(subset) <: DataSubset{typeof(var), typeof(idx)}
                 @test subset.data === var
                 @test subset.indices === idx
+                @test subset.obsdim === ObsDim.Last()
                 @test @inferred(nobs(subset)) === length(idx)
                 @test @inferred(getobs(subset)) == getobs(var, idx)
                 @test @inferred(DataSubset(subset)) === subset
-                @test @inferred(subset[1]) == datasubset(var, idx[1])
-                @test typeof(@inferred(subset[1:1])) == typeof(datasubset(var, idx[1:1]))
-                @test nobs(subset[1:1]) == nobs(datasubset(var, idx[1:1]))
+                @test @inferred(subset[1]) == DataSubset(var, idx[1])
+                @test typeof(@inferred(subset[1:1])) == typeof(DataSubset(var, idx[1:1]))
+                @test nobs(subset[1:1]) == nobs(DataSubset(var, idx[1:1]))
             end
         end
     end
@@ -370,13 +409,13 @@ end
             subset = @inferred(DataSubset(var, 101:150))
             @test typeof(@inferred(getobs(subset))) <: Array{Float64,2}
             @test @inferred(nobs(subset)) == length(subset) == 50
-            @test @inferred(subset[10:20]) == view(X, :, 110:120)
+            @test @inferred(subset[10:20]) == DataSubset(X, 110:120)
             @test @inferred(getobs(subset, 10:20)) == X[:, 110:120]
             @test @inferred(getobs(subset, [11,10,14])) == X[:, [111,110,114]]
-            @test typeof(subset[10:20]) <: SubArray
-            @test @inferred(subset[collect(10:20)]) == X[:, 110:120]
-            @test typeof(subset[collect(10:20)]) <: SubArray
-            @test @inferred(getobs(subset)) == subset[1:end] == getindex(X, :, 101:150)
+            @test typeof(subset[10:20]) <: DataSubset
+            @test @inferred(subset[collect(10:20)]) == DataSubset(X, collect(110:120))
+            @test typeof(subset[collect(10:20)]) <: DataSubset
+            @test @inferred(getobs(subset)) == getobs(subset[1:end]) == X[:, 101:150]
         end
     end
 
@@ -385,13 +424,13 @@ end
             subset = @inferred(DataSubset(var, 101:150))
             @test typeof(getobs(subset)) <: Array{String,1}
             @test @inferred(nobs(subset)) == length(subset) == 50
-            @test @inferred(subset[10:20]) == getindex(y, 110:120)
+            @test @inferred(subset[10:20]) == DataSubset(y, 110:120)
             @test @inferred(getobs(subset, 10:20)) == y[110:120]
             @test @inferred(getobs(subset, [11,10,14])) == y[[111,110,114]]
-            @test typeof(subset[10:20]) <: SubArray
-            @test @inferred(subset[collect(10:20)]) == y[110:120]
-            @test typeof(subset[collect(10:20)]) <: SubArray
-            @test @inferred(getobs(subset)) == subset[1:end] == getindex(y, 101:150)
+            @test typeof(subset[10:20]) <: DataSubset
+            @test @inferred(subset[collect(10:20)]) == DataSubset(y, collect(110:120))
+            @test typeof(subset[collect(10:20)]) <: DataSubset
+            @test @inferred(getobs(subset)) == getobs(subset[1:end]) == y[101:150]
         end
     end
 
@@ -400,9 +439,9 @@ end
             subset = @inferred(DataSubset((v1,v2), 101:150))
             @test typeof(getobs(subset)) <: Tuple{Array{Float64,2},Array{String,1}}
             @test @inferred(nobs(subset)) == nobs(subset[1]) == nobs(subset[2]) == 50
-            @test @inferred(subset[1][10:20]) == getindex(X, :, 110:120)
-            @test @inferred(subset[2][10:20]) == getindex(y, 110:120)
-            @test @inferred(getobs(subset)) == (getindex(X, :, 101:150), getindex(y, 101:150))
+            @test @inferred(subset[1][10:20]) == DataSubset(X, 110:120)
+            @test @inferred(subset[2][10:20]) == DataSubset(y, 110:120)
+            @test @inferred(getobs(subset)) == (X[:, 101:150], y[101:150])
         end
     end
 
@@ -424,6 +463,8 @@ end
 @testset "datasubset" begin
     @testset "Array and SubArray" begin
         @test @inferred(datasubset(X)) == Xv
+        @test @inferred(datasubset(X, ObsDim.Last())) == Xv
+        @test @inferred(datasubset(X, ObsDim.Last())) == Xv
         @test typeof(datasubset(X)) <: SubArray
         @test @inferred(datasubset(Xv)) === Xv
         @test @inferred(datasubset(XX)) == XX
@@ -446,6 +487,12 @@ end
     end
 
     @testset "Tuple of Array and Subarray" begin
+        @test_throws DimensionMismatch datasubset((X,X), 1:150, (ObsDim.Last(), ObsDim.Last(), ObsDim.Last()))
+        @test_throws DimensionMismatch datasubset((X,X), 1:150, (ObsDim.Last(),))
+        @test_throws DimensionMismatch datasubset((X,X), (ObsDim.Last(), ObsDim.Last(), ObsDim.Last()))
+        @test_throws DimensionMismatch datasubset((X,X), (ObsDim.Last(),))
+        @test @inferred(datasubset((X,y),ObsDim.Last())) == (X,y)
+        @test @inferred(datasubset((X,y),(ObsDim.Last(),ObsDim.Last()))) == (X,y)
         @test @inferred(datasubset((X,y)))   == (X,y)
         @test @inferred(datasubset((X,yv)))  == (X,yv)
         @test @inferred(datasubset((X,yv)))  === (view(X,:,1:150),yv)
@@ -460,6 +507,12 @@ end
             @test @inferred(datasubset((X,yv),i))  === (view(X,:,i), view(y,i))
             @test @inferred(datasubset((Xv,yv),i)) === (view(X,:,i), view(y,i))
             @test @inferred(datasubset((XX,X,y),i)) === (view(XX,:,:,i), view(X,:,i),view(y,i))
+            # compare if obs match in tuple
+            x1, y1 = getobs(datasubset((X1,Y1), i))
+            @test all(x1' .== y1)
+            x1, y1, z1 = getobs(datasubset((X1,Y1,X1), i))
+            @test all(x1' .== y1)
+            @test all(x1 .== z1)
         end
     end
 
@@ -488,7 +541,7 @@ end
             @test @inferred(datasubset((ys,Xs),i)) === (DataSubset(ys,i), DataSubset(Xs,i))
             @test @inferred(datasubset((XX,Xs,y),i)) === (view(XX,:,:,i),DataSubset(Xs,i),view(y,i))
             # compare if obs match in tuple
-            x1, y1 = getobs(datasubset((X1,Y1), i))
+            x1, y1 = getobs(datasubset((X1,sparse(Y1)), i))
             @test all(x1' .== y1)
             x1, y1, z1 = getobs(datasubset((X1,Y1,sparse(X1)), i))
             @test all(x1' .== y1)
@@ -506,6 +559,8 @@ end
         @test_throws MethodError datasubset(CustomType(), 2:10, obsdim=:last)
         @test_throws BoundsError getobs(datasubset(CustomType(), 11:20), 11)
         @test typeof(@inferred(datasubset(CustomType()))) <: DataSubset
+        @test datasubset(CustomType()) == DataSubset(CustomType())
+        @test datasubset(CustomType(), 11:20) == DataSubset(CustomType(), 11:20)
         @test nobs(datasubset(CustomType())) === 100
         @test nobs(datasubset(CustomType(), 11:20)) === 10
         @test getobs(datasubset(CustomType())) == collect(1:100)

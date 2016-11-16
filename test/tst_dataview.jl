@@ -14,12 +14,19 @@
         @test_throws MethodError ObsView(CustomType(), ObsDim.Last())
         @test_throws MethodError eachobs(EmptyType(), obsdim=1)
         @test_throws MethodError eachobs((EmptyType(),EmptyType()))
+        for var in (vars..., Xs, ys)
+            A = @inferred(ObsView(var))
+            @test @inferred(ObsView(A,ObsDim.Last())) == A
+        end
+        for var in tuples
+            A = @inferred(ObsView(var))
+            @test @inferred(ObsView(A,(fill(ObsDim.Last(),length(var))...))) == A
+        end
         for var in (vars..., tuples..., Xs, ys)
-            @test_throws MethodError eachobs(var...)
-            @test_throws MethodError eachobs(var..., obsdim=:last)
-            @test @inferred(parent(ObsView(var))) === var
             A = ObsView(var)
-            @test ObsView(A) == A
+            @test_throws AssertionError ObsView(A, ObsDim.First())
+            @test @inferred(parent(A)) === var
+            @test @inferred(ObsView(A)) == A
             @test @inferred(eachobs(var)) == A
         end
         A = ObsView(X',obsdim=1)
@@ -37,6 +44,8 @@
         end
         for tup in tuples
             @test typeof(@inferred(eachobs(tup))) <: ObsView
+            @test typeof(@inferred(eachobs(tup,(fill(ObsDim.Last(),length(tup))...)))) <: ObsView
+            @test typeof(@inferred(ObsView(tup,(fill(ObsDim.Last(),length(tup))...)))) <: ObsView
             @test_throws ErrorException @inferred(eachobs(tup, obsdim=:last))
         end
         @test typeof(@inferred(ObsView(CustomType()))) <: ObsView
@@ -81,22 +90,24 @@
     end
 
     @testset "subsetting" begin
-        for var in (vars..., tuples..., Xs, ys)
-            A = ObsView(var)
-            @test getobs(@inferred(datasubset(A))) == @inferred(getobs(A))
-            S = @inferred(datasubset(A, 1:5))
-            @test typeof(S) <: ObsView
-            @test @inferred(length(S)) == 5
-            @test @inferred(size(S)) == (5,)
-            @test @inferred(A[1:5]) == S == collect(S)
-            @test @inferred(getobs(A,1:5)) == getobs(S)
-            @test @inferred(getobs(S)) == getobs(ObsView(datasubset(var,1:5)))
-            S = @inferred(DataSubset(A, 1:5))
-            @test typeof(S) <: ObsView
-            @test typeof(S.data) <: Union{DataSubset,Tuple}
-            @test @inferred(length(S)) == 5
-            @test @inferred(size(S)) == (5,)
-            @test @inferred(getobs(S)) == getobs(ObsView(DataSubset(var,1:5)))
+        for var_raw in (vars..., tuples..., Xs, ys)
+            for var in (var_raw, DataSubset(var_raw))
+                A = ObsView(var)
+                @test getobs(@inferred(datasubset(A))) == @inferred(getobs(A))
+                S = @inferred(datasubset(A, 1:5))
+                @test typeof(S) <: ObsView
+                @test @inferred(length(S)) == 5
+                @test @inferred(size(S)) == (5,)
+                @test @inferred(A[1:5]) == S == collect(S)
+                @test @inferred(getobs(A,1:5)) == getobs(S)
+                @test @inferred(getobs(S)) == getobs(ObsView(datasubset(var,1:5)))
+                S = @inferred(DataSubset(A, 1:5))
+                @test typeof(S) <: ObsView
+                @test typeof(S.data) <: Union{DataSubset,Tuple}
+                @test @inferred(length(S)) == 5
+                @test @inferred(size(S)) == (5,)
+                @test @inferred(getobs(S)) == getobs(ObsView(DataSubset(var,1:5)))
+            end
         end
         A = ObsView(X)
         @test typeof(A.data) <: Array
@@ -162,13 +173,16 @@ end
             @test_throws MethodError BatchView(var...)
             @test_throws MethodError BatchView(var..., obsdim=:last)
             @test @inferred(parent(BatchView(var))) === var
-            A = BatchView(var)
-            @test BatchView(A) == A
+            A = @inferred(BatchView(var))
+            @test @inferred(BatchView(A)) == A
             @test typeof(BatchView(A)) <: typeof(A)
             @test @inferred(BatchView(var)) == A
             @test nobs(A) == nobs(var)
         end
+        @test BatchView((X,X)) == @inferred(BatchView((X,X), (ObsDim.Last(),ObsDim.Last())))
+        @test BatchView((X,X)) == @inferred(BatchView((X,X), -1, (ObsDim.Last(),ObsDim.Last())))
         A = BatchView(X',obsdim=1)
+        @test A == @inferred(BatchView(X',ObsDim.First()))
         @test A == @inferred(BatchView(X',-1,ObsDim.First()))
         @test A == BatchView(X',obsdim=:first)
     end

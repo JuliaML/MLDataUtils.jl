@@ -177,6 +177,12 @@ end
 DataSubset{T,I,O}(data::T, indices::I, obsdim::O) =
     DataSubset{T,I,O}(data, indices, obsdim)
 
+# don't nest subsets
+function DataSubset(subset::DataSubset, indices, obsdim)
+    @assert subset.obsdim == obsdim
+    DataSubset(subset.data, subset.indices[indices], obsdim)
+end
+
 function Base.show(io::IO, subset::DataSubset)
     if get(io, :compact, false)
         print(io, "DataSubset{", typeof(subset.data), "} with " , nobs(subset), " observations")
@@ -185,12 +191,18 @@ function Base.show(io::IO, subset::DataSubset)
     end
 end
 
+function Base.:(==)(s1::DataSubset,s2::DataSubset)
+    s1.data == s2.data &&
+        s1.indices == s2.indices &&
+        s1.obsdim == s2.obsdim
+end
+
 Base.length(subset::DataSubset) = length(subset.indices)
 
 Base.endof(subset::DataSubset) = length(subset)
 
 Base.getindex(subset::DataSubset, idx) =
-    datasubset(subset.data, subset.indices[idx], subset.obsdim)
+    DataSubset(subset.data, subset.indices[idx], subset.obsdim)
 
 nobs(subset::DataSubset) = length(subset)
 
@@ -231,7 +243,7 @@ dimension denotes the observations. see `ObsDim` for more detail.
 
 see `DataSubset` for more information.
 """
-datasubset(data, indices, obsdim::ObsDimension) =
+datasubset(data, indices, obsdim) =
     DataSubset(data, indices, obsdim)
 
 # --------------------------------------------------------------------
@@ -246,12 +258,18 @@ for fun in (:DataSubset, :datasubset)
             ($fun)(data, 1:nobs(data, nobsdim), nobsdim)
         end
 
-        # don't nest subsets
-        ($fun)(subset::DataSubset, indices, obsdim::ObsDimension) =
-            ($fun)(subset.data, subset.indices[indices], obsdim)
-
         # No-op
         ($fun)(subset::DataSubset) = subset
+
+        # allow typestable way to just provide the obsdim
+        ($fun)(data, obsdim::ObsDimension) =
+            ($fun)(data, 1:nobs(data, obsdim), obsdim)
+
+        ($fun)(data::Tuple, obsdim::ObsDimension) =
+            ($fun)(data, 1:nobs(data, obsdim), obsdim)
+
+        ($fun)(data::Tuple, obsdim::Tuple) =
+            ($fun)(data, 1:nobs(data, obsdim), obsdim)
 
         # map DataSubset over the tuple
         function ($fun)(tup::Tuple)

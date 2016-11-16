@@ -201,7 +201,7 @@ eachobs(data, obsdim) = ObsView(data, obsdim)
 
 # --------------------------------------------------------------------
 
-default_batch_size(source, obsdim) = clamp(div(nobs(source,obsdim), 5), 1, 100)
+default_batch_size(source, obsdim) = clamp(div(nobs(source,obsdim), 5), 2, 100)
 
 """
 Helper function to compute sensible and compatible values for the
@@ -380,6 +380,9 @@ function BatchView(A::BatchView, size::Int, count::Int, obsdim)
     @assert obsdim == A.obsdim
     BatchView(parent(A), size, count, obsdim)
 end
+
+BatchView(data, obsdim::Union{Tuple,ObsDimension}) =
+    BatchView(data, -1, -1, obsdim)
 
 BatchView(data; size = -1, count = -1, obsdim = default_obsdim(data)) =
     BatchView(data, size, count, obs_dim(obsdim))
