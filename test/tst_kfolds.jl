@@ -1,30 +1,26 @@
-X, y = load_iris()
-Y = permutedims(hcat(y,y), [2,1])
-Xv = view(X,:,:)
-yv = view(y,:)
-XX = rand(20,30,150)
-XXX = rand(3,20,30,150)
-vars = (X, Xv, yv, XX, XXX, y, (X,y), (X,Y), (XX,X,y), (XXX,XX,X,y))
-Xs = sprand(10,150,.5)
-ys = sprand(150,.5)
-
 @testset "KFolds constructor" begin
-    @test KFolds <: DataIterator
     @test_throws ArgumentError KFolds(X, -1)
     @test_throws ArgumentError KFolds(X, 1)
     @test_throws ArgumentError KFolds(X, 151)
     println(KFolds(X)) # make sure it doesn't crash
+    println([KFolds(X),KFolds(X)]) # make sure it doesn't crash
 
-    for var in (Xs, ys, vars...)
-        kf = KFolds(var)
-        @test kf.k == length(kf.sizes) == length(kf.indices) == 5
-        @test kf.data === var
+    for var in (Xs, ys, vars..., tuples...)
+        for kf in (@inferred(KFolds(var)),
+                   @inferred(KFolds(var,ObsDim.Last())),
+                   @inferred(KFolds(var,5)),
+                   @inferred(KFolds(var,5,ObsDim.Last())),
+                   KFolds(var,k=5,obsdim=:last))
+            @test kf.k == length(kf.sizes) == length(kf.indices) == 5
+            @test kf.data === var
+            @test sum(kf.sizes) == nobs(var)
+        end
 
-        kf = KFolds(var, 15)
+        kf = @inferred(KFolds(var, 15))
         @test kf.k == length(kf.sizes) == length(kf.indices) == 15
         @test kf.data === var
 
-        kf = KFolds(var, 20)
+        kf = @inferred(KFolds(var, 20))
         @test kf.k == length(kf.sizes) == length(kf.indices) == 20
         @test kf.data === var
         cumobs = kf.sizes[1]
@@ -34,6 +30,15 @@ ys = sprand(150,.5)
             @test 1 <= kf.indices[i-1] < kf.indices[i] < nobs(var)
         end
         @test cumobs == nobs(var)
+    end
+    for var in (Xs, ys, vars...)
+        kf = KFolds(var)
+        @test kf.obsdim == ObsDim.Last()
+    end
+    for var in tuples
+        kf = KFolds(var)
+        @test typeof(kf.obsdim) <: Tuple
+        @test all(map(_->typeof(_)<:ObsDim.Last, kf.obsdim))
     end
 end
 
@@ -48,6 +53,30 @@ end
         @test length(kf) == 10
         @test getobs(kf[end]) == getobs(kf[length(kf)])
     end
+    kf = KFolds(X)
+    @test typeof(@inferred(kf[1])) <: Tuple
+    @test typeof(kf[1][1]) <: SubArray
+    @test typeof(kf[1][2]) <: SubArray
+    @test size(kf[1][1]) == (4,120)
+    @test size(kf[1][2]) == (4,30)
+    kf = KFolds(X', obsdim=1)
+    @test typeof(@inferred(kf[1])) <: Tuple
+    @test typeof(kf[1][1]) <: SubArray
+    @test typeof(kf[1][2]) <: SubArray
+    @test size(kf[1][1]) == (120,4)
+    @test size(kf[1][2]) == (30,4)
+    kf = KFolds((X',X), obsdim=(1,2))
+    @test typeof(@inferred(kf[1])) <: Tuple
+    @test typeof(kf[1][1]) <: Tuple
+    @test typeof(kf[1][2]) <: Tuple
+    @test typeof(kf[1][1][1]) <: SubArray
+    @test typeof(kf[1][1][2]) <: SubArray
+    @test typeof(kf[1][2][1]) <: SubArray
+    @test typeof(kf[1][2][2]) <: SubArray
+    @test size(kf[1][1][1]) == (120,4)
+    @test size(kf[1][1][2]) == (4,120)
+    @test size(kf[1][2][1]) == (30,4)
+    @test size(kf[1][2][2]) == (4,30)
 end
 
 @testset "KFolds iteration" begin
@@ -102,8 +131,19 @@ end
 end
 
 @testset "kfolds" begin
+    for var in (Xs, ys, vars..., tuples...)
+        for kf in (@inferred(kfolds(var)),
+                   @inferred(kfolds(var,ObsDim.Last())),
+                   @inferred(kfolds(var,5)),
+                   @inferred(kfolds(var,5,ObsDim.Last())),
+                   kfolds(var,k=5,obsdim=:last))
+            @test kf.k == length(kf.sizes) == length(kf.indices) == 5
+            @test kf.data === var
+            @test sum(kf.sizes) == nobs(var)
+        end
+    end
     for v1 in (X, Xv), v2 in (y, yv)
-        kf = kfolds(v1, v2, k = 15)
+        kf = kfolds((v1, v2), k = 15)
         @test typeof(kf) <: KFolds{Tuple{typeof(v1),typeof(v2)}}
         for ((train_x, train_y), (test_x, test_y)) in kf
             @test typeof(train_x) <: SubArray{Float64, 2}
@@ -124,9 +164,27 @@ end
 end
 
 @testset "leaveout" begin
+    for var in (Xs, ys, vars..., tuples...)
+        for kf in (@inferred(leaveout(var)),
+                   @inferred(leaveout(var,ObsDim.Last())),
+                   @inferred(leaveout(var,1)),
+                   @inferred(leaveout(var,1,ObsDim.Last())),
+                   leaveout(var,size=1,obsdim=:last))
+            @test kf.k == length(kf.sizes) == length(kf.indices) == 150
+            @test kf.data === var
+            @test sum(kf.sizes) == nobs(var)
+        end
+        for kf in (@inferred(leaveout(var,30)),
+                   @inferred(leaveout(var,30,ObsDim.Last())),
+                   leaveout(var,size=30,obsdim=:last))
+            @test kf.k == length(kf.sizes) == length(kf.indices) == 5
+            @test kf.data === var
+            @test sum(kf.sizes) == nobs(var)
+        end
+    end
     for v1 in (X, Xv), v2 in (y, yv)
-        @test leaveout(v1, v2).k == 150
-        kf = leaveout(v1, v2, size = 10)
+        @test leaveout((v1, v2)).k == 150
+        kf = leaveout((v1, v2), size = 10)
         @test typeof(kf) <: KFolds{Tuple{typeof(v1),typeof(v2)}}
         for ((train_x, train_y), (test_x, test_y)) in kf
             @test typeof(train_x) <: SubArray{Float64, 2}
@@ -143,6 +201,32 @@ end
     for var in (Xs, ys, vars...)
         kf = leaveout(var)
         @test typeof(kf) <: KFolds{typeof(var)}
+    end
+end
+
+@testset "nest DataView" begin
+    for var in (Xs, ys, vars..., tuples...)
+        A = ObsView(var)
+        kf = @inferred KFolds(A,10)
+        @test length(kf) == 10
+        for i = 1:10
+            t1,t2 = kf[i]
+            @test typeof(t1) <: ObsView
+            @test typeof(t2) <: ObsView
+            @test length(t1) == 135
+            @test length(t2) == 15
+        end
+
+        A = BatchView(var,15)
+        kf = @inferred KFolds(A,10)
+        @test length(kf) == 10
+        for i = 1:10
+            t1,t2 = kf[i]
+            @test typeof(t1) <: BatchView
+            @test typeof(t2) <: BatchView
+            @test length(t1) == 9
+            @test length(t2) == 1
+        end
     end
 end
 

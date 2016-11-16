@@ -16,15 +16,14 @@
         @test_throws MethodError eachobs((EmptyType(),EmptyType()))
         for var in (vars..., Xs, ys)
             A = @inferred(ObsView(var))
-            @test @inferred(ObsView(A,ObsDim.Last())) == A
+            @test A.obsdim == ObsDim.Last()
         end
         for var in tuples
             A = @inferred(ObsView(var))
-            @test @inferred(ObsView(A,(fill(ObsDim.Last(),length(var))...))) == A
+            @test A.obsdim == (fill(ObsDim.Last(),length(var))...)
         end
         for var in (vars..., tuples..., Xs, ys)
             A = ObsView(var)
-            @test_throws AssertionError ObsView(A, ObsDim.First())
             @test @inferred(parent(A)) === var
             @test @inferred(ObsView(A)) == A
             @test @inferred(eachobs(var)) == A
@@ -57,7 +56,6 @@
             A = ObsView(var)
             @test_throws BoundsError A[-1]
             @test_throws BoundsError A[151]
-            @test @inferred(ObsView(BatchView(var))) == A
             @test @inferred(nobs(A)) == 150
             @test @inferred(length(A)) == 150
             @test @inferred(size(A)) == (150,)
@@ -137,8 +135,8 @@ end
     @test MLDataUtils._compute_batch_settings((X',y),-1,-1,ObsDim.First()) === (30,5)
     @test MLDataUtils._compute_batch_settings((Xv,yv)) === (30,5)
 
-    @test_throws BoundsError MLDataUtils._compute_batch_settings(X, 160)
-    @test_throws BoundsError MLDataUtils._compute_batch_settings(X, 1, 160)
+    @test_throws ArgumentError MLDataUtils._compute_batch_settings(X, 160)
+    @test_throws ArgumentError MLDataUtils._compute_batch_settings(X, 1, 160)
     @test_throws ArgumentError MLDataUtils._compute_batch_settings(X, 10, 20)
 
     for inner in (Xs, ys, vars...), var in (inner, DataSubset(inner))
@@ -172,6 +170,7 @@ end
         for var in (vars..., tuples..., Xs, ys)
             @test_throws MethodError BatchView(var...)
             @test_throws MethodError BatchView(var..., obsdim=:last)
+            @test_throws ArgumentError BatchView(var, 151)
             @test @inferred(parent(BatchView(var))) === var
             A = @inferred(BatchView(var))
             @test @inferred(BatchView(A)) == A
@@ -284,6 +283,13 @@ end
             @test eltype(@inferred(BatchView(ObsView(var)))[1]) <: DataSubset
             @test @inferred(BatchView(BatchView(var))) == BatchView(var)
         end
+        @test ObsView(BatchView(X)) == ObsView(X)
+        @test ObsView(BatchView(X', obsdim=1)) == ObsView(X', obsdim=1)
+        A = ObsView(X', obsdim=1)
+        @test nobs(BatchView(A)) == 150
+        @test size(BatchView(A)[1]) == (30,)
+        @test typeof(BatchView(A)[1]) <: ObsView
+        @test BatchView(A).obsdim == ObsDim.First()
     end
 end
 

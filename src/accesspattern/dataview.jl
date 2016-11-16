@@ -125,8 +125,9 @@ function ObsView{T,O}(data::T, obsdim::O)
     ObsView{T,E,O}(data,obsdim)
 end
 
-function ObsView(A::DataView, obsdim)
+function ObsView{T<:DataView}(A::T, obsdim)
     @assert obsdim == A.obsdim
+    warn("Trying to nest a ", T, " into an ObsView, which is not supported. Returning ObsView(parent(_)) instead")
     ObsView(parent(A), obsdim)
 end
 
@@ -210,8 +211,8 @@ Helper function to compute sensible and compatible values for the
 function _compute_batch_settings(source, size::Int = -1, count::Int = -1, obsdim = default_obsdim(source))
     num_observations = nobs(source, obsdim)::Int
     @assert num_observations > 0
-    size  <= num_observations || throw(BoundsError(source,size))
-    count <= num_observations || throw(BoundsError(source,count))
+    size  <= num_observations || throw(ArgumentError("Specified batch-size is too large for the given number of observations"))
+    count <= num_observations || throw(ArgumentError("Specified batch-count is too large for the given number of observations"))
     if size <= 0 && count <= 0
         # no batch settings specified, use default size and as many batches as possible
         size = default_batch_size(source, obsdim)::Int
