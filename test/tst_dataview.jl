@@ -1,6 +1,7 @@
 @testset "ObsView" begin
     @test ObsView <: AbstractVector
     @test ObsView <: DataView
+    @test obsview === ObsView
 
     @testset "constructor" begin
         @test_throws DimensionMismatch ObsView((rand(2,10),rand(9)))
@@ -12,8 +13,8 @@
         @test_throws MethodError ObsView(EmptyType(), ObsDim.Last())
         @test_throws MethodError ObsView((EmptyType(),EmptyType()))
         @test_throws MethodError ObsView(CustomType(), ObsDim.Last())
-        @test_throws MethodError eachobs(EmptyType(), obsdim=1)
-        @test_throws MethodError eachobs((EmptyType(),EmptyType()))
+        @test_throws MethodError ObsView(EmptyType(), obsdim=1)
+        @test_throws MethodError ObsView((EmptyType(),EmptyType()))
         for var in (vars..., Xs, ys)
             A = @inferred(ObsView(var))
             @test A.obsdim == ObsDim.Last()
@@ -26,26 +27,26 @@
             A = ObsView(var)
             @test @inferred(parent(A)) === var
             @test @inferred(ObsView(A)) == A
-            @test @inferred(eachobs(var)) == A
+            @test @inferred(ObsView(var)) == A
         end
         A = ObsView(X',obsdim=1)
-        @test A == @inferred(eachobs(X',ObsDim.First()))
-        @test A == eachobs(X',obsdim=:first)
+        @test A == @inferred(ObsView(X',ObsDim.First()))
+        @test A == ObsView(X',obsdim=:first)
     end
 
     @testset "typestability" begin
-        @test_throws ErrorException @inferred(eachobs(X, obsdim=2))
+        @test_throws Exception @inferred(ObsView(X, obsdim=2))
         for var in (vars..., tuples..., Xs, ys)
             @test typeof(@inferred(ObsView(var))) <: ObsView
             @test typeof(@inferred(ObsView(var, ObsDim.Last()))) <: ObsView
-            @test typeof(@inferred(eachobs(var))) <: ObsView
-            @test_throws ErrorException @inferred(eachobs(var, obsdim=:last))
+            @test typeof(@inferred(ObsView(var))) <: ObsView
+            @test_throws Exception @inferred(ObsView(var, obsdim=:last))
         end
         for tup in tuples
-            @test typeof(@inferred(eachobs(tup))) <: ObsView
-            @test typeof(@inferred(eachobs(tup,(fill(ObsDim.Last(),length(tup))...)))) <: ObsView
+            @test typeof(@inferred(ObsView(tup))) <: ObsView
             @test typeof(@inferred(ObsView(tup,(fill(ObsDim.Last(),length(tup))...)))) <: ObsView
-            @test_throws ErrorException @inferred(eachobs(tup, obsdim=:last))
+            @test typeof(@inferred(ObsView(tup,(fill(ObsDim.Last(),length(tup))...)))) <: ObsView
+            @test_throws Exception @inferred(ObsView(tup, obsdim=:last))
         end
         @test typeof(@inferred(ObsView(CustomType()))) <: ObsView
         @test typeof(@inferred(ObsView(CustomType(), ObsDim.Undefined()))) <: ObsView
@@ -117,7 +118,7 @@
 
     @testset "iteration" begin
         count = 0
-        for (i,x) in enumerate(eachobs(X1))
+        for (i,x) in enumerate(ObsView(X1))
             @test all(i .== x)
             count += 1
         end
@@ -154,6 +155,7 @@ end
 @testset "BatchView" begin
     @test BatchView <: AbstractVector
     @test BatchView <: DataView
+    @test batchview == BatchView
 
     @testset "constructor" begin
         @test_throws DimensionMismatch BatchView((rand(2,10),rand(9)))
@@ -177,6 +179,7 @@ end
             @test typeof(BatchView(A)) <: typeof(A)
             @test @inferred(BatchView(var)) == A
             @test nobs(A) == nobs(var)
+            @test batchsize(A) == 30
         end
         @test BatchView((X,X)) == @inferred(BatchView((X,X), (ObsDim.Last(),ObsDim.Last())))
         @test BatchView((X,X)) == @inferred(BatchView((X,X), -1, (ObsDim.Last(),ObsDim.Last())))
@@ -211,6 +214,7 @@ end
             @test_throws BoundsError A[11]
             @test @inferred(nobs(A)) == 150
             @test @inferred(length(A)) == 10
+            @test @inferred(batchsize(A)) == 15
             @test @inferred(size(A)) == (10,)
             @test @inferred(getobs(A[2:3])) == getobs(BatchView(datasubset(var, 16:45), 15))
             @test @inferred(getobs(A[[1,3]])) == getobs(BatchView(datasubset(var, [1:15..., 31:45...]), 15))

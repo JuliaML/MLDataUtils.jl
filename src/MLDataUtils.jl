@@ -10,7 +10,9 @@ export
 
     nobs,
     getobs,
+    getobs!,
     randobs,
+    batchsize,
 
     noisy_function,
     noisy_sin,
@@ -40,15 +42,18 @@ export
     splitobs,
 
 #    AbstractDataProvider,
+        BufferGetObs,
         DataView,
             ObsView,
             BatchView,
-#        DataProvider,
-#            ObsProvider,
-#                InfiniteObs,
-#            BatchProvider,
-#                InfiniteBatches,
+        DataIterator,
+            ObsIterator,
+                RandomObs,
+            BatchIterator,
+                RandomBatches,
 
+    obsview,
+    batchview,
     eachobs,
     eachbatch,
 
@@ -67,7 +72,7 @@ include("datasets.jl")
 include("accesspattern/obsdim.jl")
 include("accesspattern/datasubset.jl")
 include("accesspattern/dataview.jl")
-include("accesspattern/dataprovider.jl")
+include("accesspattern/dataiterator.jl")
 include("accesspattern/kfolds.jl")
 
 @deprecate partitiondata(X; at=0.5) splitobs(shuffleobs(X); at=at)

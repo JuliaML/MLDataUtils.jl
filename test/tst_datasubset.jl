@@ -251,7 +251,7 @@ end
         @test @inferred(getobs((XX,X,y), 2)) == (XX[:,:,2], X[:,2], y[2])
     end
 
-    @testset "custom types" begin
+    @testset "type without getobs support" begin
         @test getobs(EmptyType()) === EmptyType()
         @test_throws MethodError getobs(EmptyType(), obsdim=1)
         # test that fallback bouncing doesn't cause stackoverflow
@@ -261,16 +261,174 @@ end
         @test_throws MethodError getobs(EmptyType(), 1, obsdim=:first)
         @test_throws MethodError getobs(EmptyType(), 1, obsdim=10)
         @test_throws MethodError getobs(EmptyType(), 1:10, obsdim=:last)
+    end
 
+    @testset "custom type with getobs support" begin
         @test_throws MethodError getobs(CustomType(), obsdim=1)
+        @test_throws MethodError getobs(CustomType(), ObsDim.Last())
         @test_throws MethodError getobs(CustomType(), 4:40, obsdim=1)
-        @test getobs(CustomType(), 11) === 11
-        @test getobs(CustomType(), 4:40) == collect(4:40)
+        @test @inferred(getobs(CustomType(), 11)) === 11
+        @test @inferred(getobs(CustomType(), 4:40)) == collect(4:40)
         # No-op unless defined
-        @test getobs(CustomType()) === CustomType()
+        @test @inferred(getobs(CustomType())) === CustomType()
         # No bounds checking here
-        @test getobs(CustomType(), 200) === 200
-        @test getobs(CustomType(), [2,200,1]) == [2,200,1]
+        @test @inferred(getobs(CustomType(), 200)) === 200
+        @test @inferred(getobs(CustomType(), [2,200,1])) == [2,200,1]
+    end
+end
+
+@testset "getobs!" begin
+    @testset "Array and Subarray" begin
+        Xbuf = similar(X)
+        # interpreted as idx
+        @test_throws Exception getobs!(Xbuf, X, ObsDim.Undefined())
+        @test_throws Exception getobs!(Xbuf, X, ObsDim.Constant(1))
+        # obsdim not defined without some idx
+        @test_throws MethodError getobs!(Xbuf, X, obsdim = ObsDim.Undefined())
+        @test_throws MethodError getobs!(Xbuf, X, obsdim = ObsDim.Constant(1))
+        # access outside nobs bounds
+        @test_throws BoundsError getobs!(Xbuf, X, -1)
+        @test_throws BoundsError getobs!(Xbuf, X, 0)
+        @test_throws BoundsError getobs!(Xbuf, X, 0, obsdim = 1)
+        @test_throws BoundsError getobs!(Xbuf, X, 151)
+        @test_throws BoundsError getobs!(Xbuf, X, 151, obsdim = 2)
+        @test_throws BoundsError getobs!(Xbuf, X, 151, obsdim = 1)
+        @test_throws BoundsError getobs!(Xbuf, X, 5, obsdim = 1)
+        @test @inferred(getobs!(Xbuf, X)) === Xbuf
+        @test Xbuf == X
+        @test all(getobs!(similar(Xv), Xv) .== X)
+        @test all(getobs!(similar(yv), yv) .== y)
+        @test @inferred(getobs!(similar(XX), XX))   == XX
+        @test @inferred(getobs!(similar(XXX), XXX)) == XXX
+        @test @inferred(getobs!(similar(y), y))     == y
+        xbuf1 = zeros(4)
+        xbuf2 = zeros(4)
+        @test @inferred(getobs!(xbuf1, X, 45)) == getobs!(xbuf2, X', 45, obsdim = 1)
+        Xbuf1 = zeros(4,8)
+        Xbuf2 = zeros(8,4)
+        @test @inferred(getobs!(Xbuf1, X, 3:10)) == getobs!(Xbuf2, X', 3:10, obsdim = 1)'
+        # obsdim = 2
+        Xbuf1 = zeros(20,150)
+        @test_throws ErrorException @inferred(getobs!(Xbuf1, XX, 2, obsdim = 2))
+        @test @inferred(getobs!(Xbuf1, XX, 5, ObsDim.Constant(2))) == XX[:,5,:]
+        @test getobs!(Xbuf1, XX, 11, obsdim = 2) == XX[:,11,:]
+        Xbuf2 = zeros(20,5,150)
+        @test_throws ErrorException @inferred(getobs!(Xbuf2, XX, 6:10, obsdim = 2))
+        @test @inferred(getobs!(Xbuf2, XX, 6:10, ObsDim.Constant(2))) == XX[:,6:10,:]
+        @test getobs!(Xbuf2, XX, 11:15, obsdim = 2) == XX[:,11:15,:]
+        # string vector
+        @test_throws MethodError getobs!("setosa", y, 1)
+        @test_throws MethodError getobs!(nothing, y, 1)
+        @test @inferred(getobs!(nothing, datasubset(y, 1))) == "setosa"
+    end
+
+    @testset "SparseArray" begin
+        # Sparse Arrays opt-out of buffer usage
+        @test @inferred(getobs!(nothing, Xs)) === getobs(Xs)
+        @test @inferred(getobs!(nothing, Xs, 1)) == getobs(Xs, 1)
+        @test @inferred(getobs!(nothing, Xs, 5:10)) == getobs(Xs, 5:10)
+        @test @inferred(getobs!(nothing, Xs, 2, ObsDim.First())) == getobs(Xs, 2, obsdim=1)
+        @test getobs!(nothing, Xs, 2, obsdim = 1) == getobs(Xs, 2, obsdim=1)
+        @test @inferred(getobs!(nothing, ys)) === getobs(ys)
+        @test @inferred(getobs!(nothing, ys, 1)) === getobs(ys, 1)
+        @test @inferred(getobs!(nothing, ys, 5:10)) == getobs(ys, 5:10)
+        @test @inferred(getobs!(nothing, ys, 5:10, ObsDim.First())) == getobs(ys, 5:10)
+        @test getobs!(nothing, ys, 5:10, obsdim=1) == getobs(ys, 5:10)
+    end
+
+    @testset "DataSubset" begin
+        xbuf1 = zeros(4,8)
+        s1 = DataSubset(X, 2:9)
+        @test @inferred(getobs!(xbuf1,s1)) === xbuf1
+        @test xbuf1 == getobs(s1)
+        xbuf1 = zeros(4,5)
+        s1 = DataSubset(X, 10:17)
+        @test @inferred(getobs!(xbuf1,s1,2:6)) === xbuf1
+        @test xbuf1 == getobs(s1,2:6) == getobs(X,11:15)
+
+        xbuf2 = zeros(8,4)
+        s2 = DataSubset(X', 2:9, obsdim=1)
+        @test @inferred(getobs!(xbuf2,s2)) === xbuf2
+        @test xbuf2 == getobs(s2)
+        xbuf2 = zeros(5,4)
+        s2 = DataSubset(X', 10:17, obsdim=1)
+        @test @inferred(getobs!(xbuf2,s2,2:6)) === xbuf2
+        @test xbuf2 == getobs(s2,2:6) == getobs(X',11:15,obsdim=1)
+
+        s3 = DataSubset(Xs, 11:15)
+        @test @inferred(getobs!(nothing,s3)) == getobs(Xs,11:15)
+
+        s4 = DataSubset(CustomType(), 6:10)
+        @test @inferred(getobs!(nothing,s4)) == getobs(s4)
+        s5 = DataSubset(CustomType(), 9:20)
+        @test @inferred(getobs!(nothing,s5,2:6)) == getobs(s5,2:6)
+    end
+
+    @testset "Tuple" begin
+        @test_throws MethodError getobs!((nothing,nothing), (X,y))
+        @test_throws MethodError getobs!((nothing,nothing), (X,y), 1:5)
+        @test_throws DimensionMismatch getobs!((nothing,nothing,nothing), (X,y))
+        xbuf = zeros(4,2)
+        ybuf = ["foo", "bar"]
+        @test_throws DimensionMismatch getobs!((xbuf,), (X,y))
+        @test_throws DimensionMismatch getobs!((xbuf,ybuf,ybuf), (X,y))
+        @test_throws DimensionMismatch getobs!((xbuf,), (X,y), 1:5)
+        @test_throws DimensionMismatch getobs!((xbuf,ybuf,ybuf), (X,y), 1:5)
+        @test @inferred(getobs!((xbuf,ybuf),(X,y), 2:3)) === (xbuf,ybuf)
+        @test xbuf == getobs(X, 2:3)
+        @test ybuf == getobs(y, 2:3)
+        @test @inferred(getobs!((xbuf,ybuf),(X,y), [50,150])) === (xbuf,ybuf)
+        @test xbuf == getobs(X, [50,150])
+        @test ybuf == getobs(y, [50,150])
+
+        xbuf2 = zeros(2,4)
+        @test @inferred(getobs!((xbuf2,ybuf),(X',y), 4:5, ObsDim.First())) === (xbuf2,ybuf)
+        @test xbuf2 == getobs(X', 4:5, obsdim=1)
+        @test ybuf  == getobs(y, 2:3)
+
+        @test @inferred(getobs!((xbuf2,ybuf,xbuf),(X',y,X), 99:100, (ObsDim.First(),ObsDim.Last(),ObsDim.Last()))) === (xbuf2,ybuf,xbuf)
+        @test xbuf2 == getobs(X', 99:100, obsdim=1)
+        @test ybuf  == getobs(y, 99:100)
+        @test xbuf == getobs(X, 99:100)
+
+        @test getobs!((xbuf2,ybuf,xbuf),(X',y,X), 9:10, obsdim=(1,1,2)) === (xbuf2,ybuf,xbuf)
+        @test xbuf2 == getobs(X', 9:10, obsdim=1)
+        @test ybuf  == getobs(y, 9:10)
+        @test xbuf == getobs(X, 9:10)
+
+        @test getobs!((nothing,xbuf),(Xs,X), 3:4) == (getobs(Xs,3:4),xbuf)
+        @test xbuf == getobs(X,3:4)
+
+        # Tuple with subsets
+        s1 = DataSubset(Xs, 5:9)
+        s2 = DataSubset(X, 5:9)
+        @test_throws AssertionError getobs!((nothing,xbuf),(s1,s2),2:3,ObsDim.First())
+        @test_throws AssertionError getobs!((nothing,xbuf),(s1,s2),2:3,(ObsDim.First(),ObsDim.Last()))
+        @test getobs!((nothing,xbuf),(s1,s2), 2:3) == (getobs(Xs,6:7),xbuf)
+        @test xbuf == getobs(X,6:7)
+        @test getobs!((nothing,xbuf),(s1,s2), 2:3, ObsDim.Last()) == (getobs(Xs,6:7),xbuf)
+        @test getobs!((nothing,xbuf),(s1,s2), 2:3, (ObsDim.Last(),ObsDim.Last())) == (getobs(Xs,6:7),xbuf)
+    end
+
+    @testset "type without getobs support" begin
+        # buffer is ignored if getobs! is not defined
+        @test @inferred(getobs!(nothing, EmptyType())) === EmptyType()
+        @test_throws MethodError getobs!(nothing, EmptyType(), 1)
+        @test_throws MethodError getobs!(nothing, EmptyType(), obsdim=1)
+        @test_throws MethodError getobs!(nothing, EmptyType(), ObsDim.Last())
+        @test_throws MethodError getobs!(nothing, CustomType(), obsdim=1)
+        @test_throws MethodError getobs!(nothing, CustomType(), ObsDim.Last())
+        @test_throws MethodError getobs!(nothing, CustomType(), 4:40, obsdim=1)
+    end
+
+    @testset "custom type with getobs support" begin
+        # No-op unless defined
+        @test @inferred(getobs!(nothing, CustomType())) === CustomType()
+        @test @inferred(getobs!(nothing, CustomType(), 11)) === 11
+        @test @inferred(getobs!(nothing, CustomType(), 4:40)) == collect(4:40)
+        # No bounds checking here
+        @test @inferred(getobs!(nothing, CustomType(), 200)) === 200
+        @test @inferred(getobs!(nothing, CustomType(), [2,200,1])) == [2,200,1]
     end
 end
 
