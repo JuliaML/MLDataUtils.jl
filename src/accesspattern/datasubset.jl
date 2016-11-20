@@ -20,8 +20,9 @@ the result instead of allocating a dedicated object.
 
 Note: In the case no such method is provided for the type of `data`,
 then `buffer` will be **ignored** and the result of `getobs` returned.
-This is because the type of `data` may not lend itself to the concept
-of `copy!`.
+This could be because the type of `data` may not lend itself to the
+concept of `copy!`. Thus supporting a custom `getobs!(::MyType, ...)`
+is optional and not required.
 """
 getobs!(buffer, data) = getobs(data)
 getobs!(buffer, data, idx, obsdim) = getobs(data, idx, obsdim)
@@ -128,6 +129,14 @@ The following methods can also be provided and are optional:
     Note: If your type has no use for `obsdim` then dispatch on
     `::ObsDim.Undefined` in the signature.
 
+- `getobs!(buffer, data:MyType, [i], [obsdim::ObsDimension])` :
+    Inplace version of `getobs(data, i, obsdim)`. If this method is
+    provided for `MyType`, then `eachobs` and `eachbatch` (among others)
+    can preallocate a buffer that is then reused every iteration.
+    Note: `buffer` should be equivalent to the return value of
+    `getobs(::MyType, ...)`, since this is how `buffer` is preallocated
+    by default.
+
 Author(s)
 ==========
 
@@ -178,7 +187,7 @@ subset = datasubset((X,y), 1:100)
 @assert typeof(subset) <: Tuple # tuple of SubArray
 
 # Split dataset into training and test split
-train, test = splitobs(shuffleobs(X, y), at = 0.7)
+train, test = splitobs(shuffleobs((X,y)), at = 0.7)
 @assert typeof(train) <: Tuple # of SubArray
 @assert typeof(test)  <: Tuple # of SubArray
 @assert nobs(train) == 105
@@ -278,6 +287,8 @@ Returns a lazy subset of the observations in `data` that correspond
 to the given `indices`. No data will be copied except of the indices.
 It is similar to calling `DataSubset(data, [indices], [obsdim])`,
 but returns a `SubArray` if the type of `data` is `Array` or `SubArray`.
+Furthermore, this function may be extended for custom types of `data`
+that also want to provide their own subset-type.
 
 If instead you want to get the subset of observations corresponding
 to the given `indices` in their native type, use `getobs`.
@@ -502,7 +513,7 @@ _getobs_error() = throw(DimensionMismatch("The first argument (tuple with the bu
     N = length(buffer.types)
     N == length(tup.types) || _getobs_error()
     quote
-        _check_nobs(tup)
+        # _check_nobs(tup) # don't check because of single obs
         $(Expr(:tuple, (:(getobs!(buffer[$i],tup[$i])) for i in 1:N)...))
     end
 end
@@ -516,7 +527,7 @@ end
         Expr(:tuple, (:(getobs!(buffer[$i], tup[$i], indices, obsdim[$i])) for i in 1:N)...)
     end
     quote
-        _check_nobs(tup, obsdim)
+        # _check_nobs(tup, obsdim) # don't check because of single obs
         $expr
     end
 end

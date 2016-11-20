@@ -218,3 +218,224 @@ end
     end
 end
 
+@testset "BufferGetObs" begin
+    @testset "ObsView" begin
+        A = BufferGetObs(ObsView(X))
+        println(A)
+        println([A])
+        @test size(A.buffer) == (4,)
+        @test typeof(A.buffer) <: Array{Float64,1}
+
+        for var in (X,Y,XX,XXX,(X,Y),(XX,X),(XXX,XX,X))
+            A = @inferred BufferGetObs(ObsView(var))
+            @test typeof(A.buffer) == typeof(getobs(var,1))
+            for (i,a) in enumerate(A)
+                @test a === A.buffer
+                @test a == getobs(var,i)
+            end
+        end
+
+        # preallocating buffer
+        for var in (X,Y,XX,XXX)
+            buffer = similar(getobs(var,1))
+            A = @inferred BufferGetObs(ObsView(var), buffer)
+            for (i,a) in enumerate(A)
+                @test a === A.buffer
+                @test a === buffer
+                @test a == getobs(var,i)
+            end
+        end
+        # preallocating buffer for tuple
+        for var in ((X,X),(XX,X),(X,Y))
+            buffer = (similar(getobs(var[1],1)),similar(getobs(var[2],1)))
+            A = @inferred BufferGetObs(ObsView(var), buffer)
+            for (i,a) in enumerate(A)
+                @test a === A.buffer
+                @test a === buffer
+                @test a == getobs(var,i)
+            end
+        end
+
+        for var in (vars..., tuples..., Xs, ys, CustomType())
+            A = @inferred BufferGetObs(ObsView(var))
+            @test typeof(A.buffer) == typeof(getobs(var,1))
+            for (i,a) in enumerate(A)
+                @test a == getobs(var,i)
+            end
+        end
+    end
+
+    @testset "BatchView" begin
+        A = BufferGetObs(BatchView(X, 15))
+        @test size(A.buffer) == (4,15)
+        @test typeof(A.buffer) <: Array{Float64,2}
+
+        for var in (X,Y,XX,XXX,(X,Y),(XX,X),(XXX,XX,X))
+            A = @inferred BufferGetObs(BatchView(var,15))
+            @test typeof(A.buffer) == typeof(getobs(var,collect(1:15)))
+            for (i,a) in enumerate(A)
+                @test a === A.buffer
+                @test a == BatchView(var,15)[i]
+            end
+        end
+        # preallocating buffer
+        for var in (X,Y,XX,XXX)
+            buffer = similar(getobs(var,1:15))
+            A = @inferred BufferGetObs(BatchView(var,15), buffer)
+            for (i,a) in enumerate(A)
+                @test a === A.buffer
+                @test a === buffer
+                @test a == BatchView(var,15)[i]
+            end
+        end
+        # preallocating buffer for tuple
+        for var in ((X,X),(XX,X),(X,Y))
+            buffer = (similar(getobs(var[1],1:15)),similar(getobs(var[2],1:15)))
+            A = @inferred BufferGetObs(BatchView(var, 15), buffer)
+            for (i,a) in enumerate(A)
+                @test a === A.buffer
+                @test a === buffer
+                @test a == BatchView(var,15)[i]
+            end
+        end
+
+        for var in (vars..., tuples..., Xs, ys, CustomType())
+            A = @inferred BufferGetObs(BatchView(var,10))
+            @test typeof(A.buffer) == typeof(getobs(var,1:10))
+            for (i,a) in enumerate(A)
+                @test a == getobs(BatchView(var,10)[i])
+            end
+        end
+    end
+
+    @testset "RandomObs" begin
+        A = BufferGetObs(RandomObs(X, 10))
+        @test size(A.buffer) == (4,)
+        @test typeof(A.buffer) <: Array{Float64,1}
+        @test length(A) == 10
+        @test Base.iteratorsize(A) == Base.HasLength()
+        A = BufferGetObs(RandomObs(X))
+        @test size(A.buffer) == (4,)
+        @test typeof(A.buffer) <: Array{Float64,1}
+        @test_throws MethodError length(A)
+        @test Base.iteratorsize(A) == Base.IsInfinite()
+
+        for var in (X,Y,XX,XXX,(X,Y),(XX,X),(XXX,XX,X))
+            A = @inferred BufferGetObs(RandomObs(var,10))
+            @test typeof(A.buffer) == typeof(getobs(var,1))
+            for (i,a) in enumerate(A)
+                @test a === A.buffer
+                @test i <= 10
+            end
+        end
+        for var in (vars..., tuples..., Xs, ys, CustomType())
+            A = @inferred BufferGetObs(RandomObs(var, 10))
+            @test typeof(A.buffer) == typeof(getobs(var,1))
+            for (i,a) in enumerate(A)
+                @test i <= 10
+            end
+        end
+    end
+
+    @testset "RandomBatches" begin
+        A = BufferGetObs(RandomBatches(X, 15, 10))
+        @test size(A.buffer) == (4,15)
+        @test typeof(A.buffer) <: Array{Float64,2}
+        @test length(A) == 10
+        @test Base.iteratorsize(A) == Base.HasLength()
+        A = BufferGetObs(RandomBatches(X, 15))
+        @test size(A.buffer) == (4,15)
+        @test typeof(A.buffer) <: Array{Float64,2}
+        @test_throws MethodError length(A)
+        @test Base.iteratorsize(A) == Base.IsInfinite()
+
+        for var in (X,Y,XX,XXX,(X,Y),(XX,X),(XXX,XX,X))
+            A = @inferred BufferGetObs(RandomBatches(var,15,10))
+            @test typeof(A.buffer) == typeof(getobs(var,collect(1:15)))
+            for (i,a) in enumerate(A)
+                @test a === A.buffer
+                @test i <= 10
+            end
+        end
+        for var in (vars..., tuples..., Xs, ys, CustomType())
+            A = @inferred BufferGetObs(RandomBatches(var,10,10))
+            @test typeof(A.buffer) == typeof(getobs(var,1:10))
+            for (i,a) in enumerate(A)
+                @test i <= 10
+            end
+        end
+    end
+end
+
+@testset "eachobs" begin
+    A = @inferred eachobs(X)
+    @inferred first(A)
+    @test typeof(A) <: BufferGetObs
+    @test typeof(A.iter) <: ObsView
+    @test A.iter.obsdim == ObsDim.Last()
+    @test A.iter.data == X
+    A = @inferred eachobs(X, ObsDim.First())
+    @inferred first(A)
+    @test typeof(A) <: BufferGetObs
+    @test typeof(A.iter) <: ObsView
+    @test A.iter.obsdim == ObsDim.First()
+    @test A.iter.data == X
+    A = eachobs(X, obsdim = 1)
+    @inferred first(A)
+    @test typeof(A) <: BufferGetObs
+    @test typeof(A.iter) <: ObsView
+    @test A.iter.obsdim == ObsDim.First()
+    @test A.iter.data == X
+end
+
+@testset "eachbatch" begin
+    A = @inferred eachbatch(X)
+    @inferred first(A)
+    @test typeof(A) <: BufferGetObs
+    @test typeof(A.iter) <: BatchView
+    @test A.iter.obsdim == ObsDim.Last()
+    @test A.iter.data == X
+    @test size(A.buffer) == (4,30)
+    @test length(A) == 5
+    A = @inferred eachbatch(X', ObsDim.First())
+    @inferred first(A)
+    @test typeof(A) <: BufferGetObs
+    @test typeof(A.iter) <: BatchView
+    @test A.iter.obsdim == ObsDim.First()
+    @test A.iter.data == X'
+    @test size(A.buffer) == (30,4)
+    @test length(A) == 5
+    A = eachbatch(X', obsdim=1)
+    @inferred first(A)
+    @test typeof(A) <: BufferGetObs
+    @test typeof(A.iter) <: BatchView
+    @test A.iter.obsdim == ObsDim.First()
+    @test A.iter.data == X'
+    @test size(A.buffer) == (30,4)
+    @test length(A) == 5
+    A = @inferred eachbatch(X, 10)
+    @inferred first(A)
+    @test typeof(A) <: BufferGetObs
+    @test typeof(A.iter) <: BatchView
+    @test A.iter.obsdim == ObsDim.Last()
+    @test A.iter.data == X
+    @test size(A.buffer) == (4,10)
+    @test length(A) == 15
+    A = @inferred eachbatch(X', 10, ObsDim.First())
+    @inferred first(A)
+    @test typeof(A) <: BufferGetObs
+    @test typeof(A.iter) <: BatchView
+    @test A.iter.obsdim == ObsDim.First()
+    @test A.iter.data == X'
+    @test size(A.buffer) == (10,4)
+    @test length(A) == 15
+    A = eachbatch(X', count = 15, obsdim = 1)
+    @inferred first(A)
+    @test typeof(A) <: BufferGetObs
+    @test typeof(A.iter) <: BatchView
+    @test A.iter.obsdim == ObsDim.First()
+    @test A.iter.data == X'
+    @test size(A.buffer) == (10,4)
+    @test length(A) == 15
+end
+

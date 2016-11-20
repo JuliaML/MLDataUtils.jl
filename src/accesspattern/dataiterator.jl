@@ -13,7 +13,11 @@ see `RandomObs`, `RandomBatches`
 """
 abstract DataIterator{TElem,TData}
 
-_length(iter::DataIterator) = (Base.iteratorsize(iter) == Base.HasLength()) ? length(iter) : Inf
+_length(iter) = _length(iter, Base.iteratorsize(iter))
+_length(iter, ::Base.HasLength) = length(iter)
+_length(iter, ::Base.HasShape)  = length(iter)
+_length(iter, ::Base.IsInfinite) = Inf
+_length(iter, ::Base.SizeUnknown) = "NA"
 
 Base.iteratoreltype{E,T}(::Type{DataIterator{E,T}}) = Base.HasEltype()
 Base.eltype{E,T}(::Type{DataIterator{E,T}}) = E
@@ -325,94 +329,23 @@ Base.length{E,T,O}(iter::RandomBatches{E,T,O,Base.HasLength}) = iter.count
 nobs(iter::RandomBatches) = nobs(iter.data, iter.obsdim)
 batchsize(iter::RandomBatches) = iter.size
 
-"""
-    eachbatch(data, [size], [count], [obsdim])
-
-Iterate over a data source in `count` equally sized batches of
-`size` by using `BufferGetObs(BatchView(...))`.
-In the case that the size of the dataset is not dividable by
-the specified (or inferred) size, the remaining observations will
-be ignored.
-
-```julia
-for x in eachbatch(X, count = 10)
-    # code called 10 times
-    # nobs(x) won't change over iterations
-end
-```
-
-Multiple variables are supported (e.g. for labeled data)
-
-```julia
-for (x,y) in eachbatch((X, Y), size = 20)
-    @assert nobs(x) == 20
-    @assert nobs(y) == 20
-    # ...
-end
-```
-
-see `BufferGetObs` and `BatchView` for more info.
-"""
-function eachbatch(data; size::Int = -1, count::Int = -1)
-    EachBatch(data, size, count)
-end
-
-"""
-    batches(data[...]; [count], [size])
-
-Create a vector of `count` equally sized `DataSubset` of size
-`size` by partitioning the given `data` in their _current_ order.
-In the case that the size of the dataset is not dividable by
-the specified (or inferred) size, the remaining observations will
-be ignored.
-
-```julia
-for x in batches(X, count = 10)
-    # code called 10 times
-    # nobs(x) won't change over iterations
-end
-```
-
-Using `shuffled` one can also have batches with randomly
-assigned observations
-
-```julia
-for x in batches(shuffled(X), count = 10)
-    # ...
-end
-```
-
-Or alternatively just process the statically assigned batches in
-random order.
-
-```julia
-for x in shuffled(batches(X, count = 10))
-    # ...
-end
-```
-
-Multiple variables are supported (e.g. for labeled data).
-
-```julia
-for (x,y) in batches(X, Y, size = 20)
-    @assert nobs(x) == 20
-    @assert nobs(y) == 20
-    # ...
-end
-```
-
-see `DataSubset` for more info, or `eachbatch` for an iterator version.
-"""
-function batches(data; size::Int = -1, count::Int = -1)
-    collect(EachBatch(data, size, count))
-end
-
 # --------------------------------------------------------------------
 
 """
     BufferGetObs(iterator, [buffer])
 
-TODO
+Stores the output of `next(iterator,state)` into `buffer` using
+`getobs!(buffer, ...)`. Depending on the type of data provided
+by `iterator` this may be more memory efficient than `getobs(...)`.
+In the case of array data, for example, this allows for cache efficient
+processing of each element without allocating a temporary array.
+
+Note that not all types of data support buffering, because it is
+the author's choice to opt-in and implement a custom `getobs!`.
+For those types that do not provide a custom `getobs!`,
+the buffer will be ignored and the result of `getobs(...)` returned.
+
+see `eachobs` and `eachbatch` for concrete examples.
 """
 immutable BufferGetObs{TElem,TIter}
     iter::TIter
@@ -426,9 +359,9 @@ end
 
 function Base.show{E,T}(io::IO, iter::BufferGetObs{E,T})
     if get(io, :compact, false)
-        print(io, typeof(iter).name.name, "{", E, ",", T, "} with " , length(iter), " elements")
+        print(io, typeof(iter).name.name, "{", E, ",", T, "} with " , _length(iter), " elements")
     else
-        print(io, summary(iter), "\n Iterator providing ", length(iter), " elements")
+        print(io, summary(iter), "\n Iterator providing ", _length(iter), " elements")
     end
 end
 
@@ -451,41 +384,32 @@ batchsize(b::BufferGetObs) = batchsize(b.iter)
 """
     eachobs(data, [obsdim])
 
-Creates a view of `data` that allows to treat it as a vector of
-observations. Any computation is delayed until `getindex` is called,
-and even `getindex` returns a lazy subset of the observation.
+Iterates over `data` one observation at a time. If supported by the
+type of `data`, a buffer will be preallocated and reused for memory
+efficiency.
+Note: Thus avoid using `collect`, because in general each iteration
+could return the same object with mutated values. If that behaviour
+is undesired use `BatchView` instead.
 
 ```julia
 X = rand(4,100)
-A = eachobs(X)
-@assert typeof(A) <: ObsView <: AbstractVector
-@assert eltype(A) <: SubArray{Float64,1}
-@assert length(A) == 100
-@assert size(A[1]) == (4,)
+for x in eachobs(X)
+    # loop entered 100 times
+    @assert typeof(x) <: Vector{Float64}
+    @assert size(x) == (4,)
+end
 ```
 
 In the case of arrays it is assumed that the observations are
-represented by the last array dimension.
-This can be overwritten.
+represented by the last array dimension. This can be overwritten.
 
 ```julia
 # This time flip the dimensions of the matrix
 X = rand(100,4)
 A = eachobs(X, obsdim=1)
 # The behaviour remains the same as before
-@assert typeof(A) <: ObsView <: AbstractVector
-@assert eltype(A) <: SubArray{Float64,1}
+@assert eltype(A) <: Array{Float64,1}
 @assert length(A) == 100
-@assert size(A[1]) == (4,)
-```
-
-This is especially useful for iterating through a dataset one
-observation at a time.
-
-```julia
-for x in eachobs(X)
-    # use getobs(x) to get the underlying data
-end
 ```
 
 Multiple variables are supported (e.g. for labeled data)
@@ -496,20 +420,122 @@ for (x,y) in eachobs((X,Y))
 end
 ```
 
+Note that internally `eachobs(data, obsdim)` maps to
+`BufferGetObs(ObsView(data, obsdim))`.
+
+```julia
+@assert typeof(eachobs(X)) <: BufferGetObs
+@assert typeof(eachobs(X).iter) <: ObsView
+```
+
+This means that the following code:
+
 ```julia
 for obs in eachobs(data, obsdim)
     # ...
 end
 ```
 
+is roughly equivalent to:
+
 ```julia
-obs = getobs(data, 1, obsdim)
+obs = getobs(data, 1, obsdim) # use first element to preallocate buffer
 for _ in ObsView(data, obsdim)
-    getobs!(obs, _)
+    getobs!(obs, _) # reuse buffer each iteration
     # ...
 end
 ```
+
+see `BufferGetObs`, `ObsView`, and `getobs!` for more info.
+also see `eachbatch` for a mini-batch version.
 """
 eachobs(data, obsdim) = BufferGetObs(ObsView(data, obsdim))
 eachobs(data; obsdim = default_obsdim(data)) = eachobs(data, obs_dim(obsdim))
+
+# --------------------------------------------------------------------
+
+"""
+    eachbatch(data, [size], [count], [obsdim])
+
+Iterates over `data` one batch at a time. If supported by the type of
+`data`, a buffer will be preallocated and reused for memory efficiency.
+Note: Thus avoid using `collect`, because in general each iteration
+could return the same object with mutated values. If that behaviour
+is undesired use `BatchView` instead.
+
+The (constant) batch-size can be either provided directly using `size`
+or indirectly using `count`, which derives `size` based on `nobs`.
+In the case that the size of the dataset is not dividable by
+the specified (or inferred) `size`, the remaining observations will
+be ignored.
+
+```julia
+X = rand(4,150)
+for x in eachbatch(X, size = 10) # or: eachbatch(X, count = 15)
+    # loop entered 15 times
+    @assert typeof(x) <: Matrix{Float64}
+    @assert size(x) == (4,10)
+end
+```
+
+In the case of arrays it is assumed that the observations are
+represented by the last array dimension. This can be overwritten.
+
+```julia
+# This time flip the dimensions of the matrix
+X = rand(150,4)
+A = eachbatch(X, size = 10, obsdim = 1)
+# The behaviour remains the same as before
+@assert eltype(A) <: Array{Float64,2}
+@assert length(A) == 15
+```
+
+Multiple variables are supported (e.g. for labeled data)
+
+```julia
+for (x,y) in eachbatch((X,Y))
+    # ...
+end
+```
+
+Note that internally `eachbatch(data, ...)` maps to
+`BufferGetObs(BatchView(data, ...))`.
+
+```julia
+@assert typeof(eachbatch(X)) <: BufferGetObs
+@assert typeof(eachbatch(X).iter) <: BatchView
+```
+
+This means that the following code:
+
+```julia
+for batch in eachbatch(data, batchsize, obsdim)
+    # ...
+end
+```
+
+is roughly equivalent to:
+
+```julia
+batch = getobs(data, collect(1:batchsize), obsdim) # use first element to preallocate buffer
+for _ in BatchView(data, batchsize, obsdim)
+    getobs!(batch, _) # reuse buffer each iteration
+    # ...
+end
+```
+
+see `BufferGetObs`, `BatchView`, and `getobs!` for more info.
+also see `eachobs` for a single-observation version.
+"""
+eachbatch(data; size = -1, count = -1, obsdim = default_obsdim(data)) =
+    BufferGetObs(BatchView(data, size, count, obs_dim(obsdim)))
+
+eachbatch{T<:Union{Tuple,ObsDimension}}(data, obsdim::T) =
+    BufferGetObs(BatchView(data, -1, -1, obsdim))
+
+eachbatch{T<:Union{Tuple,ObsDimension}}(data, size::Int, obsdim::T = default_obsdim(data)) =
+    BufferGetObs(BatchView(data, size, -1, obsdim))
+
+eachbatch{T<:Union{Tuple,ObsDimension}}(data, size::Int, count::Int, obsdim::T = default_obsdim(data)) =
+    BufferGetObs(BatchView(data, size, count, obsdim))
 
