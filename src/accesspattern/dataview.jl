@@ -1,14 +1,3 @@
-"""
-    abstract DataView{TElem, TData} <: AbstractVector{TElem}
-
-Baseclass for all vector-like views of some data structure.
-This allow for example to see some design matrix as a vector of
-individual observation-vectors instead of one matrix.
-
-see `ObsView` and `BatchView` for more detail.
-"""
-abstract DataView{TElem, TData} <: AbstractVector{TElem}
-
 Base.linearindexing{T<:DataView}(::Type{T}) = Base.LinearFast()
 Base.size(A::DataView) = (length(A),)
 Base.endof(A::DataView) = length(A)
@@ -116,7 +105,7 @@ see also
 
 `eachobs`, `BatchView`, `shuffleobs`, `getobs`, `nobs`, `DataSubset`
 """
-immutable ObsView{TElem,TData,O} <: DataView{TElem,TData}
+immutable ObsView{TElem,TData,O} <: AbstractObsView{TElem,TData}
     data::TData
     obsdim::O
 end
@@ -312,7 +301,7 @@ see also
 
 `ObsView`, `shuffleobs`, `getobs`, `nobs`, `DataSubset`
 """
-immutable BatchView{TElem,TData,O} <: DataView{TElem,TData}
+immutable BatchView{TElem,TData,O} <: AbstractBatchView{TElem,TData}
     data::TData
     size::Int
     count::Int

@@ -1,6 +1,8 @@
 @testset "RandomObs" begin
     @test RandomObs <: DataIterator
     @test RandomObs <: ObsIterator
+    @test RandomObs <: AbstractDataIterator
+    @test RandomObs <: AbstractObsIterator
     println(RandomObs(X))
     println([RandomObs(X)])
 
@@ -98,6 +100,8 @@ end
 @testset "RandomBatches" begin
     @test RandomBatches <: DataIterator
     @test RandomBatches <: BatchIterator
+    @test RandomBatches <: AbstractDataIterator
+    @test RandomBatches <: AbstractBatchIterator
     println(RandomBatches(X))
     println([RandomBatches(X)])
 

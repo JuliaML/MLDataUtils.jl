@@ -1,29 +1,5 @@
-"""
-    getobs(data, [idx], [obsdim])
-
-Returns the observations corresponding to the observation-index `idx`.
-Note that `idx` can be of type `Int` or `AbstractVector`.
-
-If it makes sense for the type of `data`, `obsdim` can be used to
-specify which dimension of `data` denotes the observations.
-It can be specified in a typestable manner as a positional argument
-(see `?ObsDim`), or more conveniently as a smart keyword argument.
-"""
 getobs(data) = data
 
-"""
-    getobs!(buffer, data, [idx], [obsdim])
-
-Inplace version of `getobs(data, idx, obsdim)`. If this method is
-defined for the type of `data`, then `buffer` will be used to store
-the result instead of allocating a dedicated object.
-
-Note: In the case no such method is provided for the type of `data`,
-then `buffer` will be **ignored** and the result of `getobs` returned.
-This could be because the type of `data` may not lend itself to the
-concept of `copy!`. Thus supporting a custom `getobs!(::MyType, ...)`
-is optional and not required.
-"""
 getobs!(buffer, data) = getobs(data)
 getobs!(buffer, data, idx, obsdim) = getobs(data, idx, obsdim)
 getobs!(buffer, data, idx; obsdim = default_obsdim(data)) =
@@ -36,6 +12,14 @@ getobs!(buffer, data, idx; obsdim = default_obsdim(data)) =
 nobs(data, ::ObsDim.Undefined)::Int = nobs(data)
 getobs(data, idx, ::ObsDim.Undefined) = getobs(data, idx)
 
+"""
+    nobs(data, [obsdim])
+
+Returns the number of observations contained in `data`.
+The optional parameter `obsdim` can be used to specify which
+dimension denotes the observations, if that concept makes sense for
+the type of `data`. See `?LearnBase.ObsDim` for more information.
+"""
 function nobs(data; obsdim = default_obsdim(data))::Int
     nobsdim = obs_dim(obsdim)
     # make sure we don't bounce between fallback methods
@@ -279,25 +263,6 @@ function getobs!(buffer, subset::DataSubset, idx, obsdim::ObsDimension)
 end
 
 # --------------------------------------------------------------------
-
-"""
-    datasubset(data, [indices], [obsdim])
-
-Returns a lazy subset of the observations in `data` that correspond
-to the given `indices`. No data will be copied except of the indices.
-It is similar to calling `DataSubset(data, [indices], [obsdim])`,
-but returns a `SubArray` if the type of `data` is `Array` or `SubArray`.
-Furthermore, this function may be extended for custom types of `data`
-that also want to provide their own subset-type.
-
-If instead you want to get the subset of observations corresponding
-to the given `indices` in their native type, use `getobs`.
-
-The optional (keyword) parameter `obsdim` allows one to specify which
-dimension denotes the observations. see `ObsDim` for more detail.
-
-see `DataSubset` for more information.
-"""
 datasubset(data, indices, obsdim) =
     DataSubset(data, indices, obsdim)
 

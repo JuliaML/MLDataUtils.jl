@@ -41,13 +41,15 @@ export
     shuffleobs,
     splitobs,
 
-#    AbstractDataIterator,
-#        AbstractObsIterator,
-#        AbstractBatchIterator,
+    AbstractDataIterator,
+        AbstractObsIterator,
+        AbstractBatchIterator,
 
     DataView,
-        ObsView,
-        BatchView,
+        AbstractObsView,
+            ObsView,
+        AbstractBatchView,
+            BatchView,
     DataIterator,
         ObsIterator,
             RandomObs,
@@ -75,7 +77,7 @@ include("feature_scaling.jl")
 include("basis_expansion.jl")
 include("noisy_function.jl")
 include("datasets.jl")
-include("accesspattern/obsdim.jl")
+include("accesspattern/learnbase.jl")
 include("accesspattern/datasubset.jl")
 include("accesspattern/dataview.jl")
 include("accesspattern/dataiterator.jl")

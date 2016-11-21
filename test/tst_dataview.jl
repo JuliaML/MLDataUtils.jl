@@ -1,6 +1,9 @@
 @testset "ObsView" begin
     @test ObsView <: AbstractVector
     @test ObsView <: DataView
+    @test ObsView <: AbstractObsView
+    @test ObsView <: AbstractObsIterator
+    @test ObsView <: AbstractDataIterator
     @test obsview === ObsView
 
     @testset "constructor" begin
@@ -155,6 +158,9 @@ end
 @testset "BatchView" begin
     @test BatchView <: AbstractVector
     @test BatchView <: DataView
+    @test BatchView <: AbstractBatchView
+    @test BatchView <: AbstractBatchIterator
+    @test BatchView <: AbstractDataIterator
     @test batchview == BatchView
 
     @testset "constructor" begin

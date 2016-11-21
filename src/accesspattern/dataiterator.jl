@@ -1,18 +1,3 @@
-"""
-    abstract DataIterator{TElem,TData}
-
-Baseclass for all types that iterate over a `data` source
-in some manner. The total number of observations may or may
-not be known or defined and in general there is no contract that
-`getobs` or `nobs` has to be supported by the type of `data`.
-Furthermore, `length` should be used to query how many elements
-the iterator can provide, while `nobs` may return the underlying
-true amount of observations available (if known)
-
-see `RandomObs`, `RandomBatches`
-"""
-abstract DataIterator{TElem,TData}
-
 _length(iter) = _length(iter, Base.iteratorsize(iter))
 _length(iter, ::Base.HasLength) = length(iter)
 _length(iter, ::Base.HasShape)  = length(iter)
@@ -36,23 +21,8 @@ _next_idx(iter, idx) = _next_idx(Base.iteratorsize(iter), idx)
 _next_idx(::Base.IteratorSize, idx) = idx + 1
 _next_idx(::Base.IsInfinite, idx) = 1
 
-"""
-    abstract ObsIterator{TElem,TData} <: DataIterator{TElem,TData}
-
-Baseclass for all types that iterate over some data source
-one observation at a time.
-
-```julia
-@assert typeof(RandomObs(X)) <: ObsIterator
-
-for x in RandomObs(X)
-    # ...
-end
-```
-
-see `RandomObs`
-"""
-abstract ObsIterator{TElem,TData} <: DataIterator{TElem,TData}
+# --------------------------------------------------------------------
+# ObsIterator
 
 function Base.show{E,T}(io::IO, iter::ObsIterator{E,T})
     if get(io, :compact, false)
@@ -62,24 +32,8 @@ function Base.show{E,T}(io::IO, iter::ObsIterator{E,T})
     end
 end
 
-"""
-    abstract BatchIterator{TElem,TData} <: DataIterator{TElem,TData}
-
-Baseclass for all types that iterate over of some data source one
-batch at a time.
-
-```julia
-@assert typeof(RandomBatches(X, size=10)) <: BatchIterator
-
-for x in RandomBatches(X, size=10)
-    @assert nobs(x) == 10
-    # ...
-end
-```
-
-see `RandomBatches`
-"""
-abstract BatchIterator{TElem,TData} <: DataIterator{TElem,TData}
+# --------------------------------------------------------------------
+# BatchIterator
 
 function Base.show{E,T}(io::IO, iter::BatchIterator{E,T})
     if get(io, :compact, false)
@@ -202,7 +156,6 @@ Base.length{E,T,O}(iter::RandomObs{E,T,O,Base.HasLength}) = iter.count
 nobs(iter::RandomObs) = nobs(iter.data, iter.obsdim)
 
 # --------------------------------------------------------------------
-
 
 """
     RandomBatches(data, [size], [count], [obsdim])
