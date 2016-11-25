@@ -63,9 +63,9 @@ Arguments
 - **`data`** : The object describing the dataset. Can be of any
     type as long as it implements `getobs` and `nobs`.
 
-- **`indices`** : Optional. The observation index or indices in
-    the original `data`. Can be of type Int or some subtype
-    `AbstractVector`.
+- **`indices`** : Optional. The index or indices of the observation(s)
+    in `data` that the subset should represent. Can be of type
+    `Int` or some subtype `AbstractVector`.
 
 - **`obsdim`** : Optional. If it makes sense for the type of `data`,
     `obsdim` can be used to specify which dimension of `data` denotes
@@ -113,7 +113,7 @@ The following methods can also be provided and are optional:
     Note: If your type has no use for `obsdim` then dispatch on
     `::ObsDim.Undefined` in the signature.
 
-- `getobs!(buffer, data:MyType, [i], [obsdim::ObsDimension])` :
+- `getobs!(buffer, data::MyType, [i], [obsdim::ObsDimension])` :
     Inplace version of `getobs(data, i, obsdim)`. If this method is
     provided for `MyType`, then `eachobs` and `eachbatch` (among others)
     can preallocate a buffer that is then reused every iteration.

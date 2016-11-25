@@ -273,6 +273,9 @@ end
 Base.start(iter::RandomBatches) = 1
 Base.done(iter::RandomBatches, idx) = idx > _length(iter)
 function Base.next(iter::RandomBatches, idx)
+    # maybe use StatsBase.sample instead of rand in order to avoid
+    # replacement. That said I would like to avoid keyword arguments
+    # and currentply sample needs replace to be specified as such
     indices = rand(1:nobs(iter.data, iter.obsdim), iter.size)
     (datasubset(iter.data, indices, iter.obsdim), _next_idx(iter, idx))
 end
