@@ -9,22 +9,28 @@ In contrast to other data-centered packages, MLDataUtils focuses
 specifically on functionality utilized in a Machine Learning
 context.
 
+Where to begin?
+----------------
+
 If this is the first time you consider using MLDataUtils, make
 sure to check out the "Getting Started" section; specifically
-"How to ...?".
+"How to ...?", which lists some of most common scenarios and how
+to approach them.
 
 .. toctree::
    :maxdepth: 2
 
-   introduction/install
    introduction/gettingstarted
+
+Package Overview
+-----------------
 
 While the sole focus of the whole package is on data-related
 functionality, we can further divide the provided types and functions
 into a number of quite different sub-categories.
 
 Data Access Pattern
----------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 The core of the package, and indeed the part that thus far
 received the most attention, are the data access pattern. These
@@ -44,7 +50,7 @@ such as ``Array``.
    accesspattern/custom
 
 Data Processing
----------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 This package contains a number of simple pre-processing
 strategies that are often applied for ML purposes, such as
@@ -56,7 +62,7 @@ feature centering and rescaling.
   data/feature
 
 Data Generators
----------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 When studying learning algorithm or other ML related
 functionality, it is usually of high interest to empirically test
@@ -71,7 +77,7 @@ the understanding of the system under investigation.
    data/generators
 
 Example Datasets
----------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 We provide a small number of toy datasets. These are mainly
 intended for didactic and testing purposes.

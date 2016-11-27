@@ -4,7 +4,7 @@ Example Datasets
 The package contains a few static datasets that are intended to
 serve as toy examples.
 
-.. note::
+.. warning::
 
    This section may be subject of larger changes.
    It is possible that in the future the datasets will instead be

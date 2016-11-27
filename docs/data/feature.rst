@@ -1,7 +1,7 @@
 Feature Normalization
 ======================
 
-.. note::
+.. warning::
 
    This section will likely be subject to larger changes and/or
    redesigns. For example none of these function are of yet
@@ -22,11 +22,11 @@ parameters computed from the training data.
    # Normalizes the given data using the derived parameters
    X_norm = predict(cs, X)
 
-.. code-block::
+.. code-block:: none
 
    3x101 Array{Float64,2}:
     -1.70647  -1.67235  -1.63822  -1.60409   …  1.56996  1.60409  1.63822  1.67235  1.70647
-    2.15985   2.03026   1.90328   1.77893      1.65719  1.77893  1.90328  2.03026  2.15985
+     2.15985   2.03026   1.90328   1.77893      1.65719  1.77893  1.90328  2.03026  2.15985
     -2.55607  -2.40576  -2.26145  -2.12303      1.99038  2.12303  2.26145  2.40576  2.55607
 
 The underlying functions can also be used directly

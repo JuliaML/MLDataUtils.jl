@@ -1,7 +1,7 @@
 Data Generators
 ================
 
-.. note::
+.. warning::
 
    This section may be subject of larger changes and/or redesigns.
    For example it is planned to absorb `joshday/DataGenerator.jl <https://github.com/joshday/DataGenerator.jl>`_

@@ -1,6 +1,8 @@
 Data Iterators
 ===============
 
+TODO: The two categories of data sources
+
 Other partition-needs arise from the fact that the interesting
 datasets are increasing in size as the scientific community
 continues to improve the state-of-the-art. However, bigger
