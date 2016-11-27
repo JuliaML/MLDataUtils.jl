@@ -2,23 +2,30 @@ Data Subsetting
 ==================
 
 It is a common requirement in machine learning related experiments
-to partition the data set of interest in one way or the other.
-This section outlines the functionality that this package provides
-for the typical use-cases.
+to partition the data set at hand in one way or the other.
+In this section we discuss what that entails and how one would
+go about approaching this task efficiently when solving it by hand.
+Further, we will outline some of the pitfalls one might encounter
+when doing so, which will lead to the motivation of the design
+decisions that this package follows.
+Details on how to perform specific sub-setting task with this
+package will be discussed towards the end.
 
-Problem Description
---------------------
+Introduction and Motivation
+-----------------------------
 
 When it comes to subsetting/partitioning data into individual
-samples (which we call *observations*), or groups of samples
-(which we will refer to as *batches* or mini-batches) the problem
+*samples* (which we call **observations**), or groups of samples
+(which we will refer to as **batches** or *mini-batches*) the problem
 at hand really breaks down to one core task: **keeping track of
 indices**.
 
 To get a better understanding of what exactly we mean by "tracking
-indices", let us together discuss how one would typically approach
+indices", let us together explore how one would typically approach
 data partitioning scenarios without the use of external packages
-(i.e. by getting our hands dirty and coding it ourselves!)
+(i.e. by getting our hands dirty and coding it ourselves!).
+We will do so using a number of different but commonly used forms
+of data storage such as *matrices* and *data frames*.
 
 .. note::
 
@@ -29,14 +36,14 @@ data partitioning scenarios without the use of external packages
    section is **not** intended as a guide on how to apply this
    package.
 
-Example: Manual Solution for Arrays
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A Manual Solution for Arrays
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Matrices and other (multi-dimensional) arrays are one of the most
 commonly used data storage containers in Machine Learning.
-As such, it is quite likely that you will find (or already found)
-yourself in the position of working with such data sooner or
-later.
+As such, it is quite likely that you will find (or have already
+found) yourself in the position of working with such data sooner
+or later.
 
 Let's say you are interested in working with the Iris data set in
 order to test some clustering or classification algorithm that
@@ -53,8 +60,12 @@ target-vector of labels ``Y``.
 The first variable, ``X``, contains all our **features**,
 sometimes called *independent variables* or *predictors*.
 In this case each column of the matrix corresponds to a single
-**observation**, sometimes called *sample*. Each observation in
-``X`` thus has 4 features each.
+**observation**, or *sample*. Each observation in
+``X`` thus has 4 features each. These features represent some
+quantitative information known about the corresponding
+observation, which for the sake of keeping this document concise,
+is about the extend to which we will discuss their meaning in
+this tutorial.
 
 .. code-block:: jlcon
 
@@ -68,9 +79,9 @@ In this case each column of the matrix corresponds to a single
 The second variable, ``Y``, denotes the **labels** (also often
 called *classes* or *categories*) of each observation. These
 terms are usually used in the context of predicting categorical
-variables. The more general term for ``Y``, which also includes
-the case of numerical outcomes, is **targets**, *responses*, or
-*dependent variables*.
+variables, such as we do in this example. The more general term
+for ``Y``, which also includes the case of numerical outcomes, is
+**targets**, *responses*, or *dependent variables*.
 
 .. code-block:: jlcon
 
@@ -112,11 +123,14 @@ dangerous because this strategy makes a strong assumption that
 may not be true for the data we are working with (and in fact it
 is not true for the Iris data set). But more on that later.
 
-To do a static split we first need to decide how many observation
-we want in our training set and how many observation we would
-like to hold out on and put in our test set. Let's say we decide
-on using 80% of our data for training. To split our data we need
-to create the indices denoting each set.
+To perform a static split we first need to decide how many
+observation we want in our training set and how many observation
+we would like to hold out on and put in our test set.
+It is often more convenient to think in terms of proportions
+instead of absolute numbers. Let's say we decide on using 80% of
+our data for training. To split our data set in such a way, we
+first need to derive which elements of ``X`` and ``Y`` we need
+assign to each subset in order to accomplish this exact effect.
 
 .. code-block:: jlcon
 
@@ -127,9 +141,9 @@ to create the indices denoting each set.
    121:150
 
 As we can see, we made sure that the two ranges do not overlap,
-so our two subsets should be disjoint. Now we can use these
-ranges as indices to subset our variables into a training and a
-test portion.
+implying that our two subsets will be disjoint. At this point we
+can use these ranges as indices to subset our variables into a
+training and a test portion.
 
 .. code-block:: jlcon
 
@@ -141,28 +155,29 @@ test portion.
    julia> size(X_test)
    (4,30)
 
+.. note::
+
+   To put this into perspective: In order to perform this type of
+   static split using the provided functions of this package, one
+   would type the following code:
+
+   .. code-block:: julia
+
+      (X_train,Y_train), (X_test,Y_test) = splitobs((X,Y), at = 0.8)
+
+   For more information take a look at the documentation for the
+   function :func:`splitobs`.
+
 So far so good. For many data sets, this approach would actually
 work pretty fine. However - as we teased before - performing
 static splits is not necessarily a good idea if you are not sure
-that both your resulting subsets (individually) would be
-representative of the complete data set.
-
-.. tip::
-
-   While it surely depends on the situation, as a rough guide we
-   would advise to only use static splits in one of the following
-   two situations:
-
-   1. You are *absolutely confident* that the order of the
-      observations in your data set is *random*.
-
-   2. You are working with a data set for which there is a
-      convention to use the last :math:`n` observations as a
-      test set or validation set.
+that both your resulting subsets (individually!) would end up
+being representative of the complete data set or population under
+study.
 
 The concrete issue in our current example is that the iris
 data set has structure in the order of its observations.
-In fact the data set is ordered according to their label.
+In fact, the data set is ordered according to their labels.
 The first 50 observations all belong to the class ``setosa``,
 the next 50 to ``versicolor``, and the last 50 observation to
 ``virginica``. Knowing that piece of trivia it is now plain to
@@ -186,6 +201,19 @@ estimates and chances are some colleague would (rightfully) smile
 at us knowingly, and probably tease us with this little mistake
 for a few weeks.
 
+.. tip::
+
+   While it surely depends on the situation, as a rough guide we
+   would advise to only use static splits in one of the following
+   two situations:
+
+   1. You are *absolutely confident* that the order of the
+      observations in your data set is *random*.
+
+   2. You are working with a data set for which there is a
+      convention to use the last :math:`n` observations as a
+      test set or validation set.
+
 Well, so we saw that a static split would not be a good idea for
 this data set. What we really want in our situation is a random
 assignment of each observation to one (and only one) of the two
@@ -208,18 +236,19 @@ The naive thing to do now would be to first create a shuffled
 version of our full data set using ``X[:,idx]`` and ``Y[idx]`` and
 then do a static split on the new shuffled version. That,
 however, would in general be quite inefficient as we would copy
-the data set around quite a few times before even using it for training
-our model. The data set usually takes up a lot more memory than
-just the indices, and if we think about it, we will see that
-reasoning with the indices is all we really need to do in order
-to accomplish our partitioning strategy.
+the data set around unnecessarily a few times before even using
+it for training our model. The data set usually takes up a lot
+more memory than just the indices, and if we think about it, we
+will see that reasoning with the indices is all we really need to
+do in order to accomplish our partitioning strategy.
 
 Instead of first shuffling the whole data set, let us just perform
 a static split on ``idx``, similar to how we initially did on the
 data directly. In other words we perform our static sub-setting
 on the indices in ``idx`` instead of the observations in data.
-This is what we initially meant with "keeping track of indices",
-as this concept of index-accumulation is quite powerful.
+This is already hinting to what we meant at the beginning of this
+document with "keeping track of indices", since this concept of
+index-accumulation is quite powerful.
 
 .. code-block:: jlcon
 
@@ -239,9 +268,9 @@ as this concept of index-accumulation is quite powerful.
       5
      13
 
-Using these new training and test indices we can now build our
-two data subsets as before, but this time we end up with
-randomly assigned observations for both.
+Using these new training- and test indices we can now construct
+our two data subsets as we did before, but this time we end up
+with randomly assigned observations for both.
 
 .. code-block:: jlcon
 
@@ -253,83 +282,128 @@ randomly assigned observations for both.
     "setosa"
     "setosa"
 
-Very well, now we have a training set and a test set. In many
+Very well! Now we have a training set and a test set. In many
 situations we may want to consider further sub-setting of our
 training set before feeding the subsets into some learning
-algorithm. In a typical scenario we would be inclined to further
-split our training set into a smaller training set and a
-validation set, which we would like to use to test the impact of
-our hyper-parameters on the prediction quality of our model. And
-if additionally we employ a stochastic learning algorithm,
-chances are that we also want to split our training data into
-equally sized mini-batches before feeding it into the algorithm.
+algorithm.
 
-The nice thing is that all these sub-setting of sub-sets can be
-done by just accumulating indices. The following code-snipped
-shows how this could be achieved if done manually.
+In a typical scenario we would be inclined to split our newly
+created training set into a smaller training set and a validation
+set, the later of which we would like to use to test the impact
+of our hyper-parameters on the prediction quality of our model.
+And if additionally we employ a stochastic learning algorithm,
+chances are that we also want to chunk our training data into
+equally sized mini-batches before feeding those individually into
+the training procedure.
+
+Even though this is starting to sound rather complex, it turns
+out that all we really need to do is keep track of our indices
+properly. In other words, all these sub-setting of sub-sets can
+be done by just accumulating indices. The following code-snipped
+shows how this could be achieved if implemented manually.
 
 .. code-block:: julia
 
    X, Y = load_iris()
 
+   # trainingset: 100 obs
+   # validationset: 20 obs
+   # testset: 30 obs
    n_cv    = 120
    n_train = 100
 
+   # randomly assign observations to either CV set or test set
+   # the CV set will later be divided into training and validation set
    idx = shuffle(1:150)
    idx_cv   = idx[1:n_cv]
    idx_test = idx[(n_cv + 1):150]
 
+   # we will perform 10 different partitions of the CV set into
+   # a training and validation portion to get a better estimate
    for i = 1:10
+       # each iteration we shuffle around the CV indices so that
+       # a static split into training and validation set will be
+       # the same as a random assignment
        shuffle!(idx_cv)
        idx_train = idx_cv[1:n_train]
        idx_val   = idx_cv[(n_train+1):n_cv]
 
-       # iterate over 20 batches of batch-size 5
+       # iterate over our training set in 20 batches of batch-size 5
        for j = 1:20
            idx_batch = idx_train[(1:5) + (j*5-5)]
 
+           # Now we actually allocate the current batch of data
+           # that we need for our computation in this step.
            X_batch = X[:, idx_batch]
            Y_batch = Y[idx_batch]
 
-           # .. train some model on current batch here
+           # ... train some model on current batch here ...
        end
    end
 
+
 I would argue that this code is still quite readable and we
 managed to delay accessing and sub-setting of our data set to the
-latest possible moment, while also only copying the data we
-actually need at that point.
+latest possible moment. Also note how we only copy the portion of
+the data that we actually need at that iteration.
+
 The main point of this exercise is to show that nesting data
 access pattern can be reduced to just keeping track of indices.
 This is the core design principle that the access pattern of
 MLDataUtils follow.
 
+.. note::
+
+   To put this into perspective: In order to perform this type of
+   partitioning scheme using the provided functions of this
+   package, one would type the following code:
+
+   .. code-block:: julia
+
+      cv, test = splitobs(shuffleobs((X,Y), at = 0.8)
+
+      for i = 1:10
+          train, val = splitobs(shuffleobs(cv), at = 0.84)
+
+          # iterate over our training set in 20 batches of batch-size 5
+          for (X_batch, Y_batch) in eachbatch(train, 5)
+              # ... train some model on current batch here ...
+          end
+      end
+
+   For more information take a look at the documentation for the
+   functions :func:`splitobs`, :func:`shuffleobs`, and
+   :func:`eachbatch` respectively.
+
 While this is already a decent enough implementation, we could
-further reduce our memory footprint by using views. Keep in mind
-that even if we only copy indices, we still copy around memory.
+further reduce our memory footprint by using views.
+We should not forget that that even if we only copy indices, we
+still copy around memory.
 
 .. code-block:: julia
 
    X, Y = load_iris()
 
+   # same as before
    n_cv    = 120
    n_train = 100
-
    idx = shuffle(1:150)
    idx_cv   = view(idx, 1:n_cv)
    idx_test = view(idx, (n_cv + 1):150)
 
-   # preallocate batch-buffer
+   # preallocate batch buffers. We will re-use them in every
+   # iteration to avoid temporary arrays
    X_batch = zeros(Float64, 4, 5)
    Y_batch = Y[1:5]
 
+   # We can create our training and validation views here,
+   # as their elements will be mutated when we shuffle idx_cv
    idx_train = view(idx_cv, 1:n_train)
    idx_val   = view(idx_cv, (n_train+1):n_cv)
 
    for i = 1:10
        shuffle!(idx_cv)
 
-       # iterate over 20 batches of batch-size 5
        for j = 1:20
            idx_batch = view(idx_train, (1:5) + (j*5-5))
 
@@ -340,42 +414,45 @@ that even if we only copy indices, we still copy around memory.
            # of strings, but you get the idea.
            copy!(Y_batch, view(Y, idx_batch))
 
-           # .. train some model on current batch here
+           # .. train some model on current batch here ...
        end
    end
 
-In this version of the code we did quite a lot of micro
-optimization, which at least on paper yields a cleaner
-implementation of our task. While probably improving our
-performance a little, it did not really help readability of our
-code however.
+In this version of the code we did quite a lot of
+micro-optimization, which at least on paper yields a cleaner
+solution to our task. While probably improving our performance a
+little, it did not really help readability of our code however.
+And if we end up with a bug somewhere we may have a nasty time
+deducing which little "trick" does not do what we thought it would.
 
-.. tip::
+.. warning::
 
    These kind of hand-crafted micro-optimizations, while fun to
-   do for some, can be quite error prone. In some situations they
-   may not even turn out to have been worth the effort when
-   comparing its influence on the training time of your model.
-   So if your time is valuable it might be that it could be
-   better utilized elsewhere.
+   do to think about, can be quite error prone. In some
+   situations they may not even turn out to have been worth the
+   effort when comparing its influence on the training time of
+   your model. Keep that in mind when tinkering on a project.
+   Premature optimization without profiling can cost a lot of
+   valueable time and energy.
 
 Now to the good part. MLDataUtils tries to do these kind of
-performance tricks for you in certain situations. So if it makes
-sense and it would be type-stable, our provided pattern try to
-avoid allocating unnecessary index-vectors. Naturally, one will
-most of the time be able to hand craft some better optimized
-solution for some special use-case, but most of the time just
-avoiding common pitfalls will get your 80% of the way. With an
-interesting enough problem the other 20% of performance-gain you
-could achieve by dwelling on this issue would likely be within the
-standard error of your training time.
+performance tricks for you in certain situations (specifically
+when working directly with :class:`DataSubset`). So if it makes
+sense, our provided pattern try to avoid allocating unnecessary
+index-vectors. Naturally, one will always be able to hand craft
+some better optimized solution for some special use-case such as
+this one, but most of the time just avoiding common pitfalls will
+get you 80% of the way. With an interesting enough problem the
+other 20% of performance-gain you could achieve by dwelling on
+this issue would likely be negligible in relation to the training
+time of your learning algorithm.
 
-Observation Dimension
-~~~~~~~~~~~~~~~~~~~~~~~
+Array Dimension for Observations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Before we move on from our array example, let us briefly think about
-the "observation dimension" of some array. Let us consider the
-Iris data set again
+Before we move on from our array example to a data frame, let us
+briefly think about the "observation dimension" of some array.
+Let us consider the Iris data set again.
 
 .. code:: jlcon
 
@@ -384,15 +461,139 @@ Iris data set again
    julia> size(X)
    (4,150)
 
-   julia> size(Y)
-   (150,)
+The variable ``X`` is our feature ``Matrix{Float64}``, which in
+Julia is a typealias for a two dimensional array
+``Array{Float64,2}``.
+As such the variable has two dimensions that we can assign meaning
+to.
+
+So far we acted on the convention that the first dimension
+encodes our features, and the second dimension encodes our
+observations. However, there is no law that dictates that this is
+the right way around. In fact it is much more common in the
+literature as well as other languages to have the first dimension
+encode the observations and the second dimension denote the
+features.
+
+.. note::
+
+   There is a good reason that you will often find the convention
+   that the last dimension encodes the observations when working
+   with Julia. This has to do with how Julia arrays access their
+   memory. For more information on this topic take a look at the
+   corresponding section in the
+   `Julia documentation <http://docs.julialang.org/en/latest/manual/performance-tips/#access-arrays-in-memory-order-along-columns>`_
+
+There have been many discussions on which convention is more
+useful and/or efficient, but the only answer you will find here
+is a humble **it depends on what you are doing**.
+
+Consider the following scenario. Let's say we would again like to
+work with the Iris dataset, but this time we use the `RDatasets`
+package to load it.
+
+.. code-block:: jlcon
+
+   julia> using RDatasets
+   julia> iris = dataset("datasets", "iris")
+   150×5 DataFrames.DataFrame
+   │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species     │
+   ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────────┤
+   │ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ "setosa"    │
+   │ 2   │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ "setosa"    │
+   │ 3   │ 4.7         │ 3.2        │ 1.3         │ 0.2        │ "setosa"    │
+   │ 4   │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ "setosa"    │
+   ⋮
+   │ 147 │ 6.3         │ 2.5        │ 5.0         │ 1.9        │ "virginica" │
+   │ 148 │ 6.5         │ 3.0        │ 5.2         │ 2.0        │ "virginica" │
+   │ 149 │ 6.2         │ 3.4        │ 5.4         │ 2.3        │ "virginica" │
+   │ 150 │ 5.9         │ 3.0        │ 5.1         │ 1.8        │ "virginica" │
+
+There are two common ways of how to go about using such a
+data frame for some Machine Learning purposes:
+
+1. Using a formula to compute a model-matrix and work with that.
+   This is a typical approach for when one wants to use models
+   that need numerical features, such as linear regression.
+   The reason is that using a formula we can transform the
+   categorical features to numerical ones using so-called dummy
+   variables.
+
+2. Using the data frame directly. Some models, such as decision
+   trees, can deal with categorical features themself and don't
+   need the features in a matrix form.
+
+Before we dive into the second scenario, let us consider building
+a model matrix. This will give us a motivating example to deal with
+different conventions for the observation dimension.
+
+Without any explaining that does it justice, let us create a
+model matrix ``X`` from the data frame ``iris`` using the
+following code snipped:
+
+.. code-block:: jlcon
+
+   julia> X = ModelMatrix(ModelFrame(Species ~ SepalLength + SepalWidth + PetalLength + PetalWidth, iris)).m
+   150×5 Array{Float64,2}:
+    1.0  5.1  3.5  1.4  0.2
+    1.0  4.9  3.0  1.4  0.2
+    1.0  4.7  3.2  1.3  0.2
+    1.0  4.6  3.1  1.5  0.2
+    ⋮
+    1.0  6.3  2.5  5.0  1.9
+    1.0  6.5  3.0  5.2  2.0
+    1.0  6.2  3.4  5.4  2.3
+    1.0  5.9  3.0  5.1  1.8
+
+Notice two things. First, we now have a feature matrix ``X`` for
+which the first dimension (i.e. the rows) denotes the observations.
+Secondly, we ended up with 5 features for each observation, while
+in our previous example he had 4. This is because by default
+the model matrix is augmented with a constant variable that
+models can use to fit an intercept to. But that need not trouble
+us right now. The main point is that different tasks often have
+different conventions, and ideally we would like to have tools
+that can adapt to the current situation.
+
+So how would this change of convention be reflected in our
+sub-setting strategy? Well, everywhere we previously wrote
+``X[:, indices]``, we would now write ``X[indices, :]``.
+This looks like a simple enough change, but it has the
+consequence that the reuse already written partitioning code can be
+rather limited without some more coding effort. And even then,
+what if next time we work with 3 or 4 dimensional arrays (e.g.
+image data)?
+
+.. note::
+
+   To put this into perspective: In order to be able to diverge
+   from the convention of using the last array dimension as
+   observation, all relevant methods of this package have an
+   optional parameter ``obsdim``, which can be specified either
+   as a positional and type-stable argument, or as a convenient
+   keyword argument
+
+   .. code-block:: julia
+
+      train, test = splitobs(X, obsdim = 1)
+      train, test = splitobs(X, obsdim = :first)
+      train, test = splitobs(X, ObsDim.First())
+
+   For more information take a look at the documentation for
+   :class:`ObsDimension`.
 
 
+Generalizing to Other Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-TODO: Discuss Shortcomings
+So far we have discussed how to implement a solution to the task
+of partitioning some data in array form. We also showed that it
+is feasible to consider supporting different conventions for
+which dimension to use to denote the observations.
 
-Generalizing the Approach
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Now what if we would like to work with data that is not in array
+form, such as data-frames.
+
 
 TODO: getting number of obs and individiual obs
 
@@ -405,6 +606,12 @@ As such we made it a key priority to make as little assumptions
 as possible about the data at hand.
 
 TODO: Extensibility  Minimal dependecies LearnBase
+
+TODO: Tuple group obs
+
+TODO: Tuple last element contains target (if one exists)
+
+TODO: obs maps to target elementwise (important for iterators)
 
 The DataSubset Type
 --------------------

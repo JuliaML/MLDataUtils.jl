@@ -43,7 +43,7 @@ are most commonly employed to represent the data of interest,
 such as ``Array``.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    accesspattern/subsetting
    accesspattern/iteration
