@@ -12,6 +12,12 @@ getobs!(buffer, data, idx; obsdim = default_obsdim(data)) =
 nobs(data, ::ObsDim.Undefined)::Int = nobs(data)
 getobs(data, idx, ::ObsDim.Undefined) = getobs(data, idx)
 
+# to accumulate indices as views instead of copies
+_view(indices::Range, i::Int) = indices[i]
+_view(indices::Range, i::Range) = indices[i]
+_view(indices, i::Int) = indices[i] # to throw error in case
+_view(indices, i) = view(indices, i)
+
 """
     nobs(data, [obsdim])
 
@@ -204,7 +210,7 @@ DataSubset{T,I,O}(data::T, indices::I, obsdim::O) =
 # don't nest subsets
 function DataSubset(subset::DataSubset, indices, obsdim)
     @assert subset.obsdim == obsdim
-    DataSubset(subset.data, subset.indices[indices], obsdim)
+    DataSubset(subset.data, _view(subset.indices, indices), obsdim)
 end
 
 function Base.show(io::IO, subset::DataSubset)
@@ -226,7 +232,7 @@ Base.length(subset::DataSubset) = length(subset.indices)
 Base.endof(subset::DataSubset) = length(subset)
 
 Base.getindex(subset::DataSubset, idx) =
-    DataSubset(subset.data, subset.indices[idx], subset.obsdim)
+    DataSubset(subset.data, _view(subset.indices, idx), subset.obsdim)
 
 nobs(subset::DataSubset) = length(subset)
 
@@ -234,13 +240,13 @@ getobs(subset::DataSubset) =
     getobs(subset.data, subset.indices, subset.obsdim)
 
 getobs(subset::DataSubset, idx) =
-    getobs(subset.data, subset.indices[idx], subset.obsdim)
+    getobs(subset.data, _view(subset.indices, idx), subset.obsdim)
 
 getobs!(buffer, subset::DataSubset) =
     getobs!(buffer, subset.data, subset.indices, subset.obsdim)
 
 getobs!(buffer, subset::DataSubset, idx) =
-    getobs!(buffer, subset.data, subset.indices[idx], subset.obsdim)
+    getobs!(buffer, subset.data, _view(subset.indices, idx), subset.obsdim)
 
 # compatibility with nested functions
 default_obsdim(subset::DataSubset) = subset.obsdim

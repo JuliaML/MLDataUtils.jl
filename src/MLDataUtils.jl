@@ -3,7 +3,6 @@ module MLDataUtils
 using LearnBase
 using StatsBase
 
-import Iterators: repeatedly
 import LearnBase: nobs, getobs
 
 export

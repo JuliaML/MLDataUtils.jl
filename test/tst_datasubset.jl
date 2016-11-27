@@ -537,8 +537,13 @@ end
                 @test @inferred(getobs(subset)) == getobs(var, idx)
                 @test @inferred(DataSubset(subset)) === subset
                 @test @inferred(subset[1]) == DataSubset(var, idx[1])
-                @test typeof(@inferred(subset[1:1])) == typeof(DataSubset(var, idx[1:1]))
-                @test nobs(subset[1:1]) == nobs(DataSubset(var, idx[1:1]))
+                if typeof(idx) <: Range
+                    @test typeof(@inferred(subset[1:1])) == typeof(DataSubset(var, idx[1:1]))
+                    @test nobs(subset[1:1]) == nobs(DataSubset(var, idx[1:1]))
+                else
+                    @test typeof(@inferred(subset[1:1])) == typeof(DataSubset(var, view(idx, 1:1)))
+                    @test nobs(subset[1:1]) == nobs(DataSubset(var, view(idx, 1:1)))
+                end
             end
         end
     end
