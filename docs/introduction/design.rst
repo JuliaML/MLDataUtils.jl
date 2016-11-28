@@ -1,5 +1,5 @@
 Package Design
-==================
+===============
 
 In a heterogeneous field, such as Machine Learning, one quickly
 finds himself/herself collaborating with very smart people of
@@ -21,12 +21,27 @@ were made to be as they are.
 
 
 Design Principles
--------------------
+------------------
 
 While some design goals are arguably generic no-brainer for any
 software project, we would still like to take the time to write
 down the key principles and opportunities that we identified while
 devising and implementing this package.
+
+Julia First
+~~~~~~~~~~~~
+
+As the name **JuliaML** subtly hints, the mission of our
+organization is to design and implement Machine Learning
+functionality in Julia itself. We believe that the design of the
+language allows us to experiment with API design ideas that may
+not be feasible or sensible in other languages that suffer from
+the two-language problem much more significantly. Naturally,
+that is not as black or white as it sounds, since even Julia
+itself out-sources certain computation to BLAS (which is a good
+thing!). As a rough guide: unless it is in ``Base`` we only
+consider code that is written solely in Julia to be merged
+into the JuliaML ecosystem.
 
 Data Agnostic
 ~~~~~~~~~~~~~~
@@ -91,7 +106,7 @@ sub-sampling your data. It is important to us that one can do
 such a thing in a sensible way and also still be able to use to
 rest of the package.
 
-The situation that we judge as probably be most common, though,
+The situation that we judge as probably the most common, though,
 will be that users will want to work with their own special
 data-containers. Therefore we put our core priority on making
 sure that doing so is as simple and non-disruptive as possible.
@@ -119,7 +134,6 @@ problem, but we put a large emphasis on testing the actual
 functionality of our code. As such we can also only consider
 pull-requests that provide sensible and meaningful tests for
 their proposed changes (so coverage alone won't cut it).
-
 
 Cross-Community
 ~~~~~~~~~~~~~~~~~
