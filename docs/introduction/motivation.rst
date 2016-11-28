@@ -396,6 +396,8 @@ still copy around memory.
    idx_val   = view(idx_cv, (n_train+1):n_cv)
 
    for i = 1:10
+       # this little trick will randomly assign observations to
+       # either training set or validation set in each iteration
        shuffle!(idx_cv)
 
        for j = 1:20

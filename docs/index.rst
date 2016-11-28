@@ -38,11 +38,6 @@ approaches the task conceptually.
    :maxdepth: 2
 
    introduction/motivation
-
-
-.. toctree::
-   :maxdepth: 2
-
    introduction/design
 
 Using MLDataUtils.jl
@@ -82,7 +77,7 @@ feature centering and rescaling.
 .. toctree::
    :maxdepth: 2
 
-  data/feature
+   data/feature
 
 Data Generators
 ~~~~~~~~~~~~~~~~~~~~~~~
