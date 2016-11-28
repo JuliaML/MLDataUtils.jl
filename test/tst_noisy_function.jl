@@ -23,4 +23,3 @@ end
     end
     print(scatterplot(x, y; color = :blue, height = 5))
 end
-

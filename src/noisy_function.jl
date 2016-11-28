@@ -43,3 +43,34 @@ function noisy_poly{T<:Real,R<:Real}(coef::AbstractVector{R}, x::AbstractVector{
     y .+= noise .* f_rand(n)
     x_vec, y
 end
+
+
+"""
+`x_one, y_one, x_zero, y_zero = noisy_spiral(n, a, theta, b; noise = 0.01, f_rand = randn)`
+
+Generates `n` noisy responses for a spiral with two labels. Uses the radius, angle
+and scaling arguments to space the points in 2D space and adding `noise .* f_randn(n)`
+to the response.
+"""
+function noisy_spiral(n::Int = 96, a::Real = 6.5, theta::Real = 16.0, b::Real=104.0; noise::Real = 0.1, f_rand::Function = randn)
+    x_one = zeros(n)
+    y_one = zeros(n)
+    x_zero = zeros(n)
+    y_zero = zeros(n)
+    index = 1:1.0:n
+    for i = 1:n
+        _angle = index[i]*pi/theta
+    	_radius = a * (b-index[i]) / b
+    	_x = _radius * sin(_angle)
+    	_y = _radius * cos(_angle)
+    	x_one[i] = _x
+    	y_one[i] = _y
+    	x_zero[i] = -_x
+    	y_zero[i] = -_y
+    end
+    x_one += noise * f_rand(n)
+    y_one += noise * f_rand(n)
+    x_zero += noise * f_rand(n)
+    y_zero += noise * f_rand(n)
+    x_one, y_one, x_zero, y_zero
+end
