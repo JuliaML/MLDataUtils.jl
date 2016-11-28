@@ -28,8 +28,8 @@ software project, we would still like to take the time to write
 down the key principles and opportunities that we identified while
 devising and implementing this package.
 
-Julia First
-~~~~~~~~~~~~
+# Julia First
+~~~~~~~~~~~~~~~
 
 As the name **JuliaML** subtly hints, the mission of our
 organization is to design and implement Machine Learning
@@ -43,8 +43,8 @@ thing!). As a rough guide: unless it is in ``Base`` we only
 consider code that is written solely in Julia to be merged
 into the JuliaML ecosystem.
 
-Data Agnostic
-~~~~~~~~~~~~~~
+# Data Agnostic
+~~~~~~~~~~~~~~~~
 
 One of the interesting strong points of the Julia language is its
 rich and developer-friendly type system. User-created types are
@@ -57,8 +57,8 @@ make as little assumptions as possible about the data at hand.
 For example, we do not require custom data-storage types to share
 a common super-type.
 
-Type Stable
-~~~~~~~~~~~~
+# Type Stable
+~~~~~~~~~~~~~~
 
 The impact of type-stable code on its performance is not
 necessarily a clean cut issue. That said, you do not want to have
@@ -70,8 +70,8 @@ dispatch-friendly arguments.  This can be unintuitive at times,
 because the ordering of the arguments does not always offer
 itself to some meaningful convention or interpretation.
 
-Convenient
-~~~~~~~~~~~
+# Convenient
+~~~~~~~~~~~~~
 
 While efficiency is important, we can sometimes be prone to
 overthink and indeed overestimate the impact of certain factors
@@ -93,8 +93,8 @@ arguments are designed to be more tolerant with the parameter
 values and types they accept. However, this can come at the price
 of poisoning the type-inference of the calling scope.
 
-Extensible
-~~~~~~~~~~~
+# Extensible
+~~~~~~~~~~~~~
 
 If you find yourself working on an unusual problem, chances are
 that the standard methods or patterns implemented by this package
@@ -124,8 +124,8 @@ This way package developers need not pollute their ``REQUIRE``
 file with heavy dependencies just to support the JuliaML
 ecosystem.
 
-Well Tested
-~~~~~~~~~~~~
+# Well Tested
+~~~~~~~~~~~~~~
 
 While test coverage can give a rough estimate of how much effort
 was spend in testing your code, it is still just a proxy variable
@@ -135,8 +135,8 @@ functionality of our code. As such we can also only consider
 pull-requests that provide sensible and meaningful tests for
 their proposed changes (so coverage alone won't cut it).
 
-Cross-Community
-~~~~~~~~~~~~~~~~~
+# Cross-Community
+~~~~~~~~~~~~~~~~~~
 
 The initial authors of this package consider it of importance to
 work through aesthetic-based disagreements, and so to converge
@@ -157,21 +157,85 @@ more promising ground for actionable changes or refactors.
 Design Overview
 ----------------
 
-TODO: Tuple group obs
+This section will serve as a documentation of how and why
+specific parts of MLDataUtils was designed the way it is. As
+such it is *not* a user's guide, but instead a discussion is
+intended to inform potential contributors and users of why things
+are the way they are currently.
 
-TODO: Tuple last element contains target (if one exists)
+Support for Custom Data Container
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-TODO: obs maps to target elementwise (important for iterators)
+We identified quite early in our design discussions, that we
+wanted to support custom data-container types as first class
+citizen in our data-access pattern. Consequently, we had to
+carefully think about what kind of functionality and information
+any data-storage type must expose in order to achieve this in a
+clean and efficient manner.
+Luckily we found that this can be reduced to surprisingly little,
+as subsetting/partitioning of data really just breaks down to
+keeping track of indices, and don't actually involve the data
+until the very end (see :doc:`motivation` for a thorough
+discussion of this).
 
-The DataSubset Type
-~~~~~~~~~~~~~~~~~~~~
+Furthermore, we wanted to make sure that the decision to opt-in
+to our ecosystem had as little impact to the overall design of
+the user code as possible. This had the consequence of not being
+able to require a common super-type for data-containers.
+Additionally, we could not rely on ``Base`` functions, such as
+``size``, to be implemented for the data at hand. Worse, we could
+not be confident that (even if implemented) these methods would
+consistently have the same second-hand interpretation in terms of
+what denotes the *number of observations*.
 
-This package represents subsets of data as a custom type called
-:class:`DataSubset`; unless a custom subset type is provided, but
-more on that later. The main purpose for the existence of
-:class:`DataSubset` is two-fold:
+Thus we decided to define custom functions with singular
+interpretation for these purposes. This has a price, however.
+If a user would like to provide support for his/her custom
+data-storage type, he/she would need to add at least some JuliaML
+dependency in order to define methods for the required functions.
+To keep this dependency reasonable small, we created a
+light-weight package called
+`LearnBase <https://github.com/JuliaML/LearnBase.jl>`_.
+The sole purpose of this package is to define common types and
+functions used through the JuliaML ecosystem.
 
-1. To **delay the evaluation** of a subsetting operation until an
+Thus to opt-in to the ecosystem with your custom package, the
+LearnBase dependency is all that you will need to accomplish that
+(if it isn't then you likely found a bug!).  Take a look at
+:doc:`../accesspattern/custom` for more information on that
+topic.
+
+Representing Data Subsets
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As we mentioned before, as long as we can somehow keep track of
+the indices, we don't actually require the data-storage to offer
+a lot of special functionality. The question that remained,
+though, is how to track the indices in a sensible and
+non-intrusive manner. When in doubt, we try to follow the Julia
+design by example. Consider the ``SubArray`` type. In our current
+context, we can think about it as really just a special case
+implementation for a data-container decorator that keeps track of
+the indices (especially since the release of 0.5).
+
+We will call an object that connects some data-container to some
+subset-indices a **Subset**. We decided that it would be
+preferable to allow data-containers to specify their own type of
+subset. For example, a ``SubArray`` would be a good choice as a
+subset for some ``Matrix``. See :doc:`../accesspattern/custom`
+for more information on how to provide a custom subset type for
+your data-container.
+
+To keep user-effort manageable, we provide a generic subset
+implementation for those types that do not want to implement
+their own special version.
+In other words: Unless a custom subset-type is provided, a
+subsets of some given data will be represented by a type called
+:class:`DataSubset`.  The main purpose for the existence of
+:class:`DataSubset` - or any special data subset for that matter
+- is two-fold:
+
+1. To **delay the evaluation** of a sub-setting operation until an
    actual batch of data is needed.
 
 2. To **accumulate subsettings** when different data access pattern
@@ -179,7 +243,15 @@ more on that later. The main purpose for the existence of
    (i.e.: train/test splitting -> K-fold CV -> Minibatch-stream)
 
 This design aspect is particularly useful if the data is not
-located in memory, but on the harddrive or some remote location.
+located in memory, but on the hard-drive or some remote location.
 In such a scenario one wants to load only the required data
 only when it is actually needed.
 
+Tuples and Labeled Data
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+TODO: Tuple group obs
+
+TODO: Tuple last element contains target (if one exists)
+
+TODO: obs maps to target elementwise (important for iterators)
