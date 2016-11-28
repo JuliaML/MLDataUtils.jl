@@ -12,22 +12,45 @@ context.
 Where to begin?
 ----------------
 
-If this is the first time you consider using MLDataUtils, make
-sure to check out the "Getting Started" section; specifically
-"How to ...?", which lists some of most common scenarios and how
-to approach them.
+If this is the first time you consider using MLDataUtils for your
+machine learning related experiments, make sure to check out the
+"Getting Started" section; specifically "How to ...?", which
+lists some of most common scenarios and how to approach them
+using the functionality provided by this package.
 
 .. toctree::
    :maxdepth: 2
 
    introduction/gettingstarted
 
-Package Overview
------------------
+Introduction and Motivation
+-----------------------------
+
+If you are new to Machine Learning in Julia, or are simply
+interested in how and why this package works the way it works,
+feel free to take a look at the following documents.
+There we discuss the problem of data-partitioning itself and what
+challenges it entails.
+Further we will provide some insight on how this package
+approaches the task conceptually.
+
+.. toctree::
+   :maxdepth: 2
+
+   introduction/motivation
+
+
+.. toctree::
+   :maxdepth: 2
+
+   introduction/design
+
+Using MLDataUtils.jl
+---------------------
 
 While the sole focus of the whole package is on data-related
 functionality, we can further divide the provided types and functions
-into a number of quite different sub-categories.
+into a number of quite heterogeneous sub-categories.
 
 Data Access Pattern
 ~~~~~~~~~~~~~~~~~~~~~~~
