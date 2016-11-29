@@ -256,23 +256,40 @@ it can be split somewhere or sub-setted somehow. This need not
 be true for all kinds of data we are interested in working with.
 
 This package differentiates between two kinds of data that we
-will call **data-provider**, and **data-container** respectively.
+will call **data-iterator**, and **data-container** respectively.
 None is the superset of the other, but a user type can be both.
 This also implies that none require a type to have some specific
 super-type.
 
-Data Provider
-    A data provider is really just the same as a plain Julia
+Data Iterator
+    A data iterator is really just the same as a plain Julia
     iterator that need not (but may) know how many elements it
     can provide. It also makes no guarantees about being able to
     be sub-setted, so there is no contract that states that a
-    data provider must implement a function that allows to query
+    data iterator must implement a function that allows to query
     an observation of some specific index.
 
     Each element must either be a single observation or a batch
-    of observations; the choice is up to the data provider. That
+    of observations; the choice is up to the data iterator. That
     said it is important that all provided elements are of the
     same type and of the same structure (e.g. batch size).
+
+    There is no hard distinction between a data iterator that
+    provides the data itself or a data iterator that just
+    iterates over some other data iterator/container in some
+    manner. For example the data iterator :class:`RandomBatches`
+    iterates over randomly sampled batches of the data container
+    that you pass to it in its constructor.
+
+    It is not a requirement that a custom data iterator is a
+    subtype of :class:`DataIterator` (nor :class:`BatchIterator`
+    or :class:`ObsIterator` for that matter). Their sole purpose
+    is dispatch.  For those cases that you can't use these types
+    as super-type for your custom iterator you can use the
+    function :func:`dataiter` to box your iterator in a simple
+    distpatch-able decorator that is a sub-type of those. Of
+    course there are some nuances to consider and interfaces to
+    implement. See TODO for more information.
 
 Data Container
     A data container is any type that knows how many observations
@@ -280,15 +297,24 @@ Data Container
     method for :func:`getobs` that allows to query individual
     observations or batches of observations.
 
-    A data container need not also be a data provider! There is
+    There is no contract that states :func:`getobs` must return
+    some specific type. What it returns is up to the data
+    container. The only requirement is that it is consistent. A
+    single observation should always have the same type and
+    structure, as should a batch of some specific size. see TODO
+    for more information of what makes some type a data
+    container.
+
+    A data container need not also be a data iterator! There is
     no contract that iterating over a data container makes sense
     in terms of its observations. For example: iterating over a
     matrix will not iterate over its observations, but instead
     over each individual element of the matrix.
 
-    Any data container can be converted to a data provider by
-    boxing it into a :class:`DataView`, such as
-    :class:`BatchView` or :class:`ObsView`.
+    Any data container can be promoted to be a data iterator as
+    well as a data container by boxing it into a
+    :class:`DataView`, such as :class:`BatchView` or
+    :class:`ObsView`. See TOD for more information on data views.
 
 Tuples and Labeled Data
 ~~~~~~~~~~~~~~~~~~~~~~~~
