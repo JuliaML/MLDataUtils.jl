@@ -238,14 +238,57 @@ subsets of some given data will be represented by a type called
 1. To **delay the evaluation** of a sub-setting operation until an
    actual batch of data is needed.
 
-2. To **accumulate subsettings** when different data access pattern
-   are used in combination with each other (which they usually are).
-   (i.e.: train/test splitting -> K-fold CV -> Minibatch-stream)
+2. To **accumulate subsetting indices** when different data
+   access pattern are used in combination with each other (which
+   they usually are).  (i.e.: train/test splitting -> K-fold CV
+   -> Minibatch-stream)
 
 This design aspect is particularly useful if the data is not
 located in memory, but on the hard-drive or some remote location.
 In such a scenario one wants to load only the required data
 only when it is actually needed.
+
+What about Streaming Data?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+So far we talked about data as if it were an universal truth that
+it can be split somewhere or sub-setted somehow. This need not
+be true for all kinds of data we are interested in working with.
+
+This package differentiates between two kinds of data that we
+will call **data-provider**, and **data-container** respectively.
+None is the superset of the other, but a user type can be both.
+This also implies that none require a type to have some specific
+super-type.
+
+Data Provider
+    A data provider is really just the same as a plain Julia
+    iterator that need not (but may) know how many elements it
+    can provide. It also makes no guarantees about being able to
+    be sub-setted, so there is no contract that states that a
+    data provider must implement a function that allows to query
+    an observation of some specific index.
+
+    Each element must either be a single observation or a batch
+    of observations; the choice is up to the data provider. That
+    said it is important that all provided elements are of the
+    same type and of the same structure (e.g. batch size).
+
+Data Container
+    A data container is any type that knows how many observations
+    it represents (exposed via :func:`nobs`) and implements a
+    method for :func:`getobs` that allows to query individual
+    observations or batches of observations.
+
+    A data container need not also be a data provider! There is
+    no contract that iterating over a data container makes sense
+    in terms of its observations. For example: iterating over a
+    matrix will not iterate over its observations, but instead
+    over each individual element of the matrix.
+
+    Any data container can be converted to a data provider by
+    boxing it into a :class:`DataView`, such as
+    :class:`BatchView` or :class:`ObsView`.
 
 Tuples and Labeled Data
 ~~~~~~~~~~~~~~~~~~~~~~~~
