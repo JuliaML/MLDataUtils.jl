@@ -73,20 +73,18 @@ end
 
 
 """
-x_one, y_one, x_zero, y_zero, vars = load_spiral()`
+x, y, vars = load_spiral()`
 
 Loads an artificial example dataset for a noisy spiral function.
 It is particularly useful to explain representation learning and nonlinearity.
-The vector `x` contains 194 points between 0 and 6.5 with two classes "ones", "zeros".
-The vector `y` contains `r*sin(θ), r*cos(θ)` plus some gaussian noise
+The matrix `x` contains 194 points between 0 and 6.5 lying on the spiral.
+The vector `y` contains the corresponding labels, i.e "ones" or "zeros".
 The optional vector `vars` contains descriptive names for `x` and `y`
 """
-function load_spiral()
+function load_spiral(n::Int = 194)
     path = joinpath(Pkg.dir("MLDataUtils"), "data", "spiral.csv")
     raw_csv = readcsv(path)
-    x_one = convert(Vector{Float64}, raw_csv[:, 1])
-    y_one = convert(Vector{Float64}, raw_csv[:, 2])
-    x_zero = convert(Vector{Float64}, raw_csv[:, 3])
-    y_zero = convert(Vector{Float64}, raw_csv[:, 4])
-    x_one, y_one, x_zero, y_zero, ["r*sin(θ)", "r*cos(θ)", "-r*sin(θ)", "-r*cos(θ)"]
+    x = convert(Matrix{Float64}, raw_csv[1:n, 1:2])
+    y = convert(Vector{Int}, raw_csv[1:n, 3])
+    x, y, ["r*sin(θ)", "r*cos(θ)", "class"]
 end

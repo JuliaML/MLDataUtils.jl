@@ -46,31 +46,29 @@ end
 
 
 """
-`x_one, y_one, x_zero, y_zero = noisy_spiral(n, a, theta, b; noise = 0.01, f_rand = randn)`
+`x, y = noisy_spiral(n, a, theta, b; noise = 0.01, f_rand = randn)`
 
 Generates `n` noisy responses for a spiral with two labels. Uses the radius, angle
 and scaling arguments to space the points in 2D space and adding `noise .* f_randn(n)`
 to the response.
 """
-function noisy_spiral(n::Int = 96, a::Real = 6.5, theta::Real = 16.0, b::Real=104.0; noise::Real = 0.1, f_rand::Function = randn)
-    x_one = zeros(n)
-    y_one = zeros(n)
-    x_zero = zeros(n)
-    y_zero = zeros(n)
-    index = 1:1.0:n
+function noisy_spiral(n::Int = 97, a::Real = 6.5, theta::Real = 16.0, b::Real=104.0; noise::Real = 0.1, f_rand::Function = randn)
+    x = zeros(Float64, (2, 2*n))
+    y = zeros(Int, 2*n)
+    index = 0:1.0:(n-1)
     for i = 1:n
         _angle = index[i]*pi/theta
     	_radius = a * (b-index[i]) / b
-    	_x = _radius * sin(_angle)
-    	_y = _radius * cos(_angle)
-    	x_one[i] = _x
-    	y_one[i] = _y
-    	x_zero[i] = -_x
-    	y_zero[i] = -_y
+    	x_coord = _radius * sin(_angle)
+    	y_coord = _radius * cos(_angle)
+    	x[1, i] = x_coord
+    	x[2, i] = y_coord
+        x[1, n+i] = -(x_coord)
+    	x[2, n+i] = -(y_coord)
+        y[i] = 1
+        y[n+i] = 0
     end
-    x_one += noise * f_rand(n)
-    y_one += noise * f_rand(n)
-    x_zero += noise * f_rand(n)
-    y_zero += noise * f_rand(n)
-    x_one, y_one, x_zero, y_zero
+    x[1, :] += noise * f_rand(2*n)
+    x[2, :] += noise * f_rand(2*n)
+    x, y
 end

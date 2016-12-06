@@ -53,14 +53,10 @@ end
 # ==============================================================
 
 @testset "Test load_spiral" begin
-    x_one, y_one, x_zero, y_zero, vars = load_spiral()
-
-    @test typeof(x_one) <: Vector{Float64}
-    @test typeof(y_one) <: Vector{Float64}
-    @test typeof(x_zero) <: Vector{Float64}
-    @test typeof(y_zero) <: Vector{Float64}
+    x, y, vars = load_spiral()
+    @test typeof(x) <: Matrix{Float64}
+    @test typeof(y) <: Vector{Int}
     @test typeof(vars) <: Vector{UTF8String}
-    @test length(x_one) == length(y_one) == 96
-    @test length(x_zero) == length(y_zero) == 96
-    @test length(vars) == 4
+    @test length(x) == length(y) == 194
+    @test length(vars) == 3
 end
