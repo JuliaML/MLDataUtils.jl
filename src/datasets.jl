@@ -70,3 +70,21 @@ function load_poly()
     y = convert(Vector{Float64}, raw_csv[:, 2])
     x, y, ["x", "2.6 x² + .8 x + ɛ"]
 end
+
+
+"""
+x, y, vars = load_spiral()`
+
+Loads an artificial example dataset for a noisy spiral function.
+It is particularly useful to explain representation learning and nonlinearity.
+The matrix `x` contains 194 points between 0 and 6.5 lying on the spiral.
+The vector `y` contains the corresponding labels, i.e "ones" or "zeros".
+The optional vector `vars` contains descriptive names for `x` and `y`
+"""
+function load_spiral(n::Int = 194)
+    path = joinpath(Pkg.dir("MLDataUtils"), "data", "spiral.csv")
+    raw_csv = readcsv(path)
+    x = convert(Matrix{Float64}, raw_csv[1:n, 1:2])
+    y = convert(Vector{Int}, raw_csv[1:n, 3])
+    x, y, ["r*sin(θ)", "r*cos(θ)", "class"]
+end

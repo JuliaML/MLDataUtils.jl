@@ -16,6 +16,7 @@ export
     noisy_function,
     noisy_sin,
     noisy_poly,
+    noisy_spiral,
 
     center!,
     rescale!,
@@ -28,6 +29,7 @@ export
     load_line,
     load_sin,
     load_poly,
+    load_spiral,
 
     fit,
     predict,

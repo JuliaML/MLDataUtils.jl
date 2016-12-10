@@ -24,3 +24,13 @@ end
     print(scatterplot(x, y; color = :blue, height = 5))
 end
 
+# ==============================================================
+
+@testset "Test noisy_spiral" begin
+    n = 97
+    x, y = noisy_spiral(n; noise = 0.)
+
+    @test length(x[1, :]) == length(y) == 2*n
+    test_plot = scatterplot(x[1, 1:97], x[2, 1:97], title="Spiral Function", color=:blue, name="pos")
+    print(scatterplot!(test_plot, x[1, 98:194], x[2, 98:194], color=:yellow, name="neg" ))
+end
