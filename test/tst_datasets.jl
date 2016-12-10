@@ -57,6 +57,6 @@ end
     @test typeof(x) <: Matrix{Float64}
     @test typeof(y) <: Vector{Int}
     @test typeof(vars) <: Vector{UTF8String}
-    @test length(x[1, :]) == length(y) == 194
+    @test length(x[:, 1]) == length(y) == 194
     @test length(vars) == 3
 end
