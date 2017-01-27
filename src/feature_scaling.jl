@@ -76,7 +76,12 @@ function StatsBase.predict!{T<:Real}(cs::FeatureNormalizer, X::AbstractMatrix{T}
     X
 end
 
-function StatsBase.predict{T<:Real}(cs::FeatureNormalizer, X::AbstractMatrix{T})
+function StatsBase.predict{T<:AbstractFloat}(cs::FeatureNormalizer, X::AbstractMatrix{T})
     Xnew = copy(X)
     StatsBase.predict!(cs, Xnew)
+end
+
+function StatsBase.predict{T<:Real}(cs::FeatureNormalizer, X::AbstractMatrix{T})
+    X = convert(AbstractMatrix{AbstractFloat}, X)
+    StatsBase.predict!(cs, X)
 end
