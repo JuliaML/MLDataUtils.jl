@@ -72,13 +72,16 @@ end
 
 function StatsBase.predict!{T<:Real}(cs::FeatureNormalizer, X::AbstractMatrix{T})
     @assert length(cs.offset) == size(X, 1)
-    # Convert Integer Matrix to Float for avoiding InexactError
-    (T <: Integer) && (X=convert(AbstractMatrix{AbstractFloat}, X))
     rescale!(X, cs.offset, cs.scale)
     X
 end
 
-function StatsBase.predict{T<:Real}(cs::FeatureNormalizer, X::AbstractMatrix{T})
+function StatsBase.predict{T<:AbstractFloat}(cs::FeatureNormalizer, X::AbstractMatrix{T})
     Xnew = copy(X)
     StatsBase.predict!(cs, Xnew)
+end
+
+function StatsBase.predict{T<:Real}(cs::FeatureNormalizer, X::AbstractMatrix{T})
+    X = convert(AbstractMatrix{AbstractFloat}, X)
+    StatsBase.predict!(cs, X)
 end
