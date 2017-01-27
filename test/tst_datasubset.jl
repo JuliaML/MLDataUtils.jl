@@ -1,365 +1,266 @@
 X, y = load_iris()
-Y = vcat(y', y')
+Y = permutedims(hcat(y,y), [2,1])
+Xv = view(X,:,:)
+yv = view(y,:)
 XX = rand(20,30,150)
 XXX = rand(3,20,30,150)
+vars = (X, Xv, yv, XX, XXX, y)
+tuples = ((X,y), (X,Y), (XX,X,y), (XXX,XX,X,y))
+Xs = sprand(10,150,.5)
+ys = sprand(150,.5)
 
-@testset "DataSubset of 4D Tensor" begin
-    @testset "DataSubset constructor" begin
-        @test_throws BoundsError DataSubset(XXX, -1:100)
-        @test_throws BoundsError DataSubset(XXX, 1:151)
-        @test_throws BoundsError DataSubset(XXX, [1, 10, 0, 3])
-        @test_throws BoundsError DataSubset(XXX, [1, 10, -10, 3])
-        @test_throws BoundsError DataSubset(XXX, [1, 10, 180, 3])
-        split = DataSubset(XXX, [1, 10, 150, 3])
-        @test typeof(split) <: DataSubset{Array{Float64,4}, Vector{Int}}
-
-        split = DataSubset(XXX, 1:100)
-        @test typeof(split) <: DataSubset{Array{Float64,4}, UnitRange{Int}}
-        @test split.data == XXX
-        @test split.indicies == 1:100
-
-        @test_throws TypeError split = DataSubset(XXX, 1)
-
-        split = DataSubset(XXX, [1])
-        @test typeof(split) <: DataSubset{Array{Float64,4}, Vector{Int}}
-        @test split.data == XXX
-        @test split.indicies == [1]
-
-        split = DataSubset(XXX, collect(1:5))
-        @test typeof(split) <: DataSubset{Array{Float64,4}, Vector{Int}}
-        @test split.data == XXX
-        @test split.indicies == [1,2,3,4,5]
+@testset "nobs" begin
+    @testset "Array, SparseArray, and Tuple" begin
+        for var in (Xs, ys, vars...)
+            @test nobs(var) === 150
+        end
+        @test nobs(()) === 0
     end
 
-    @testset "DataSubset methods with Range indicies" begin
-        split = DataSubset(XXX, 101:150)
-        @test typeof(get(split)) <: SubArray
-        @test nobs(split) == length(split) == 50
-        @test split[10:20] == sub(XXX, :, :, :, 110:120)
-        @test split[collect(10:20)] == XXX[:, :, :, 110:120]
-        @test get(split) == split[1:end] == sub(XXX, :, :, :, 101:150)
-        @test size(get(split)) == (3, 20,30,50)
+    @testset "SubArray" begin
+        @test nobs(view(X,:,:)) === 150
+        @test nobs(view(XX,:,:,:)) === 150
+        @test nobs(view(XXX,:,:,:,:)) === 150
+        @test nobs(view(y,:)) === 150
+        @test nobs(view(Y,:,:)) === 150
+    end
+end
 
-        i = 101
-        for ob in split
-            @test ob == XXX[:, :, :, i]
-            i += 1
-        end
-
-        split = DataSubset(sub(XXX, :, :, :, 1:150), 101:150)
-        @test typeof(get(split)) <: SubArray
-        @test nobs(split) == length(split) == 50
-        @test split[10:20] == sub(XXX, :, :, :, 110:120)
-        @test split[collect(10:20)] == XXX[:, :, :, 110:120]
-        @test get(split) == split[1:end] == sub(XXX, :, :, :, 101:150)
-
-        i = 101
-        for ob in split
-            @test ob == XXX[:, :, :, i]
-            i += 1
+@testset "getobs" begin
+    @testset "Array and Subarray" begin
+        @test getobs(X)   == X
+        @test all(getobs(Xv)  .== X)
+        @test getobs(XX)  == XX
+        @test getobs(XXX) == XXX
+        @test getobs(y)   == y
+        @test all(getobs(yv)  .== y)
+        for i in (2, 1:150, 2:10, [2,5,7], [2,1])
+            @test getobs(X,i)   == getindex(X,:,i)
+            @test all(getobs(Xv,i) .== getindex(X,:,i))
+            @test getobs(XX,i)  == getindex(XX,:,:,i)
+            @test getobs(XXX,i) == getindex(XXX,:,:,:,i)
+            @test getobs(y,i)   == ((typeof(i) <: Int) ? y[i] : getindex(y,i))
+            @test getobs(yv,i)  == ((typeof(i) <: Int) ? y[i] : getindex(y,i))
+            @test getobs(Y,i)   == getindex(Y,:,i)
         end
     end
 
-    @testset "DataSubset methods with Vector indicies" begin
-        idx = collect(101:150)
-        split = DataSubset(XXX, idx)
-        @test nobs(split) == length(split) == 50
-        @test split[10:20] == XXX[:, :, :, 110:120]
-        @test split[collect(10:20)] == XXX[:, :, :, 110:120]
-        @test get(split) == split[1:end] == XXX[:, :, :, 101:150]
+    @testset "SparseArray" begin
+        @test getobs(Xs) === Xs
+        @test getobs(ys) === ys
+        for i in (2, 1:150, 2:10, [2,5,7], [2,1])
+            @test getobs(Xs,i) == Xs[:,i]
+            @test getobs(ys,i) == ys[i]
+        end
+    end
 
-        i = 101
-        for ob in split
-            @test ob == XXX[:, :, :, i]
-            i += 1
+    @testset "Tuple" begin
+        @test getobs(()) === ()
+        @test getobs((X,y))  === (X,y)
+        @test getobs((X,yv)) == (X,y)
+        @test getobs((Xv,y)) == (X,y)
+        @test getobs((Xv,yv)) == (X,y)
+        @test getobs((XX,X,y)) === (XX,X,y)
+        @test getobs((XXX,XX,X,y)) === (XXX,XX,X,y)
+        for i in (1:150, 2:10, [2,5,7], [2,1])
+            @test getobs((X,y), i)  == (getindex(X,:,i), getindex(y,i))
+            @test getobs((X,yv), i) == (getindex(X,:,i), getindex(y,i))
+            @test getobs((Xv,y), i) == (getindex(X,:,i), getindex(y,i))
+            @test getobs((X,Y), i)  == (getindex(X,:,i), getindex(Y,:,i))
+            @test getobs((XX,X,y), i) == (getindex(XX,:,:,i), getindex(X,:,i), getindex(y,i))
+        end
+        @test getobs((X,y), 2) == (getindex(X,:,2), y[2])
+        @test getobs((Xv,y), 2) == (getindex(X,:,2), y[2])
+        @test getobs((X,yv), 2) == (getindex(X,:,2), y[2])
+        @test getobs((X,Y), 2) == (getindex(X,:,2), getindex(Y,:,2))
+        @test getobs((XX,X,y), 2) == (getindex(XX,:,:,2), getindex(X,:,2), y[2])
+    end
+end
+
+@testset "randobs" begin
+    for var in (vars, tuples)
+        @test typeof(randobs(var)) == typeof(getobs(var, 1))
+        @test typeof(randobs(var, 4)) == typeof(getobs(var, 1:4))
+        @test nobs(randobs(var)) == nobs(getobs(var, 1))
+        @test nobs(randobs(var, 4)) == nobs(getobs(var, 1:4))
+    end
+    X_rnd = randobs(X, 30)
+    for i = 1:30
+        @testset "random obs $i" begin
+            found = false
+            for j = 1:150
+                if all(X_rnd[:,i] .== X[:,j])
+                    found = true
+                end
+            end
+            @test found
         end
     end
 end
 
-@testset "DataSubset of 3D Tensor" begin
-    @testset "DataSubset constructor" begin
-        @test_throws BoundsError DataSubset(XX, -1:100)
-        @test_throws BoundsError DataSubset(XX, 1:151)
-        @test_throws BoundsError DataSubset(XX, [1, 10, 0, 3])
-        @test_throws BoundsError DataSubset(XX, [1, 10, -10, 3])
-        @test_throws BoundsError DataSubset(XX, [1, 10, 180, 3])
-        split = DataSubset(XX, [1, 10, 150, 3])
-        @test typeof(split) <: DataSubset{Array{Float64,3}, Vector{Int}}
-
-        split = DataSubset(XX, 1:100)
-        @test typeof(split) <: DataSubset{Array{Float64,3}, UnitRange{Int}}
-        @test split.data == XX
-        @test split.indicies == 1:100
-
-        @test_throws TypeError split = DataSubset(XX, 1)
-
-        split = DataSubset(XX, [1])
-        @test typeof(split) <: DataSubset{Array{Float64,3}, Vector{Int}}
-        @test split.data == XX
-        @test split.indicies == [1]
-
-        split = DataSubset(XX, collect(1:5))
-        @test typeof(split) <: DataSubset{Array{Float64,3}, Vector{Int}}
-        @test split.data == XX
-        @test split.indicies == [1,2,3,4,5]
-    end
-
-    @testset "DataSubset methods with Range indicies" begin
-        split = DataSubset(XX, 101:150)
-        @test typeof(get(split)) <: SubArray
-        @test nobs(split) == length(split) == 50
-        @test split[10:20] == sub(XX, :, :, 110:120)
-        @test split[collect(10:20)] == XX[:, :, 110:120]
-        @test get(split) == split[1:end] == sub(XX, :, :, 101:150)
-        @test size(get(split)) == (20,30,50)
-
-        i = 101
-        for ob in split
-            @test ob == XX[:, :, i]
-            i += 1
-        end
-
-        split = DataSubset(sub(XX, :, :, 1:150), 101:150)
-        @test typeof(get(split)) <: SubArray
-        @test nobs(split) == length(split) == 50
-        @test split[10:20] == sub(XX, :, :, 110:120)
-        @test split[collect(10:20)] == XX[:, :, 110:120]
-        @test get(split) == split[1:end] == sub(XX, :, :, 101:150)
-
-        i = 101
-        for ob in split
-            @test ob == XX[:, :, i]
-            i += 1
+@testset "DataSubset constructor" begin
+    @testset "bounds check" begin
+        @test_throws DimensionMismatch DataSubset((rand(2,10),rand(9)))
+        @test_throws DimensionMismatch DataSubset((rand(2,10),rand(9)),1:2)
+        @test_throws DimensionMismatch DataSubset((rand(2,10),rand(4,9,10),rand(9)))
+        for var in (vars..., tuples...)
+            @test_throws BoundsError DataSubset(var, -1:100)
+            @test_throws BoundsError DataSubset(var, 1:151)
+            @test_throws BoundsError DataSubset(var, [1, 10, 0, 3])
+            @test_throws BoundsError DataSubset(var, [1, 10, -10, 3])
+            @test_throws BoundsError DataSubset(var, [1, 10, 180, 3])
         end
     end
 
-    @testset "DataSubset methods with Vector indicies" begin
-        idx = collect(101:150)
-        split = DataSubset(XX, idx)
-        @test nobs(split) == length(split) == 50
-        @test split[10:20] == XX[:, :, 110:120]
-        @test split[collect(10:20)] == XX[:, :, 110:120]
-        @test get(split) == split[1:end] == XX[:, :, 101:150]
-
-        i = 101
-        for ob in split
-            @test ob == XX[:, :, i]
-            i += 1
+    @testset "Array, SubArray, SparseArray" begin
+        for var in (Xs, ys, vars...)
+            subset = DataSubset(var)
+            println(subset) # make sure it doesn't crash
+            @test subset.data === var
+            @test subset.indices === 1:150
+            @test typeof(subset) <: DataSubset
+            @test nobs(subset) === nobs(var)
+            @test getobs(subset) == getobs(var)
+            @test DataSubset(subset) === subset
+            @test DataSubset(subset, 1:150) === subset
+            @test subset[end] == viewobs(var, 150)
+            @test subset[20:25] == viewobs(var, 20:25)
+            for idx in (1:100, [1,10,150,3], [2])
+                subset = DataSubset(var, idx)
+                @test typeof(subset) <: DataSubset{typeof(var), typeof(idx)}
+                @test subset.data === var
+                @test subset.indices === idx
+                @test nobs(subset) === length(idx)
+                @test getobs(subset) == getobs(var, idx)
+                @test DataSubset(subset) === subset
+                @test subset[1] == viewobs(var, idx[1])
+                @test typeof(subset[1:1]) == typeof(viewobs(var, idx[1:1]))
+                @test nobs(subset[1:1]) == nobs(viewobs(var, idx[1:1]))
+            end
         end
     end
 end
 
-@testset "DataSubset of Matrix" begin
-    @testset "DataSubset constructor" begin
-        @test_throws BoundsError DataSubset(X, -1:100)
-        @test_throws BoundsError DataSubset(X, 1:151)
-        @test_throws BoundsError DataSubset(X, [1, 10, 0, 3])
-        @test_throws BoundsError DataSubset(X, [1, 10, -10, 3])
-        @test_throws BoundsError DataSubset(X, [1, 10, 180, 3])
-        split = DataSubset(X, [1, 10, 150, 3])
-        @test typeof(split) <: DataSubset{Matrix{Float64}, Vector{Int}}
-
-        split = DataSubset(X, 1:100)
-        @test typeof(split) <: DataSubset{Matrix{Float64}, UnitRange{Int}}
-        @test split.data == X
-        @test split.indicies == 1:100
-
-        @test_throws TypeError split = DataSubset(X, 1)
-
-        split = DataSubset(X, [1])
-        @test typeof(split) <: DataSubset{Matrix{Float64}, Vector{Int}}
-        @test split.data == X
-        @test split.indicies == [1]
-
-        split = DataSubset(X, collect(1:5))
-        @test typeof(split) <: DataSubset{Matrix{Float64}, Vector{Int}}
-        @test split.data == X
-        @test split.indicies == [1,2,3,4,5]
-    end
-
-    @testset "DataSubset methods with Range indicies" begin
-        split = DataSubset(X, 101:150)
-        @test typeof(get(split)) <: SubArray
-        @test nobs(split) == length(split) == 50
-        @test split[10:20] == sub(X, :, 110:120)
-        @test split[collect(10:20)] == X[:, 110:120]
-        @test get(split) == split[1:end] == sub(X, :, 101:150)
-
-        i = 101
-        for ob in split
-            @test ob == X[:, i]
-            i += 1
-        end
-
-        split = DataSubset(sub(X, :, 1:150), 101:150)
-        @test typeof(get(split)) <: SubArray
-        @test nobs(split) == length(split) == 50
-        @test split[10:20] == sub(X, :, 110:120)
-        @test split[collect(10:20)] == X[:, 110:120]
-        @test get(split) == split[1:end] == sub(X, :, 101:150)
-
-        i = 101
-        for ob in split
-            @test ob == X[:, i]
-            i += 1
+@testset "DataSubset getindex" begin
+    @testset "Matrix and SubArray{T,2}" begin
+        for var in (X, Xv)
+            subset = DataSubset(var, 101:150)
+            @test typeof(getobs(subset)) <: Array{Float64,2}
+            @test nobs(subset) == length(subset) == 50
+            @test subset[10:20] == view(X, :, 110:120)
+            @test getobs(subset, 10:20) == X[:, 110:120]
+            @test getobs(subset, [11,10,14]) == X[:, [111,110,114]]
+            @test typeof(subset[10:20]) <: SubArray
+            @test subset[collect(10:20)] == X[:, 110:120]
+            @test typeof(subset[collect(10:20)]) <: SubArray
+            @test getobs(subset) == subset[1:end] == getindex(X, :, 101:150)
         end
     end
 
-    @testset "DataSubset methods with Vector indicies" begin
-        idx = collect(101:150)
-        split = DataSubset(X, idx)
-        @test nobs(split) == length(split) == 50
-        @test split[10:20] == X[:, 110:120]
-        @test split[collect(10:20)] == X[:, 110:120]
-        @test get(split) == split[1:end] == X[:, 101:150]
-
-        i = 101
-        for ob in split
-            @test ob == X[:, i]
-            i += 1
+    @testset "Vector and SubArray{T,1}" begin
+        for var in (y, yv)
+            subset = DataSubset(var, 101:150)
+            @test typeof(getobs(subset)) <: Array{String,1}
+            @test nobs(subset) == length(subset) == 50
+            @test subset[10:20] == getindex(y, 110:120)
+            @test getobs(subset, 10:20) == y[110:120]
+            @test getobs(subset, [11,10,14]) == y[[111,110,114]]
+            @test typeof(subset[10:20]) <: SubArray
+            @test subset[collect(10:20)] == y[110:120]
+            @test typeof(subset[collect(10:20)]) <: SubArray
+            @test getobs(subset) == subset[1:end] == getindex(y, 101:150)
         end
+    end
+
+    @testset "2-Tuple of Matrix, Vector, or SubArray"  begin
+        @test_throws ErrorException DataSubset{Tuple{Matrix{Float64},Matrix{Float64}},Int}((X,X), 1)
+        for v1 in (X, Xv), v2 in (y, yv)
+            subset = DataSubset((v1,v2), 101:150)
+            @test typeof(getobs(subset)) <: Tuple{Array{Float64,2},Array{String,1}}
+            @test nobs(subset) == nobs(subset[1]) == nobs(subset[2]) == 50
+            @test subset[1][10:20] == getindex(X, :, 110:120)
+            @test subset[2][10:20] == getindex(y, 110:120)
+            @test getobs(subset) == (getindex(X, :, 101:150), getindex(y, 101:150))
+        end
+    end
+
+    @testset "2-Tuple of SparseArray"  begin
+        subset = DataSubset((Xs,ys), 101:150)
+        @test typeof(subset) <: Tuple
+        @test typeof(subset[1]) <: DataSubset
+        @test typeof(subset[2]) <: DataSubset
+        @test typeof(getobs(subset)) <: Tuple
+        @test typeof(getobs(subset)[1]) <: SparseMatrixCSC
+        @test typeof(getobs(subset)[2]) <: SparseVector
+        @test nobs(subset) == nobs(subset[1]) == nobs(subset[2]) == 50
+        @test getobs(subset[1][10:20]) == getindex(Xs, :, 110:120)
+        @test getobs(subset[2][10:20]) == getindex(ys, 110:120)
+        @test getobs(subset) == (getindex(Xs, :, 101:150), getindex(ys, 101:150))
     end
 end
 
-@testset "DataSubset of Vector" begin
-    @testset "DataSubset constructor" begin
-        split = DataSubset(y, 1:100)
-        @test typeof(split) <: DataSubset{Vector{ASCIIString}, UnitRange{Int}}
-        @test split.data == y
-        @test split.indicies == 1:100
-
-        @test_throws TypeError split = DataSubset(X, 1)
-
-        split = DataSubset(y, [1])
-        @test typeof(split) <: DataSubset{Vector{ASCIIString}, Vector{Int}}
-        @test split.data == y
-        @test split.indicies == [1]
-
-        split = DataSubset(y, collect(1:5))
-        @test typeof(split) <: DataSubset{Vector{ASCIIString}, Vector{Int}}
-        @test split.data == y
-        @test split.indicies == [1,2,3,4,5]
-    end
-
-    @testset "DataSubset methods with Range indicies" begin
-        split = DataSubset(y, 101:150)
-        @test typeof(get(split)) <: SubArray
-        @test nobs(split) == length(split) == 50
-        @test split[10:20] == sub(y, 110:120)
-        @test split[collect(10:20)] == y[110:120]
-        @test get(split) == split[1:end] == sub(y, 101:150)
-
-        i = 101
-        for ob in split
-            @test ob == y[i]
-            i += 1
-        end
-
-        split = DataSubset(sub(y, 1:150), 101:150)
-        @test typeof(get(split)) <: SubArray
-        @test nobs(split) == length(split) == 50
-        @test split[10:20] == sub(y, 110:120)
-        @test split[collect(10:20)] == y[110:120]
-        @test get(split) == split[1:end] == sub(y, 101:150)
-
-        i = 101
-        for ob in split
-            @test ob == y[i]
-            i += 1
+@testset "datasubset" begin
+    @test viewobs === datasubset
+    @testset "Array and SubArray" begin
+        @test datasubset(X)   === X
+        @test datasubset(Xv)  === Xv
+        @test datasubset(XX)  === XX
+        @test datasubset(XXX) === XXX
+        @test datasubset(y)   === y
+        @test datasubset(yv)  === yv
+        for i in (2, 1:150, 2:10, [2,5,7], [2,1])
+            @test datasubset(X,i)   === view(X,:,i)
+            @test datasubset(Xv,i)  === view(X,:,i)
+            @test datasubset(Xv,i)  === view(Xv,:,i)
+            @test datasubset(XX,i)  === view(XX,:,:,i)
+            @test datasubset(XXX,i) === view(XXX,:,:,:,i)
+            @test datasubset(y,i)   === ((typeof(i) <: Int) ? y[i] : view(y,i))
+            @test datasubset(yv,i)  === ((typeof(i) <: Int) ? y[i] : view(y,i))
+            @test datasubset(yv,i)  === ((typeof(i) <: Int) ? yv[i] : view(yv,i))
+            @test datasubset(Y,i)   === view(Y,:,i)
         end
     end
 
-    @testset "DataSubset methods with Vector indicies" begin
-        idx = collect(101:150)
-        split = DataSubset(y, idx)
-        @test nobs(split) == length(split) == 50
-        @test split[10:20] == y[110:120]
-        @test split[collect(10:20)] == y[110:120]
-        @test get(split) == split[1:end] == y[101:150]
+    @testset "Tuple of Array and Subarray" begin
+        @test datasubset((X,y))   === (X,y)
+        @test datasubset((X,yv))  === (X,yv)
+        @test datasubset((Xv,y))  === (Xv,y)
+        @test datasubset((Xv,yv)) === (Xv,yv)
+        @test datasubset((X,Y))   === (X,Y)
+        @test datasubset((XX,X,y)) === (XX,X,y)
+        for i in (1:150, 2:10, [2,5,7], [2,1])
+            @test datasubset((X,y),i)   === (view(X,:,i), view(y,i))
+            @test datasubset((Xv,y),i)  === (view(X,:,i), view(y,i))
+            @test datasubset((X,yv),i)  === (view(X,:,i), view(y,i))
+            @test datasubset((Xv,yv),i) === (view(X,:,i), view(y,i))
+            @test datasubset((XX,X,y),i) === (view(XX,:,:,i), view(X,:,i),view(y,i))
+        end
+    end
 
-        i = 101
-        for ob in split
-            @test ob == y[i]
-            i += 1
+    @testset "SparseArray" begin
+        @test datasubset(Xs)  === DataSubset(Xs)
+        @test datasubset(ys)  === DataSubset(ys)
+        for i in (1:150, 2:10, [2,5,7], [2,1])
+            @test datasubset(Xs,i)  === DataSubset(Xs,i)
+            @test datasubset(ys,i)  === DataSubset(ys,i)
+        end
+    end
+
+    @testset "Tuple of SparseArray" begin
+        @test datasubset((X,ys))  === (X,DataSubset(ys))
+        @test datasubset((Xs,y))  === (DataSubset(Xs),y)
+        @test datasubset((Xs,ys)) === (DataSubset(Xs),DataSubset(ys))
+        @test datasubset((Xs,Xs)) === (DataSubset(Xs),DataSubset(Xs))
+        @test datasubset((ys,Xs)) === (DataSubset(ys),DataSubset(Xs))
+        @test datasubset((XX,Xs,y)) === (XX,DataSubset(Xs),y)
+        for i in (1:150, 2:10, [2,5,7], [2,1])
+            @test datasubset((X,ys),i)  === (view(X,:,i), DataSubset(ys,i))
+            @test datasubset((Xs,y),i)  === (DataSubset(Xs,i), view(y,i))
+            @test datasubset((Xs,ys),i) === (DataSubset(Xs,i), DataSubset(ys,i))
+            @test datasubset((Xs,Xs),i) === (DataSubset(Xs,i), DataSubset(Xs,i))
+            @test datasubset((ys,Xs),i) === (DataSubset(ys,i), DataSubset(Xs,i))
+            @test datasubset((XX,Xs,y),i) === (view(XX,:,:,i),DataSubset(Xs,i),view(y,i))
         end
     end
 end
-
-@testset "splitdata" begin
-    train, test = splitdata(X, at = .7)
-    @test typeof(train) <: DataSubset{Matrix{Float64}, UnitRange{Int}}
-    @test typeof(test)  <: DataSubset{Matrix{Float64}, UnitRange{Int}}
-    @test get(train) == sub(X, :, 1:105)
-    @test get(test)  == sub(X, :, 106:150)
-    @test nobs(train) == 105
-    @test nobs(test)  == 45
-
-    train, test = splitdata(y, at = .7)
-    @test typeof(train) <: DataSubset{Vector{ASCIIString}, UnitRange{Int}}
-    @test typeof(test)  <: DataSubset{Vector{ASCIIString}, UnitRange{Int}}
-    @test get(train) == slice(y, 1:105)
-    @test get(test)  == slice(y, 106:150)
-    @test nobs(train) == 105
-    @test nobs(test)  == 45
-
-    (train_x, train_y), (test_x, test_y) = splitdata(X, y, at = .7)
-    @test typeof(train_x) <: DataSubset{Matrix{Float64}, UnitRange{Int}}
-    @test typeof(test_x)  <: DataSubset{Matrix{Float64}, UnitRange{Int}}
-    @test get(train_x) == sub(X, :, 1:105)
-    @test get(test_x)  == sub(X, :, 106:150)
-    @test nobs(train_x) == 105
-    @test nobs(test_x)  == 45
-    @test typeof(train_y) <: DataSubset{Vector{ASCIIString}, UnitRange{Int}}
-    @test typeof(test_y)  <: DataSubset{Vector{ASCIIString}, UnitRange{Int}}
-    @test get(train_y) == slice(y, 1:105)
-    @test get(test_y)  == slice(y, 106:150)
-    @test nobs(train_y) == 105
-    @test nobs(test_y)  == 45
-end
-
-@testset "partitiondata" begin
-    train, test = partitiondata(X, at = .7)
-    @test typeof(train) <: DataSubset{Matrix{Float64}, SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}
-    @test typeof(test)  <: DataSubset{Matrix{Float64}, SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}
-    @test get(train) == X[:, train.indicies]
-    @test get(test)  == X[:, test.indicies]
-    @test length(unique(vcat(train.indicies, test.indicies))) == 150
-    @test nobs(train) == 105
-    @test nobs(test)  == 45
-
-    train, test = partitiondata(y, at = .7)
-    @test typeof(train) <: DataSubset{Vector{ASCIIString}, SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}
-    @test typeof(test)  <: DataSubset{Vector{ASCIIString}, SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}
-    @test get(train) == y[train.indicies]
-    @test get(test)  == y[test.indicies]
-    @test length(unique(vcat(train.indicies, test.indicies))) == 150
-    @test nobs(train) == 105
-    @test nobs(test)  == 45
-
-    (train_x, train_y), (test_x, test_y) = partitiondata(X, y, at = .7)
-    @test typeof(train_x) <: DataSubset{Matrix{Float64}, SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}
-    @test typeof(test_x)  <: DataSubset{Matrix{Float64}, SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}
-    @test get(train_x) == X[:, train_x.indicies]
-    @test get(test_x)  == X[:, test_x.indicies]
-    @test length(unique(vcat(train_x.indicies, test_x.indicies))) == 150
-    @test nobs(train_x) == 105
-    @test nobs(test_x)  == 45
-    @test typeof(train_y) <: DataSubset{Vector{ASCIIString}, SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}
-    @test typeof(test_y)  <: DataSubset{Vector{ASCIIString}, SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}
-    @test get(train_y) == y[train_y.indicies]
-    @test get(test_y)  == y[test_y.indicies]
-    @test length(unique(vcat(train_y.indicies, test_y.indicies))) == 150
-    @test nobs(train_y) == 105
-    @test nobs(test_y)  == 45
-    @test all(train_x.indicies .== train_y.indicies)
-    @test all(test_x.indicies .== test_y.indicies)
-end
-
-
-
-
-
-
-
-
 

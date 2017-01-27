@@ -1,8 +1,17 @@
 module MLDataUtils
 
+using LearnBase
 using StatsBase
 
+import Iterators: repeatedly
+import LearnBase: nobs, getobs
+
 export
+
+    nobs,
+    getobs,
+    viewobs,
+    randobs,
 
     noisy_function,
     noisy_sin,
@@ -24,30 +33,35 @@ export
     predict,
     predict!,
 
-    MiniBatches,
-    LabeledMiniBatches,
-
-    RandomSamples,
-    LabeledRandomSamples,
+    DataIterator,
+        ObsIterator,
+            EachObs,
+        BatchIterator,
+            EachBatch,
+        KFolds,
 
     DataSubset,
-    splitdata,
-    partitiondata,
+    datasubset,
 
-    KFolds,
-    LabeledKFolds,
-    LOOFolds
+    repeatedly,
+
+    eachobs,
+    eachbatch,
+    shuffled,
+    batches,
+    splitobs,
+    kfolds,
+    leaveout
 
 include("feature_scaling.jl")
 include("basis_expansion.jl")
 include("noisy_function.jl")
 include("datasets.jl")
-include("dataiterators/dataiterator.jl")
-include("dataiterators/minibatches.jl")
-include("dataiterators/randomsamples.jl")
-include("datasplits/datasubset.jl")
-include("datasplits/splitdata.jl")
-include("datasplits/partitiondata.jl")
-include("datasplits/kfolds.jl")
+include("accesspattern/dataiterator.jl")
+include("accesspattern/datasubset.jl")
+include("accesspattern/arrays.jl")
+include("accesspattern/tuples.jl")
+include("accesspattern/partitioning.jl")
+include("accesspattern/kfolds.jl")
 
 end
