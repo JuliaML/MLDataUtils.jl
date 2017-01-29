@@ -1,6 +1,7 @@
 module MLDataUtils
 
 using StatsBase
+using Compat
 
 export
 

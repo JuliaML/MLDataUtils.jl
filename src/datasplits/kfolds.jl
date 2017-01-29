@@ -128,7 +128,14 @@ see also
 """
 immutable KFolds{TFeatures}
     features::TFeatures
-    folds::Vector{DataSubset{TFeatures,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}}
+
+    #folds::Vector{DataSubset{TFeatures,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},true}}}
+    @static if VERSION >= v"0.5.0"
+        folds::Vector{DataSubset{TFeatures,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},true}}}
+    else
+        folds::Vector{DataSubset{TFeatures,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}}
+    end
+    
     k::Int
 
     function KFolds(features::TFeatures, k::Int)
@@ -141,7 +148,12 @@ immutable KFolds{TFeatures}
             sizes[i] = sizes[i] + 1
         end
 
-        folds = Array{DataSubset{TFeatures,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}},1}(k)
+        if VERSION >= v"0.5.0"
+            folds = Array{DataSubset{TFeatures,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},true}},1}(k)
+        else
+            folds = Array{DataSubset{TFeatures,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}},1}(k)
+        end
+
         offset = 1
         for i = 1:k
             new_offset = offset + sizes[i] - 1
@@ -164,8 +176,15 @@ see `KFolds` for documentation and usage
 immutable LabeledKFolds{TFeatures, TTargets}
     features::TFeatures
     targets::TTargets
-    features_folds::Vector{DataSubset{TFeatures,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}}
-    targets_folds::Vector{DataSubset{TTargets,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}}
+
+    @static if VERSION >= v"0.5.0"
+        features_folds::Vector{DataSubset{TFeatures,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},true}}}
+        targets_folds::Vector{DataSubset{TTargets,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},true}}}
+    else
+        features_folds::Vector{DataSubset{TFeatures,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}}
+        targets_folds::Vector{DataSubset{TTargets,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}}}
+    end
+
     k::Int
 
     function LabeledKFolds(features::TFeatures, targets::TTargets, k::Int)
@@ -179,8 +198,14 @@ immutable LabeledKFolds{TFeatures, TTargets}
             sizes[i] = sizes[i] + 1
         end
 
+    if VERSION >= v"0.5.0"
+        features_folds = Array{DataSubset{TFeatures,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},true}},1}(k)
+        targets_folds = Array{DataSubset{TTargets,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},true}},1}(k)
+    else
         features_folds = Array{DataSubset{TFeatures,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}},1}(k)
         targets_folds = Array{DataSubset{TTargets,SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},1}},1}(k)
+    end
+
         offset = 1
         for i = 1:k
             new_offset = offset + sizes[i] - 1

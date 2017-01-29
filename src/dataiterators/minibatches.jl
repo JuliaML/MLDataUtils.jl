@@ -263,9 +263,13 @@ end
 # ==============================================================
 # MiniBatches{Vector}
 # MiniBatches{Matrix}
-
-Base.eltype{F}(::Type{MiniBatches{Vector{F}}}) = SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}
-Base.eltype{F}(::Type{MiniBatches{Matrix{F}}}) = SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}
+if VERSION >= v"0.5.0"
+    Base.eltype{F}(::Type{MiniBatches{Vector{F}}}) = SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},true}
+    Base.eltype{F}(::Type{MiniBatches{Matrix{F}}}) = SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},true}
+else
+    Base.eltype{F}(::Type{MiniBatches{Vector{F}}}) = SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}
+    Base.eltype{F}(::Type{MiniBatches{Matrix{F}}}) = SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}
+end
 # TODO subarrays
 
 # ==============================================================
@@ -273,9 +277,19 @@ Base.eltype{F}(::Type{MiniBatches{Matrix{F}}}) = SubArray{F,2,Array{F,2},Tuple{C
 # LabeledMiniBatches{Vector,Matrix}
 # LabeledMiniBatches{Matrix,Vector}
 # LabeledMiniBatches{Matrix,Matrix}
-
-Base.eltype{F,T}(::Type{LabeledMiniBatches{Vector{F},Vector{T}}}) = Tuple{SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}, SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},1}}
-Base.eltype{F,T}(::Type{LabeledMiniBatches{Vector{F},Matrix{T}}}) = Tuple{SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}, SubArray{T,2,Array{T,2},Tuple{Colon,UnitRange{Int64}},2}}
-Base.eltype{F,T}(::Type{LabeledMiniBatches{Matrix{F},Vector{T}}}) = Tuple{SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}, SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},1}}
-Base.eltype{F,T}(::Type{LabeledMiniBatches{Matrix{F},Matrix{T}}}) = Tuple{SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}, SubArray{T,2,Array{T,2},Tuple{Colon,UnitRange{Int64}},2}}
+if VERSION >= v"0.5.0"
+    Base.eltype{F,T}(::Type{LabeledMiniBatches{Vector{F},Vector{T}}}) = Tuple{SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},true}, SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},true}}
+    Base.eltype{F,T}(::Type{LabeledMiniBatches{Vector{F},Matrix{T}}}) = Tuple{SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},true}, SubArray{T,2,Array{T,2},Tuple{Colon,UnitRange{Int64}},true}}
+    Base.eltype{F,T}(::Type{LabeledMiniBatches{Matrix{F},Vector{T}}}) = Tuple{SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},true}, SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},true}}
+    Base.eltype{F,T}(::Type{LabeledMiniBatches{Matrix{F},Matrix{T}}}) = Tuple{SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},true}, SubArray{T,2,Array{T,2},Tuple{Colon,UnitRange{Int64}},true}}
+else 
+    Base.eltype{F,T}(::Type{LabeledMiniBatches{Vector{F},Vector{T}}}) = Tuple{SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}, SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},1}}
+    Base.eltype{F,T}(::Type{LabeledMiniBatches{Vector{F},Matrix{T}}}) = Tuple{SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}, SubArray{T,2,Array{T,2},Tuple{Colon,UnitRange{Int64}},2}}
+    Base.eltype{F,T}(::Type{LabeledMiniBatches{Matrix{F},Vector{T}}}) = Tuple{SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}, SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},1}}
+    Base.eltype{F,T}(::Type{LabeledMiniBatches{Matrix{F},Matrix{T}}}) = Tuple{SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}, SubArray{T,2,Array{T,2},Tuple{Colon,UnitRange{Int64}},2}}
+end
+# Base.eltype{F,T}(::Type{LabeledMiniBatches{Vector{F},Vector{T}}}) = Tuple{SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}, SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},1}}
+# Base.eltype{F,T}(::Type{LabeledMiniBatches{Vector{F},Matrix{T}}}) = Tuple{SubArray{F,1,Array{F,1},Tuple{UnitRange{Int64}},1}, SubArray{T,2,Array{T,2},Tuple{Colon,UnitRange{Int64}},2}}
+# Base.eltype{F,T}(::Type{LabeledMiniBatches{Matrix{F},Vector{T}}}) = Tuple{SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}, SubArray{T,1,Array{T,1},Tuple{UnitRange{Int64}},1}}
+# Base.eltype{F,T}(::Type{LabeledMiniBatches{Matrix{F},Matrix{T}}}) = Tuple{SubArray{F,2,Array{F,2},Tuple{Colon,UnitRange{Int64}},2}, SubArray{T,2,Array{T,2},Tuple{Colon,UnitRange{Int64}},2}}
 # TODO subarrays
