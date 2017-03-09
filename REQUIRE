@@ -1,4 +1,4 @@
 julia 0.5
-LearnBase
-StatsBase
+LearnBase 0.1.2 0.2.0
+StatsBase 0.13.0
 Iterators

@@ -3,7 +3,8 @@ module MLDataUtils
 using LearnBase
 using StatsBase
 
-import LearnBase: nobs, getobs
+using LearnBase: ObsDimension, obs_dim
+import LearnBase: nobs, getobs, getobs!, datasubset, default_obsdim
 
 export
 

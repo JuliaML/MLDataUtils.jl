@@ -345,7 +345,7 @@ type of `data`, a buffer will be preallocated and reused for memory
 efficiency.
 Note: Thus avoid using `collect`, because in general each iteration
 could return the same object with mutated values. If that behaviour
-is undesired use `BatchView` instead.
+is undesired use `ObsView` instead.
 
 ```julia
 X = rand(4,100)

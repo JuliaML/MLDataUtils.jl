@@ -4,7 +4,6 @@ using UnicodePlots
 using Base.Test
 
 tests = [
-    "tst_obsdim.jl"
     "tst_datasubset.jl"
     "tst_dataview.jl"
     "tst_dataiterator.jl"
