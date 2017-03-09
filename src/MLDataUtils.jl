@@ -42,6 +42,9 @@ export
     shuffleobs,
     splitobs,
 
+    oversample
+    undersample
+
     AbstractDataIterator,
         AbstractObsIterator,
         AbstractBatchIterator,
@@ -83,6 +86,7 @@ include("accesspattern/datasubset.jl")
 include("accesspattern/dataview.jl")
 include("accesspattern/dataiterator.jl")
 include("accesspattern/kfolds.jl")
+include("accesspattern/sampling")
 
 @deprecate partitiondata(X; at=0.5) splitobs(shuffleobs(X); at=at)
 @deprecate partitiondata(X,y; at=0.5) splitobs(shuffleobs((X,y)); at=at)
@@ -90,4 +94,3 @@ include("accesspattern/kfolds.jl")
 @deprecate splitdata(X,y; at=0.5) splitobs((X,y); at=at)
 
 end
-

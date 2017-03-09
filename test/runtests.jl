@@ -12,6 +12,7 @@ tests = [
     "tst_noisy_function.jl"
     "tst_feature_scaling.jl"
     "tst_datasets.jl"
+    "tst_sampling.jl"
 ]
 
 for t in tests
@@ -19,4 +20,3 @@ for t in tests
         include(t)
     end
 end
-
