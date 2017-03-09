@@ -2,6 +2,7 @@ module MLDataUtils
 
 using LearnBase
 using StatsBase
+using DataStructures
 
 import LearnBase: nobs, getobs
 
@@ -42,8 +43,8 @@ export
     shuffleobs,
     splitobs,
 
-    oversample
-    undersample
+    oversample,
+    undersample,
 
     AbstractDataIterator,
         AbstractObsIterator,
@@ -86,7 +87,7 @@ include("accesspattern/datasubset.jl")
 include("accesspattern/dataview.jl")
 include("accesspattern/dataiterator.jl")
 include("accesspattern/kfolds.jl")
-include("accesspattern/sampling")
+include("accesspattern/sampling.jl")
 
 @deprecate partitiondata(X; at=0.5) splitobs(shuffleobs(X); at=at)
 @deprecate partitiondata(X,y; at=0.5) splitobs(shuffleobs((X,y)); at=at)
