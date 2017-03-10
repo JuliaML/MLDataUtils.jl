@@ -1,5 +1,5 @@
 """
-    oversample(data, [targetfun], [shuffleobs = true], [obsdim])
+    oversample([targetfun], data, [shuffleobs = true], [obsdim])
 
 Generates a class-balanced version of `data` by repeatedly
 sampling existing observations in such a way that the number of
@@ -43,27 +43,27 @@ that element.
 ```julia
 julia> data = DataFrame(Any[rand(6), rand(6), [:a,:b,:b,:b,:b,:a]], [:X1,:X2,:Y])
 6×3 DataFrames.DataFrame
-│ Row │ X1         │ X2       │ Y │
-├─────┼────────────┼──────────┼───┤
-│ 1   │ 0.816249   │ 0.920946 │ a │
-│ 2   │ 0.932183   │ 0.840607 │ b │
-│ 3   │ 0.184765   │ 0.566779 │ b │
-│ 4   │ 0.238145   │ 0.308438 │ b │
-│ 5   │ 0.673592   │ 0.823677 │ b │
-│ 6   │ 0.00918319 │ 0.303073 │ a │
+│ Row │ X1       │ X2       │ Y │
+├─────┼──────────┼──────────┼───┤
+│ 1   │ 0.646593 │ 0.970426 │ a │
+│ 2   │ 0.363206 │ 0.479828 │ b │
+│ 3   │ 0.87524  │ 0.547199 │ b │
+│ 4   │ 0.618918 │ 0.661277 │ b │
+│ 5   │ 0.723626 │ 0.295239 │ b │
+│ 6   │ 0.147621 │ 0.527292 │ a │
 
 julia> getobs(oversample(data, targetfun=(_->_[:Y])))
 8×3 DataFrames.DataFrame
 │ Row │ X1       │ X2       │ Y │
 ├─────┼──────────┼──────────┼───┤
-│ 1   │ 0.851029 │ 0.584991 │ a │
-│ 2   │ 0.940648 │ 0.937608 │ b │
-│ 3   │ 0.580276 │ 0.800462 │ b │
-│ 4   │ 0.979219 │ 0.505417 │ a │
-│ 5   │ 0.979219 │ 0.505417 │ a │
-│ 6   │ 0.012618 │ 0.628009 │ b │
-│ 7   │ 0.851029 │ 0.584991 │ a │
-│ 8   │ 0.222013 │ 0.602264 │ b │
+│ 1   │ 0.646593 │ 0.970426 │ a │
+│ 2   │ 0.618918 │ 0.661277 │ b │
+│ 3   │ 0.147621 │ 0.527292 │ a │
+│ 4   │ 0.646593 │ 0.970426 │ a │
+│ 5   │ 0.723626 │ 0.295239 │ b │
+│ 6   │ 0.363206 │ 0.479828 │ b │
+│ 7   │ 0.147621 │ 0.527292 │ a │
+│ 8   │ 0.87524  │ 0.547199 │ b │
 ```
 
 The convenience paramater `shuffleobs` determines if the
@@ -77,14 +77,19 @@ for the type of `data`. See `?LearnBase.ObsDim` for more
 information.
 """
 function oversample(data; targetfun=identity, shuffleobs=true, obsdim=default_obsdim(data))
-    oversample(data, targetfun, shuffleobs, obs_dim(obsdim))
+    oversample(targetfun, data, shuffleobs, obs_dim(obsdim))
 end
 
-# make it tuple of data if it wasn't already
-oversample(data, args...) = oversample((data,), args...)[1]
 
-function oversample(data::Tuple, targetfun, shuffleobs, obsdim)
-    lm = labelmap(target(targetfun, data, obsdim))
+function oversample(data, shuffleobs::Bool, obsdim=default_obsdim(data))
+    oversample(identity, data, shuffleobs, obsdim)
+end
+
+function oversample(targetfun::Function,
+                    data,
+                    shuffleobs::Bool = true,
+                    obsdim = default_obsdim(data))
+    lm = labelmap(targets(targetfun, data, obsdim))
     maxcount = maximum(length, values(lm))
 
     # firstly we will start by keeping everything
@@ -106,7 +111,7 @@ function oversample(data::Tuple, targetfun, shuffleobs, obsdim)
 end
 
 """
-    undersample(data, [targetfun], [shuffleobs = false], [obsdim])
+    undersample([targetfun], data, [shuffleobs = false], [obsdim])
 
 Generates a class-balanced version of `data` by subsampling its
 observations in such a way that the number of observations is the
@@ -150,23 +155,23 @@ that element.
 ```julia
 julia> data = DataFrame(Any[rand(6), rand(6), [:a,:b,:b,:b,:b,:a]], [:X1,:X2,:Y])
 6×3 DataFrames.DataFrame
-│ Row │ X1         │ X2       │ Y │
-├─────┼────────────┼──────────┼───┤
-│ 1   │ 0.816249   │ 0.920946 │ a │
-│ 2   │ 0.932183   │ 0.840607 │ b │
-│ 3   │ 0.184765   │ 0.566779 │ b │
-│ 4   │ 0.238145   │ 0.308438 │ b │
-│ 5   │ 0.673592   │ 0.823677 │ b │
-│ 6   │ 0.00918319 │ 0.303073 │ a │
+│ Row │ X1       │ X2       │ Y │
+├─────┼──────────┼──────────┼───┤
+│ 1   │ 0.646593 │ 0.970426 │ a │
+│ 2   │ 0.363206 │ 0.479828 │ b │
+│ 3   │ 0.87524  │ 0.547199 │ b │
+│ 4   │ 0.618918 │ 0.661277 │ b │
+│ 5   │ 0.723626 │ 0.295239 │ b │
+│ 6   │ 0.147621 │ 0.527292 │ a │
 
 julia> getobs(undersample(data, targetfun=(_->_[:Y])))
 4×3 DataFrames.DataFrame
-│ Row │ X1       │ X2        │ Y │
-├─────┼──────────┼───────────┼───┤
-│ 1   │ 0.39618  │ 0.792898  │ a │
-│ 2   │ 0.131773 │ 0.493107  │ a │
-│ 3   │ 0.116001 │ 0.598421  │ b │
-│ 4   │ 0.366346 │ 0.0760781 │ b │
+│ Row │ X1       │ X2       │ Y │
+├─────┼──────────┼──────────┼───┤
+│ 1   │ 0.646593 │ 0.970426 │ a │
+│ 2   │ 0.363206 │ 0.479828 │ b │
+│ 3   │ 0.618918 │ 0.661277 │ b │
+│ 4   │ 0.147621 │ 0.527292 │ a │
 ```
 
 The convenience paramater `shuffleobs` determines if the
@@ -180,14 +185,18 @@ for the type of `data`. See `?LearnBase.ObsDim` for more
 information.
 """
 function undersample(data; targetfun=identity, shuffleobs=false, obsdim=default_obsdim(data))
-    undersample(data, targetfun, shuffleobs, obs_dim(obsdim))
+    undersample(targetfun, data, shuffleobs, obs_dim(obsdim))
 end
 
-# make it tuple of data if it wasn't already
-undersample(data, args...) = undersample((data,), args...)[1]
+function undersample(data, shuffleobs::Bool, obsdim=default_obsdim(data))
+    undersample(identity, data, shuffleobs, obsdim)
+end
 
-function undersample(data::Tuple, targetfun, shuffleobs, obsdim)
-    lm = labelmap(target(targetfun, data, obsdim))
+function undersample(targetfun::Function,
+                     data,
+                     shuffleobs::Bool = false,
+                     obsdim = default_obsdim(data))
+    lm = labelmap(targets(targetfun, data, obsdim))
     mincount = minimum(length, values(lm))
 
     inds = Int[]
@@ -202,5 +211,5 @@ function undersample(data::Tuple, targetfun, shuffleobs, obsdim)
 end
 
 # Make sure the R people find the functionality
-@deprecate upsample(data, args...; kw...) oversample(data, args...; kw...)
-@deprecate downsample(data, args...; kw...) undersample(data, args...; kw...)
+@deprecate upsample(args...; kw...) oversample(args...; kw...)
+@deprecate downsample(args...; kw...) undersample(args...; kw...)

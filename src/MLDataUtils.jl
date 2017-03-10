@@ -10,7 +10,7 @@ import LearnBase: nobs, getobs, getobs!, datasubset, default_obsdim
 
 export
 
-    target,
+    targets,
     nobs,
     getobs,
     getobs!,
@@ -91,6 +91,7 @@ include("accesspattern/learnbase.jl")
 include("accesspattern/datasubset.jl")
 include("accesspattern/dataview.jl")
 include("accesspattern/dataiterator.jl")
+include("accesspattern/targets.jl")
 include("accesspattern/kfolds.jl")
 include("accesspattern/sampling.jl")
 

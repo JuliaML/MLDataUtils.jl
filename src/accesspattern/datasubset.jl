@@ -1,18 +1,3 @@
-target(data) = target(identity, data)
-target(f, data) = f(data)
-
-
-
-target{N}(f, tuple::NTuple{N}) = target(f, tuple[N])
-target{N}(f, tuple::NTuple{N}, obsdim::NTuple{N}) = target(f, tuple[N], obsdim[N])
-target(f, data, obsdim) = target(f, obsview(data, obsdim))
-
-
-target(f, dataview::DataView) = mappedarray(x->target(f,x), dataview)
-target(dataview::DataView) = mappedarray(target, dataview)
-
-# --------------------------------------------------------------------
-
 getobs(data) = data
 
 getobs!(buffer, data) = getobs(data)
