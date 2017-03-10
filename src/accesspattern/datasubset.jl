@@ -1,7 +1,12 @@
 target(data) = target(identity, data)
 target(f, data) = f(data)
 
+
+
 target{N}(f, tuple::NTuple{N}) = target(f, tuple[N])
+target{N}(f, tuple::NTuple{N}, obsdim::NTuple{N}) = target(f, tuple[N], obsdim[N])
+target(f, data, obsdim) = target(f, obsview(data, obsdim))
+
 
 target(f, dataview::DataView) = mappedarray(x->target(f,x), dataview)
 target(dataview::DataView) = mappedarray(target, dataview)
@@ -636,4 +641,3 @@ function splitobs{T<:AbstractFloat}(data, at::NTuple{T}, obsdim=default_obsdim(d
     push!(lst, n-nleft+1:n)
     [datasubset(data, idx, obsdim) for idx in lst]
 end
-

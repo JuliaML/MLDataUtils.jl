@@ -84,7 +84,7 @@ end
 oversample(data, args...) = oversample((data,), args...)[1]
 
 function oversample(data::Tuple, targetfun, shuffleobs, obsdim)
-    lm = labelmap(target(targetfun, data))
+    lm = labelmap(target(targetfun, data, obsdim))
     maxcount = maximum(length, values(lm))
 
     # firstly we will start by keeping everything
@@ -187,7 +187,7 @@ end
 undersample(data, args...) = undersample((data,), args...)[1]
 
 function undersample(data::Tuple, targetfun, shuffleobs, obsdim)
-    lm = labelmap(target(targetfun, data))
+    lm = labelmap(target(targetfun, data, obsdim))
     mincount = minimum(length, values(lm))
 
     inds = Int[]
@@ -204,4 +204,3 @@ end
 # Make sure the R people find the functionality
 @deprecate upsample(data, args...; kw...) oversample(data, args...; kw...)
 @deprecate downsample(data, args...; kw...) undersample(data, args...; kw...)
-
