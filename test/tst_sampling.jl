@@ -42,7 +42,17 @@ srand(1)
 
         @test Set(keys(os_cnts))==Set(keys(src_cnts))
         @test size(oversampled,2) > n_observations
-        @test all(cnt == first_os_count for (kk, cnt) in os_cnts)
+        @test all(cnt == first(os_cnts)[2] for (kk, cnt) in os_cnts)
+    end
+
+    @testset "MultiFactor Label with fun" begin
+        n_observations = 2_000
+        src = rand([1,2,2,3,3,3, 4,4,4,4], (2, n_observations))
+        sampled = oversample(src; targetfun=x->x[1]>x[2])
+        @assert sum(src[1,:].>src[2,:])!=n_observations//2
+
+        @test size(sampled,2) > n_observations
+        @test sum(sampled[1,:].>sampled[2,:]) == sum(sampled[1,:].<=sampled[2,:])
     end
 end
 
@@ -87,5 +97,16 @@ end
 
         first_os_count = first(os_cnts)[2]
         @test all(cnt == first_os_count for (kk, cnt) in os_cnts)
+    end
+
+    @testset "MultiFactor Label with fun" begin
+        n_observations = 2_000
+
+        src = rand([1,2,2,3,3,3, 4,4,4,4], (2, n_observations))
+        sampled = undersample(src; targetfun=x->x[1]>x[2])
+        @assert sum(src[1,:].>src[2,:])!=n_observations//2
+
+        @test size(sampled,2) < n_observations
+        @test sum(sampled[1,:].>sampled[2,:]) == sum(sampled[1,:].<=sampled[2,:])
     end
 end
