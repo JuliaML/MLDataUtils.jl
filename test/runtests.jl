@@ -1,7 +1,9 @@
+using Base.Test
+
 using MLDataUtils
 using StatsBase
 using UnicodePlots
-using Base.Test
+using DataStructures
 
 tests = [
     "tst_datasubset.jl"
