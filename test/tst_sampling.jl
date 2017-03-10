@@ -1,13 +1,14 @@
 using StatsBase
 using Base.Test
 using MLDataUtils
+using DataStructures
 
 srand(1)
 
 @testset "Oversample" begin
     @testset "Basic" begin
         n_src = 2000
-        src = rand([1,2,2,3,3,3, 4,4,4,4], 2000)
+        src = rand([1,2,2,3,3,3, 4,4,4,4], n_src)
         oversampled = oversample(src)
         @test all(counts(oversampled).==counts(oversampled)[1])
         @test all( x ∈ oversampled for x in unique(src))
@@ -28,13 +29,38 @@ srand(1)
         @test nobs(data_os, MLDataUtils.ObsDim.First()) == nobs(lbls_os)
         @test nobs(lbls_os) > n_src
     end
+
+    @testset "MultiFactor Label" begin
+        n_factors = 4
+        n_observations = 20_000
+
+        src = rand([1,2,2,3,3,3, 4,4,4,4], (n_factors, n_observations))
+        oversampled = oversample(src)
+
+        src_cnts = counter(obsview(src))
+        os_cnts =  counter(obsview(oversampled))
+
+        @test Set(keys(os_cnts))==Set(keys(src_cnts))
+        @test size(oversampled,2) > n_observations
+        @test all(cnt == first(os_cnts)[2] for (kk, cnt) in os_cnts)
+    end
+
+    @testset "MultiFactor Label with fun" begin
+        n_observations = 2_000
+        src = rand([1,2,2,3,3,3, 4,4,4,4], (2, n_observations))
+        sampled = oversample(src; targetfun=x->x[1]>x[2])
+        @assert sum(src[1,:].>src[2,:])!=n_observations//2
+
+        @test size(sampled,2) > n_observations
+        @test sum(sampled[1,:].>sampled[2,:]) == sum(sampled[1,:].<=sampled[2,:])
+    end
 end
 
 
 @testset "Undersample" begin
     @testset "Basic" begin
         n_src = 2000
-        src = rand([1,2,2,3,3,3, 4,4,4,4], 2000)
+        src = rand([1,2,2,3,3,3, 4,4,4,4], n_src)
         sampled = undersample(src)
         @test all(counts(sampled).==counts(sampled)[1])
         @test all( x ∈ sampled for x in unique(src))
@@ -55,5 +81,32 @@ end
         @test nobs(data_os, MLDataUtils.ObsDim.First()) == nobs(lbls_os)
         @test nobs(lbls_os) < n_src
     end
-end
 
+    @testset "MultiFactor Label" begin
+        n_factors = 4
+        n_observations = 20_000
+
+        src = rand([1,2,2,3,3,3, 4,4,4,4], (n_factors, n_observations))
+        sampled = undersample(src)
+
+        src_cnts = counter(obsview(src))
+        os_cnts =  counter(obsview(sampled))
+
+        @test Set(keys(os_cnts))==Set(keys(src_cnts))
+        @test size(sampled,2) < n_observations
+
+        first_os_count = first(os_cnts)[2]
+        @test all(cnt == first_os_count for (kk, cnt) in os_cnts)
+    end
+
+    @testset "MultiFactor Label with fun" begin
+        n_observations = 2_000
+
+        src = rand([1,2,2,3,3,3, 4,4,4,4], (2, n_observations))
+        sampled = undersample(src; targetfun=x->x[1]>x[2])
+        @assert sum(src[1,:].>src[2,:])!=n_observations//2
+
+        @test size(sampled,2) < n_observations
+        @test sum(sampled[1,:].>sampled[2,:]) == sum(sampled[1,:].<=sampled[2,:])
+    end
+end
