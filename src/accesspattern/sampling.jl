@@ -100,7 +100,8 @@ function oversample(data::Tuple, targetfun, shuffleobs, obsdim)
         append!(inds, sample(inds_for_lbl, num_extra_needed; replace=false))
     end
 
-    shuffleobs && shuffle!(inds) # rather than using shuffleobs, cut out the middleman
+    # rather than using shuffleobs, cut out the middleman
+    shuffleobs && shuffle!(inds)
     datasubset(data, inds, obsdim)
 end
 
@@ -170,8 +171,8 @@ julia> getobs(undersample(data, targetfun=(_->_[:Y])))
 
 The convenience paramater `shuffleobs` determines if the
 resulting data will be shuffled after its creation; if it is not
-shuffled then all the repeated samples will be together at the
-end, sorted by class. Defaults to `false`.
+shuffled then all the observations will be in their original
+order. Defaults to `false`.
 
 The optional parameter `obsdim` can be used to specify which
 dimension denotes the observations, if that concept makes sense
@@ -194,10 +195,9 @@ function undersample(data::Tuple, targetfun, shuffleobs, obsdim)
 
     for (lbl, inds_for_lbl) in lm
         append!(inds, sample(inds_for_lbl, mincount; replace=false))
-        #MICROOPT: Could do ordered=shuffleobs. However, what is the point since will still be class ordered? (This may sort faster, or may not; and may be slower to generate or may not)
     end
 
-    shuffleobs && shuffle!(inds) # rather than using shuffleobs, cut out the middleman
+    shuffleobs ? shuffle!(inds) : sort!(inds)
     datasubset(data, inds, obsdim)
 end
 
