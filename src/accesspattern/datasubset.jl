@@ -1,3 +1,13 @@
+target(data) = target(identity, data)
+target(f, data) = f(data)
+
+target{N}(f, tuple::NTuple{N}) = target(f, tuple[N])
+
+target(f, dataview::DataView) = mappedarray(x->target(f,x), dataview)
+target(dataview::DataView) = mappedarray(target, dataview)
+
+# --------------------------------------------------------------------
+
 getobs(data) = data
 
 getobs!(buffer, data) = getobs(data)
@@ -234,6 +244,8 @@ Base.endof(subset::DataSubset) = length(subset)
 Base.getindex(subset::DataSubset, idx) =
     DataSubset(subset.data, _view(subset.indices, idx), subset.obsdim)
 
+target(f, subset::DataSubset) = f(getobs(subset))
+
 nobs(subset::DataSubset) = length(subset)
 
 getobs(subset::DataSubset) =
@@ -441,7 +453,7 @@ function _check_nobs(tup::Tuple, obsdims::Tuple)
     end
 end
 
-function nobs(tup::Tuple)::Int
+function nobs(tup::Tuple, ::ObsDim.Undefined = ObsDim.Undefined())::Int
     _check_nobs(tup)
     length(tup) == 0 ? 0 : nobs(tup[1])
 end

@@ -1,14 +1,16 @@
 module MLDataUtils
 
-using LearnBase
 using StatsBase
-using DataStructures
+using LearnBase
+using MappedArrays
+using MLLabelUtils
 
 using LearnBase: ObsDimension, obs_dim
 import LearnBase: nobs, getobs, getobs!, datasubset, default_obsdim
 
 export
 
+    target,
     nobs,
     getobs,
     getobs!,
@@ -46,6 +48,8 @@ export
 
     oversample,
     undersample,
+    upsample,
+    downsample,
 
     AbstractDataIterator,
         AbstractObsIterator,

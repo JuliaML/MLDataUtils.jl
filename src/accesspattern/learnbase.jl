@@ -4,6 +4,8 @@
 # should move there, so no functionality is provided without using
 # MLDataUtils.
 
+function target end
+
 # --------------------------------------------------------------------
 
 """
