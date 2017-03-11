@@ -302,4 +302,3 @@ end
         @test BatchView(A).obsdim == ObsDim.First()
     end
 end
-

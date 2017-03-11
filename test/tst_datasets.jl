@@ -1,5 +1,3 @@
-# ==============================================================
-
 @testset "Test load_iris" begin
     X, y, vars = load_iris()
 
@@ -14,8 +12,6 @@
     @test_approx_eq mean(X[:,51:100], 2) [5.936, 2.77, 4.26, 1.326]
 end
 
-# ==============================================================
-
 @testset "Test load_sin" begin
     x, y, vars = load_sin()
 
@@ -25,8 +21,6 @@ end
     @test length(x) == length(y) == 15
     @test length(vars) == 2
 end
-
-# ==============================================================
 
 @testset "Test load_line" begin
     x, y, vars = load_line()
@@ -38,8 +32,6 @@ end
     @test length(vars) == 2
 end
 
-# ==============================================================
-
 @testset "Test load_poly" begin
     x, y, vars = load_poly()
 
@@ -49,8 +41,6 @@ end
     @test length(x) == length(y) == 50
     @test length(vars) == 2
 end
-
-# ==============================================================
 
 @testset "Test load_spiral" begin
     x, y, vars = load_spiral()

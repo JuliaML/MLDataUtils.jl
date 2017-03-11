@@ -1,5 +1,3 @@
-# ==============================================================
-
 @testset "Test noisy_sin" begin
     n = 50
     x, y = noisy_sin(n; noise = 0.)
@@ -11,8 +9,6 @@
     print(scatterplot(x, y; color = :blue, height = 5))
 end
 
-# ==============================================================
-
 @testset "Test noisy_poly" begin
     coef = [.8, .5, 2]
     x, y = noisy_poly(coef, -10:.1:10; noise = 0)
@@ -23,8 +19,6 @@ end
     end
     print(scatterplot(x, y; color = :blue, height = 5))
 end
-
-# ==============================================================
 
 @testset "Test noisy_spiral" begin
     n = 97

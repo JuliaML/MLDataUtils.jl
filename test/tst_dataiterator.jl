@@ -442,4 +442,3 @@ end
     @test size(A.buffer) == (10,4)
     @test length(A) == 15
 end
-
