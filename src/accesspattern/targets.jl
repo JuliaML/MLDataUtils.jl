@@ -1,8 +1,8 @@
-@inline target(data) = target(identity, data)
-@inline target{N}(f::Function, tup::NTuple{N}) = target(f, tup[N])
+@inline gettarget(data) = gettarget(identity, data)
+@inline gettarget{N}(f::Function, tup::NTuple{N}) = gettarget(f, tup[N])
 
 # noinline to allow more reliable user-overload for custom types
-@noinline target(f::Function, data) = f(getobs(data))
+@noinline gettarget(f::Function, data) = f(getobs(data))
 
 # --------------------------------------------------------------------
 
@@ -43,11 +43,11 @@ end
 
 function targets(f::typeof(identity), data::AbstractObsView, obsdim=default_obsdim(data))
     @assert obsdim === default_obsdim(data)
-    mappedarray(target, data)
+    mappedarray(gettarget, data)
 end
 
 function targets(f::Function, data::AbstractObsView, obsdim=default_obsdim(data))
     @assert obsdim === default_obsdim(data)
-    mappedarray(x->target(f,x), data)
+    mappedarray(x->gettarget(f,x), data)
 end
 
