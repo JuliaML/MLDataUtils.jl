@@ -1,28 +1,29 @@
 @inline gettarget(data) = gettarget(identity, data)
-@inline gettarget{N}(f::Function, tup::NTuple{N}) = gettarget(f, tup[N])
+@inline gettarget{N}(f, tup::NTuple{N}) = gettarget(f, tup[N])
 
 # noinline to allow more reliable user-overload for custom types
-@noinline gettarget(f::Function, data) = f(getobs(data))
+@noinline gettarget(f, data) = f(getobs(data))
+@noinline gettarget(f, data::AbstractArray) = f(data)
+@noinline gettarget(f, data::DataSubset) = gettarget(f, getobs(data))
 
 # --------------------------------------------------------------------
 
 @inline targets(data; targetfun=identity, obsdim=default_obsdim(data)) =
     targets(targetfun, data, obs_dim(obsdim))
-@inline targets(f::Function, data; obsdim=default_obsdim(data)) =
-    targets(f, data, obs_dim(obsdim))
 
-@inline targets(data, obsdim) = targets(identity, data, obsdim)
+@inline targets(f, data; obsdim=default_obsdim(data)) =
+    targets(f, data, obs_dim(obsdim))
 @inline targets(f::typeof(identity), data, obsdim) = data
-@inline targets(f::Function, data, obsdim) =
+@inline targets(f, data, obsdim) =
     targets(f, obsview(data, obsdim))
 
 @inline targets{N}(f::typeof(identity), tup::NTuple{N}, obsdim::ObsDimension) =
     targets(tup[N], obsdim)
 @inline targets{N}(f::typeof(identity), tup::NTuple{N}, obsdim::NTuple{N}) =
     targets(tup[N], obsdim[N])
-@inline targets{N}(f::Function, tup::NTuple{N}, obsdim::ObsDimension) =
+@inline targets{N}(f, tup::NTuple{N}, obsdim::ObsDimension) =
     targets(f, tup[N], obsdim)
-@inline targets{N}(f::Function, tup::NTuple{N}, obsdim::NTuple{N}) =
+@inline targets{N}(f, tup::NTuple{N}, obsdim::NTuple{N}) =
     targets(f, tup[N], obsdim[N])
 
 # --------------------------------------------------------------------
@@ -33,7 +34,7 @@ function targets(f::typeof(identity), data::AbstractBatchView, obsdim=default_ob
     mappedarray(targets, data)
 end
 
-function targets(f::Function, data::AbstractBatchView, obsdim=default_obsdim(data))
+function targets(f, data::AbstractBatchView, obsdim=default_obsdim(data))
     @assert obsdim === default_obsdim(data)
     mappedarray(x->targets(f,x), data)
 end
@@ -46,7 +47,7 @@ function targets(f::typeof(identity), data::AbstractObsView, obsdim=default_obsd
     mappedarray(gettarget, data)
 end
 
-function targets(f::Function, data::AbstractObsView, obsdim=default_obsdim(data))
+function targets(f, data::AbstractObsView, obsdim=default_obsdim(data))
     @assert obsdim === default_obsdim(data)
     mappedarray(x->gettarget(f,x), data)
 end
