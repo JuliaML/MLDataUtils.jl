@@ -89,7 +89,7 @@ function oversample(targetfun::Function,
                     data,
                     shuffleobs::Bool = true,
                     obsdim = default_obsdim(data))
-    lm = labelmap(targets(targetfun, data, obsdim))
+    lm = labelmap(targets(targetfun, obsview(data, obsdim)))
     maxcount = maximum(length, values(lm))
 
     # firstly we will start by keeping everything
@@ -196,7 +196,7 @@ function undersample(targetfun::Function,
                      data,
                      shuffleobs::Bool = false,
                      obsdim = default_obsdim(data))
-    lm = labelmap(targets(targetfun, data, obsdim))
+    lm = labelmap(targets(targetfun, obsview(data, obsdim)))
     mincount = minimum(length, values(lm))
 
     inds = Int[]

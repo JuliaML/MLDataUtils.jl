@@ -1,5 +1,4 @@
 using Base.Test
-
 using MLDataUtils
 using StatsBase
 using UnicodePlots
@@ -39,6 +38,7 @@ tests = [
     "tst_noisy_function.jl"
     "tst_feature_scaling.jl"
     "tst_datasets.jl"
+    "tst_targets.jl"
     "tst_sampling.jl"
 ]
 

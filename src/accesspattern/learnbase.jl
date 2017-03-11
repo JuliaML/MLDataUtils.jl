@@ -5,6 +5,7 @@
 # MLDataUtils.
 
 function target end
+function targets end
 
 # --------------------------------------------------------------------
 

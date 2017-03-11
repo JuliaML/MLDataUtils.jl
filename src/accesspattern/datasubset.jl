@@ -234,8 +234,6 @@ Base.endof(subset::DataSubset) = length(subset)
 Base.getindex(subset::DataSubset, idx) =
     DataSubset(subset.data, _view(subset.indices, idx), subset.obsdim)
 
-target(f, subset::DataSubset) = f(getobs(subset))
-
 nobs(subset::DataSubset) = length(subset)
 
 getobs(subset::DataSubset) =
@@ -384,7 +382,9 @@ end
 nobs{DIM}(A::AbstractArray, ::ObsDim.Constant{DIM})::Int = size(A, DIM)
 nobs{T,N}(A::AbstractArray{T,N}, ::ObsDim.Last)::Int = size(A, N)
 
-getobs(A::SubArray) = copy(A)
+getobs(A::Array) = A
+getobs(A::AbstractSparseArray) = A
+getobs(A::AbstractArray) = copy(A)
 
 getobs!(buffer, A::AbstractSparseArray, idx, obsdim) = getobs(A, idx, obsdim)
 getobs!(buffer, A::AbstractSparseArray) = getobs(A)
