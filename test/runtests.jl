@@ -1,13 +1,14 @@
 using Base.Test
 using MLDataUtils
+using MLLabelUtils
 using StatsBase
 using UnicodePlots
-using DataStructures
 
 # --------------------------------------------------------------------
 
 X, y = load_iris()
 Y = permutedims(hcat(y,y), [2,1])
+Yt = hcat(y,y)
 yt = Y[1:1,:]
 Xv = view(X,:,:)
 yv = view(y,:)
@@ -27,17 +28,18 @@ immutable CustomType end
 MLDataUtils.nobs(::CustomType) = 100
 MLDataUtils.getobs(::CustomType, i::Int) = i
 MLDataUtils.getobs(::CustomType, i::AbstractVector) = collect(i)
+MLDataUtils.gettarget(i::Int, ::CustomType) = i
 
 # --------------------------------------------------------------------
 
 tests = [
-    "tst_datasubset.jl"
-    "tst_dataview.jl"
-    "tst_dataiterator.jl"
-    "tst_kfolds.jl"
-    "tst_noisy_function.jl"
-    "tst_feature_scaling.jl"
-    "tst_datasets.jl"
+#    "tst_datasubset.jl"
+#    "tst_dataview.jl"
+#    "tst_dataiterator.jl"
+#    "tst_kfolds.jl"
+#    "tst_noisy_function.jl"
+#    "tst_feature_scaling.jl"
+#    "tst_datasets.jl"
     "tst_targets.jl"
     "tst_sampling.jl"
 ]

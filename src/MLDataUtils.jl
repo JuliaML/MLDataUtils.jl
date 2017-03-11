@@ -2,7 +2,6 @@ module MLDataUtils
 
 using StatsBase
 using LearnBase
-using MappedArrays
 using MLLabelUtils
 
 using LearnBase: ObsDimension, obs_dim
@@ -10,7 +9,6 @@ import LearnBase: nobs, getobs, getobs!, datasubset, default_obsdim
 
 export
 
-    targets,
     nobs,
     getobs,
     getobs!,
@@ -74,6 +72,9 @@ export
     batchview,
     eachobs,
     eachbatch,
+
+    targets,
+    eachtarget,
 
     KFolds,
     kfolds,

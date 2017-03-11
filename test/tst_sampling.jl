@@ -31,8 +31,8 @@ srand(1)
         src = rand([1,2,2,3,3,3, 4,4,4,4], (n_factors, n_observations))
         oversampled = oversample(src)
 
-        src_cnts = counter(obsview(src))
-        os_cnts =  counter(obsview(oversampled))
+        src_cnts = labelfreq(obsview(src))
+        os_cnts = labelfreq(obsview(oversampled))
 
         @test Set(keys(os_cnts))==Set(keys(src_cnts))
         @test size(oversampled,2) > n_observations
@@ -42,7 +42,7 @@ srand(1)
     @testset "MultiFactor Label with fun" begin
         n_observations = 2_000
         src = rand([1,2,2,3,3,3, 4,4,4,4], (2, n_observations))
-        sampled = oversample(src; targetfun=x->x[1]>x[2])
+        sampled = oversample(x->x[1]>x[2], src)
         @assert sum(src[1,:].>src[2,:])!=n_observations//2
 
         @test size(sampled,2) > n_observations
@@ -82,8 +82,8 @@ end
         src = rand([1,2,2,3,3,3, 4,4,4,4], (n_factors, n_observations))
         sampled = undersample(src)
 
-        src_cnts = counter(obsview(src))
-        os_cnts =  counter(obsview(sampled))
+        src_cnts = labelfreq(obsview(src))
+        os_cnts =  labelfreq(obsview(sampled))
 
         @test Set(keys(os_cnts))==Set(keys(src_cnts))
         @test size(sampled,2) < n_observations
@@ -96,7 +96,7 @@ end
         n_observations = 2_000
 
         src = rand([1,2,2,3,3,3, 4,4,4,4], (2, n_observations))
-        sampled = undersample(src; targetfun=x->x[1]>x[2])
+        sampled = undersample(x->x[1]>x[2], src)
         @assert sum(src[1,:].>src[2,:])!=n_observations//2
 
         @test size(sampled,2) < n_observations

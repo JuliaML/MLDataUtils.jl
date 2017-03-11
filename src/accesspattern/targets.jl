@@ -1,54 +1,84 @@
-@inline gettarget(data) = gettarget(identity, data)
-@inline gettarget{N}(f, tup::NTuple{N}) = gettarget(f, tup[N])
-
-# noinline to allow more reliable user-overload for custom types
+# gettarget is intended to be defined by the user
+# that is also the reason for using @noinline
 @noinline gettarget(f, data) = f(getobs(data))
-@noinline gettarget(f, data::AbstractArray) = f(data)
 @noinline gettarget(f, data::DataSubset) = gettarget(f, getobs(data))
+# @noinline gettarget(f, data::AbstractArray) = f(data) # one of k, etc
+
+# custom "_" function to not recurse on tuples
+# identity is special and later dispatched on
+@inline _gettarget(data) = _gettarget(identity, data)
+@inline _gettarget(f, data) = gettarget(f, data)
+
+# no nobs check because this should be a single observation
+@inline _gettarget{N}(f, tup::NTuple{N}) = gettarget(f, tup[N])
 
 # --------------------------------------------------------------------
+# targets
 
-@inline targets(data; targetfun=identity, obsdim=default_obsdim(data)) =
-    targets(targetfun, data, obs_dim(obsdim))
+# keyword based convenience API
+@inline targets(data; obsdim=default_obsdim(data)) =
+    targets(identity, data, obs_dim(obsdim))
 
 @inline targets(f, data; obsdim=default_obsdim(data)) =
     targets(f, data, obs_dim(obsdim))
-@inline targets(f::typeof(identity), data, obsdim) = data
-@inline targets(f, data, obsdim) =
-    targets(f, obsview(data, obsdim))
 
-@inline targets{N}(f::typeof(identity), tup::NTuple{N}, obsdim::ObsDimension) =
-    targets(tup[N], obsdim)
-@inline targets{N}(f::typeof(identity), tup::NTuple{N}, obsdim::NTuple{N}) =
-    targets(tup[N], obsdim[N])
-@inline targets{N}(f, tup::NTuple{N}, obsdim::ObsDimension) =
-    targets(f, tup[N], obsdim)
-@inline targets{N}(f, tup::NTuple{N}, obsdim::NTuple{N}) =
-    targets(f, tup[N], obsdim[N])
+@inline targets(data, obsdim::ObsDimension) =
+    targets(identity, data, obsdim)
 
-# --------------------------------------------------------------------
-# Obs Views
+@inline targets{N}(tup::NTuple{N}, obsdim::NTuple{N}) =
+    targets(identity, tup, obsdim)
 
-function targets(f::typeof(identity), data::AbstractBatchView, obsdim=default_obsdim(data))
-    @assert obsdim === default_obsdim(data)
-    mappedarray(targets, data)
+# only dispatch on tuples once (nested tuples are not interpreted)
+function targets{N}(f, tup::NTuple{N}, obsdim::ObsDimension)
+    _check_nobs(tup, obsdim)
+    _targets(f, tup[N], obsdim)
 end
 
+function targets{N}(f, tup::NTuple{N}, obsdim::NTuple{N})
+    _check_nobs(tup, obsdim)
+    _targets(f, tup[N], obsdim[N])
+end
+
+@inline targets(f, data, obsdim) = _targets(f, data, obsdim)
+
+# Batch Views
 function targets(f, data::AbstractBatchView, obsdim=default_obsdim(data))
     @assert obsdim === default_obsdim(data)
-    mappedarray(x->targets(f,x), data)
+    map(x->targets(f,x), data)
+end
+
+# Obs Views
+function targets(f, data::AbstractObsView, obsdim=default_obsdim(data))
+    @assert obsdim === default_obsdim(data)
+    map(x->_gettarget(f,x), data)
+end
+
+# again custom method to not recurse on tuples
+# this time we swapped the naming because the exposed function
+# should always be the one without an "_"
+@inline _targets(f::typeof(identity), data, obsdim) = getobs(data)
+@inline _targets(f, data, obsdim) = _targets(f, obsview(data, obsdim))
+
+# Obs Views of targets after tuple unroll
+function _targets(f, data::AbstractObsView, obsdim=default_obsdim(data))
+    @assert obsdim === default_obsdim(data)
+    map(x->gettarget(f,x), data)
 end
 
 # --------------------------------------------------------------------
-# Batch Views
+# eachtarget (lazy version for iterating)
 
-function targets(f::typeof(identity), data::AbstractObsView, obsdim=default_obsdim(data))
+# keyword based convenience API
+@inline eachtarget(data; obsdim=default_obsdim(data)) =
+    eachtarget(identity, data, obs_dim(obsdim))
+
+@inline eachtarget(f, data; obsdim=default_obsdim(data)) =
+    eachtarget(f, data, obs_dim(obsdim))
+
+@inline eachtarget(f, data, obsdim) =
+    eachtarget(f, obsview(data, obsdim))
+
+function eachtarget(f, data::AbstractObsView, obsdim=default_obsdim(data))
     @assert obsdim === default_obsdim(data)
-    mappedarray(gettarget, data)
+    (_gettarget(f, x) for x in data)
 end
-
-function targets(f, data::AbstractObsView, obsdim=default_obsdim(data))
-    @assert obsdim === default_obsdim(data)
-    mappedarray(x->gettarget(f,x), data)
-end
-

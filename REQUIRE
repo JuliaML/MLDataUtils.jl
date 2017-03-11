@@ -2,5 +2,4 @@ julia 0.5
 Iterators 0.3
 StatsBase 0.13
 LearnBase 0.1.2 0.2.0
-MappedArrays 0.0.6
 MLLabelUtils

@@ -1,5 +1,5 @@
 """
-    oversample([targetfun], data, [shuffleobs = true], [obsdim])
+    oversample([f], data, [shuffleobs = true], [obsdim])
 
 Generates a class-balanced version of `data` by repeatedly
 sampling existing observations in such a way that the number of
@@ -34,10 +34,10 @@ LearnBase.getobs(data::DataFrame, i) = data[i,:]
 LearnBase.nobs(data::DataFrame) = nrow(data)
 ```
 
-You can use the (keyword) parameter `targetfun` to specify how to
+You can use the (keyword) parameter `f` to specify how to
 retrieve the targets of the given `data`. Note that if `data` is
 a tuple, then it will be assumed that the last element of the
-tuple contains the targets and `targetfun` will be applied to
+tuple contains the targets and `f` will be applied to
 that element.
 
 ```julia
@@ -52,7 +52,7 @@ julia> data = DataFrame(Any[rand(6), rand(6), [:a,:b,:b,:b,:b,:a]], [:X1,:X2,:Y]
 │ 5   │ 0.723626 │ 0.295239 │ b │
 │ 6   │ 0.147621 │ 0.527292 │ a │
 
-julia> getobs(oversample(data, targetfun=(_->_[:Y])))
+julia> getobs(oversample(row->row[:Y], data))
 8×3 DataFrames.DataFrame
 │ Row │ X1       │ X2       │ Y │
 ├─────┼──────────┼──────────┼───┤
@@ -76,20 +76,17 @@ dimension denotes the observations, if that concept makes sense
 for the type of `data`. See `?LearnBase.ObsDim` for more
 information.
 """
-function oversample(data; targetfun=identity, shuffleobs=true, obsdim=default_obsdim(data))
-    oversample(targetfun, data, shuffleobs, obs_dim(obsdim))
-end
+oversample(data; shuffleobs=true, obsdim=default_obsdim(data)) =
+    oversample(identity, data, shuffleobs, obs_dim(obsdim))
 
-
-function oversample(data, shuffleobs::Bool, obsdim=default_obsdim(data))
+oversample(data, shuffleobs::Bool, obsdim=default_obsdim(data)) =
     oversample(identity, data, shuffleobs, obsdim)
-end
 
-function oversample(targetfun::Function,
-                    data,
-                    shuffleobs::Bool = true,
-                    obsdim = default_obsdim(data))
-    lm = labelmap(targets(targetfun, obsview(data, obsdim)))
+oversample(f, data; shuffleobs=true, obsdim=default_obsdim(data)) =
+    oversample(f, data, shuffleobs, obs_dim(obsdim))
+
+function oversample(f, data, shuffleobs::Bool, obsdim=default_obsdim(data))
+    lm = labelmap(eachtarget(f, data, obsdim))
     maxcount = maximum(length, values(lm))
 
     # firstly we will start by keeping everything
@@ -111,7 +108,7 @@ function oversample(targetfun::Function,
 end
 
 """
-    undersample([targetfun], data, [shuffleobs = false], [obsdim])
+    undersample([f], data, [shuffleobs = false], [obsdim])
 
 Generates a class-balanced version of `data` by subsampling its
 observations in such a way that the number of observations is the
@@ -146,10 +143,10 @@ LearnBase.getobs(data::DataFrame, i) = data[i,:]
 LearnBase.nobs(data::DataFrame) = nrow(data)
 ```
 
-You can use the (keyword) parameter `targetfun` to specify how to
+You can use the (keyword) parameter `f` to specify how to
 retrieve the targets of the given `data`. Note that if `data` is
 a tuple, then it will be assumed that the last element of the
-tuple contains the targets and `targetfun` will be applied to
+tuple contains the targets and `f` will be applied to
 that element.
 
 ```julia
@@ -164,7 +161,7 @@ julia> data = DataFrame(Any[rand(6), rand(6), [:a,:b,:b,:b,:b,:a]], [:X1,:X2,:Y]
 │ 5   │ 0.723626 │ 0.295239 │ b │
 │ 6   │ 0.147621 │ 0.527292 │ a │
 
-julia> getobs(undersample(data, targetfun=(_->_[:Y])))
+julia> getobs(undersample(row->row[:Y], data))
 4×3 DataFrames.DataFrame
 │ Row │ X1       │ X2       │ Y │
 ├─────┼──────────┼──────────┼───┤
@@ -184,19 +181,17 @@ dimension denotes the observations, if that concept makes sense
 for the type of `data`. See `?LearnBase.ObsDim` for more
 information.
 """
-function undersample(data; targetfun=identity, shuffleobs=false, obsdim=default_obsdim(data))
-    undersample(targetfun, data, shuffleobs, obs_dim(obsdim))
-end
+undersample(data; shuffleobs=false, obsdim=default_obsdim(data)) =
+    undersample(identity, data, shuffleobs, obs_dim(obsdim))
 
-function undersample(data, shuffleobs::Bool, obsdim=default_obsdim(data))
+undersample(data, shuffleobs::Bool, obsdim=default_obsdim(data)) =
     undersample(identity, data, shuffleobs, obsdim)
-end
 
-function undersample(targetfun::Function,
-                     data,
-                     shuffleobs::Bool = false,
-                     obsdim = default_obsdim(data))
-    lm = labelmap(targets(targetfun, obsview(data, obsdim)))
+undersample(f, data; shuffleobs=false, obsdim=default_obsdim(data)) =
+    undersample(f, data, shuffleobs, obsdim)
+
+function undersample(f, data, shuffleobs::Bool, obsdim=default_obsdim(data))
+    lm = labelmap(eachtarget(f, data, obsdim))
     mincount = minimum(length, values(lm))
 
     inds = Int[]
