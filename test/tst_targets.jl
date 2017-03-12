@@ -221,3 +221,87 @@ end
         @test targets(uppercase, ov) == ["A", "B", "B", "B", "B", "A"]
     end
 end
+
+@testset "eachtarget" begin
+    @test typeof(eachtarget) <: Function
+    @test eachtarget === MLDataUtils.eachtarget
+
+    @testset "questionable results to unusual parameters" begin
+        @test_throws MethodError eachtarget(_->_+1, 1)
+        @test_throws MethodError eachtarget(uppercase, "test")
+        @test_throws MethodError eachtarget((1,1:3))
+        @test_throws MethodError eachtarget((1:3,1))
+        @test_throws MethodError eachtarget(identity, 3.)
+    end
+
+    @testset "nobs mismatch" begin
+        @test_throws DimensionMismatch eachtarget((1:3,1:4))
+        @test_throws DimensionMismatch eachtarget((1:4,1:3))
+        @test_throws DimensionMismatch eachtarget((X,Yt))
+        @test_throws DimensionMismatch eachtarget((y,Yt))
+    end
+
+    @testset "Arrays" begin
+        @test collect(@inferred(eachtarget(y))) == y
+        @test collect(@inferred(eachtarget(x->x=="setosa", y))) == vcat(trues(50), falses(100))
+        @test collect(@inferred(eachtarget(Y))) == obsview(Y)
+        @test collect(eachtarget(Y, obsdim=:last)) == obsview(Y)
+        @test collect(@inferred(eachtarget(Y, ObsDim.Last()))) == obsview(Y)
+        @test collect(@inferred(eachtarget(x->x[1]==x[2], Y))) == trues(nobs(Y))
+        @test collect(eachtarget(x->x[1]==x[2], Yt, obsdim=1)) == trues(nobs(Y))
+        @test collect(@inferred(eachtarget(x->x[1]==x[2], Yt, ObsDim.First()))) == trues(nobs(Y))
+        @test collect(@inferred(eachtarget(yv))) == y
+        @test collect(@inferred(eachtarget(ys))) == collect(ys)
+        # TODO: inference broken in test modus but not otherwise :-(
+        @test collect(eachtarget(uppercase, ["a","b","c"])) == ["A","B","C"]
+    end
+
+    @testset "Tuples" begin
+        @test collect(@inferred(eachtarget((X,yv)))) == y
+        @test collect(@inferred(eachtarget((yv,)))) == y
+        @test collect(@inferred(eachtarget((ys,)))) == collect(ys)
+        @test collect(@inferred(eachtarget((Y,)))) == obsview(Y)
+
+        @test collect(eachtarget(x->map(uppercase,x), ["a" "b" "c"; "d" "e" "f"], obsdim=2)) == [["A", "D"], ["B", "E"], ["C", "F"]]
+        @test collect(eachtarget(x->map(uppercase,x), ["a" "b" "c"; "d" "e" "f"], ObsDim.Last())) == [["A", "D"], ["B", "E"], ["C", "F"]]
+        @test collect(eachtarget((y,Y),obsdim=:last)) == obsview(Y)
+        @test collect(eachtarget((y,Yt),obsdim=:first)) == obsview(Y)
+        @test collect(eachtarget((Yt,y),obsdim=(:first,:last))) == y
+        @test collect(eachtarget((Y,Yt),obsdim=(:last,:first))) == obsview(Y)
+
+        @test collect(@inferred(eachtarget((y,Y),ObsDim.Last()))) == obsview(Y)
+        @test collect(@inferred(eachtarget((y,Yt),ObsDim.First()))) == obsview(Y)
+        @test collect(@inferred(eachtarget((Yt,y),(ObsDim.First(),ObsDim.Last())))) == y
+        @test collect(@inferred(eachtarget((Y,Yt),(ObsDim.Last(),ObsDim.First())))) == obsview(Y)
+
+        @test collect(@inferred(eachtarget(identity,(y,Y),ObsDim.Last()))) == obsview(Y)
+        @test collect(@inferred(eachtarget(identity,(y,Yt),ObsDim.First()))) == obsview(Y)
+        @test collect(@inferred(eachtarget(identity,(Yt,y),(ObsDim.First(),ObsDim.Last())))) == y
+        @test collect(@inferred(eachtarget(identity,(Y,Yt),(ObsDim.Last(),ObsDim.First())))) == obsview(Y)
+
+        @test collect(@inferred(eachtarget(([:a,:b,:c],1:3)))) == [1,2,3]
+        @test collect(@inferred(eachtarget(x->x^2,([:a,:b,:c],1:3)))) == [1,4,9]
+        # nested tuples
+        @test collect(@inferred(eachtarget(([:a,:b,:c],(1:3,4:6))))) == obsview((1:3,4:6))
+        @test collect(@inferred(eachtarget(x->x[1]*x[2],([:a,:b,:c],(1:3,4:6))))) == [4,10,18]
+    end
+
+    @testset "ObsView" begin
+        ft = rand(6)
+        str = ["a", "b", "b", "b", "b", "a"]
+        ov = obsview(str)
+        @inferred eachtarget(ov)
+        @inferred eachtarget(uppercase, ov)
+        @test typeof(eachtarget(ov)) <: Base.Generator
+        @test typeof(eachtarget(uppercase, ov)) <: Base.Generator
+        @test collect(eachtarget(ov)) == ["a", "b", "b", "b", "b", "a"]
+        @test collect(eachtarget(uppercase, ov)) == ["A", "B", "B", "B", "B", "A"]
+        ov = obsview((ft,str))
+        @inferred eachtarget(ov)
+        @inferred eachtarget(uppercase, ov)
+        @test typeof(eachtarget(ov)) <: Base.Generator
+        @test typeof(eachtarget(uppercase, ov)) <: Base.Generator
+        @test collect(eachtarget(ov)) == ["a", "b", "b", "b", "b", "a"]
+        @test collect(eachtarget(uppercase, ov)) == ["A", "B", "B", "B", "B", "A"]
+    end
+end

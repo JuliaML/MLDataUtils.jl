@@ -75,6 +75,12 @@ end
 @inline eachtarget(f, data; obsdim=default_obsdim(data)) =
     eachtarget(f, data, obs_dim(obsdim))
 
+@inline eachtarget(data, obsdim::ObsDimension) =
+    eachtarget(identity, data, obsdim)
+
+@inline eachtarget{N}(tup::NTuple{N}, obsdim::NTuple{N}) =
+    eachtarget(identity, tup, obsdim)
+
 @inline eachtarget(f, data, obsdim) =
     eachtarget(f, obsview(data, obsdim))
 

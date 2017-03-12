@@ -33,13 +33,13 @@ MLDataUtils.gettarget(i::Int, ::CustomType) = i
 # --------------------------------------------------------------------
 
 tests = [
-#    "tst_datasubset.jl"
-#    "tst_dataview.jl"
-#    "tst_dataiterator.jl"
-#    "tst_kfolds.jl"
-#    "tst_noisy_function.jl"
-#    "tst_feature_scaling.jl"
-#    "tst_datasets.jl"
+    "tst_datasubset.jl"
+    "tst_dataview.jl"
+    "tst_dataiterator.jl"
+    "tst_kfolds.jl"
+    "tst_noisy_function.jl"
+    "tst_feature_scaling.jl"
+    "tst_datasets.jl"
     "tst_targets.jl"
     "tst_sampling.jl"
 ]
