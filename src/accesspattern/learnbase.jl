@@ -4,7 +4,127 @@
 # should move there, so no functionality is provided without using
 # MLDataUtils.
 
+"""
+    gettarget([f], observation)
+
+Use `f` (if provided) to extract the target from the single
+`observation` and return it. It is used internally by
+[`targets`](@ref) (only if `f` is provided) and by
+[`eachtarget`](@ref) (always) on each individual observation.
+
+```julia
+julia> using DataFrames
+
+julia> singleobs = DataFrame(X1=1.0, X2=0.5, Y=:a)
+1×3 DataFrames.DataFrame
+│ Row │ X1  │ X2  │ Y │
+├─────┼─────┼─────┼───┤
+│ 1   │ 1.0 │ 0.5 │ a │
+
+julia> MLDataUtils.gettarget(x->x[:Y][1], singleobs)
+:a
+```
+
+While this function is not exported, it is intended to be
+extended by users to support their custom data storage types.
+While not always necessary, it can make working with that storage
+more convenient. The following example shows how to extend
+`gettarget` for a more convenient use with a `DataFrame`. Note
+that the first parameter is optional and need not be explicitly
+supported.
+
+```julia
+julia> MLDataUtils.gettarget(col::Symbol, obs::DataFrame) = obs[col][1]
+
+julia> MLDataUtils.gettarget(:Y, singleobs)
+:a
+```
+
+By defining a custom `gettarget` method other functions (e.g.
+[`targets`](@ref), [`eachtarget`](@ref), [`oversample`](@ref),
+etc.) can make use of it as well. Note that these functions also
+require [`nobs`](@ref) and [`getobs`](@ref) to be defined.
+
+```julia
+julia> LearnBase.getobs(data::DataFrame, i) = data[i,:]
+
+julia> LearnBase.nobs(data::DataFrame) = nrow(data)
+
+julia> data = DataFrame(X1=rand(3), X2=rand(3), Y=[:a,:b,:a])
+3×3 DataFrames.DataFrame
+│ Row │ X1       │ X2       │ Y │
+├─────┼──────────┼──────────┼───┤
+│ 1   │ 0.31435  │ 0.847857 │ a │
+│ 2   │ 0.241307 │ 0.575785 │ b │
+│ 3   │ 0.854685 │ 0.926744 │ a │
+
+julia> targets(:Y, data)
+3-element Array{Symbol,1}:
+ :a
+ :b
+ :a
+```
+"""
 function gettarget end
+
+"""
+    targets([f], data, [obsdim])
+
+Extract the values of the targets from `data` and return them.
+
+This function is eager in the sense that it will always call
+[`getobs`](@ref) unless a custom method for [`gettarget`](@ref)
+is implemented for the type of `data`. This will make sure actual
+values are returned (in contrast to placeholders such as
+`DataSubset` or `SubArray`).
+
+```julia
+julia> targets(DataSubset([1,2,3]))
+3-element Array{Int64,1}:
+ 1
+ 2
+ 3
+```
+
+If `data` is a tuple, then the convention is that the last
+element of the tuple contains the targets and the function is
+recursed once (and only once).
+
+```julia
+julia> targets(([1,2], [3,4]))
+2-element Array{Int64,1}:
+ 3
+ 4
+
+julia> targets(([1,2], ([3,4], [5,6])))
+([3,4],[5,6])
+```
+
+If `f` is provided, then [`gettarget`](@ref) will be applied to
+each observation in `data` and the results will be returned as a
+vector.
+
+```julia
+julia> targets(indmax, [1 0 1; 0 1 0])
+3-element Array{Int64,1}:
+ 1
+ 2
+ 1
+```
+
+The optional parameter `obsdim` can be used to specify which
+dimension denotes the observations, if that concept makes sense
+for the type of `data`. See `?LearnBase.ObsDim` for more
+information.
+
+```julia
+julia> targets(indmax, [1 0; 0 1; 1 0], obsdim=1)
+3-element Array{Int64,1}:
+ 1
+ 2
+ 1
+```
+"""
 function targets end
 
 # --------------------------------------------------------------------
