@@ -135,7 +135,7 @@ function RandomObs{T,O}(data::T, obsdim::O)
     RandomObs{E,T,O,Base.IsInfinite}(data, 1337, obsdim)
 end
 
-RandomObs(data, count::Int; obsdim = default_obsdim(data)) =
+RandomObs{T}(data::T, count::Int; obsdim = default_obsdim(data)) =
     RandomObs(data, count, obs_dim(obsdim))
 
 # convenience constructor.
@@ -254,17 +254,17 @@ function RandomBatches{T,O}(data::T, size::Int, obsdim::O)
     RandomBatches{E,T,O,Base.IsInfinite}(data, size, 1337, obsdim)
 end
 
-RandomBatches(data, size::Int; obsdim = default_obsdim(data)) =
+RandomBatches{T}(data::T, size::Int; obsdim = default_obsdim(data)) =
     RandomBatches(data, size, obs_dim(obsdim))
 
-RandomBatches(data, size::Int, count::Int; obsdim=default_obsdim(data)) =
+RandomBatches{T}(data::T, size::Int, count::Int; obsdim = default_obsdim(data)) =
     RandomBatches(data, size, count, obs_dim(obsdim))
 
 # convenience constructor.
-RandomBatches(data, size::Int, ::Void, obsdim) =
+RandomBatches{T}(data::T, size::Int, ::Void, obsdim) =
     RandomBatches(data, size, obsdim)
 
-function RandomBatches(data; size::Int = -1, count = nothing, obsdim = default_obsdim(data))
+function RandomBatches{T}(data::T; size::Int = -1, count = nothing, obsdim = default_obsdim(data))
     nobsdim = obs_dim(obsdim)
     nsize = size < 0 ? default_batch_size(data, nobsdim)::Int : size
     RandomBatches(data, nsize, count, nobsdim)
