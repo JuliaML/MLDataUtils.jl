@@ -1,5 +1,5 @@
 """
-    oversample([f], data, [shuffleobs = true], [obsdim])
+    oversample([f], data, [shuffle = true], [obsdim])
 
 Generates a class-balanced version of `data` by repeatedly
 sampling existing observations in such a way that the number of
@@ -66,7 +66,7 @@ julia> getobs(oversample(row->row[:Y], data))
 │ 8   │ 0.87524  │ 0.547199 │ b │
 ```
 
-The convenience paramater `shuffleobs` determines if the
+The convenience paramater `shuffle` determines if the
 resulting data will be shuffled after its creation; if it is not
 shuffled then all the repeated samples will be together at the
 end, sorted by class. Defaults to `true`.
@@ -76,16 +76,16 @@ dimension denotes the observations, if that concept makes sense
 for the type of `data`. See `?LearnBase.ObsDim` for more
 information.
 """
-oversample(data; shuffleobs=true, obsdim=default_obsdim(data)) =
-    oversample(identity, data, shuffleobs, obs_dim(obsdim))
+oversample(data; shuffle=true, obsdim=default_obsdim(data)) =
+    oversample(identity, data, shuffle, obs_dim(obsdim))
 
-oversample(data, shuffleobs::Bool, obsdim=default_obsdim(data)) =
-    oversample(identity, data, shuffleobs, obsdim)
+oversample(data, shuffle::Bool, obsdim=default_obsdim(data)) =
+    oversample(identity, data, shuffle, obsdim)
 
-oversample(f, data; shuffleobs=true, obsdim=default_obsdim(data)) =
-    oversample(f, data, shuffleobs, obs_dim(obsdim))
+oversample(f, data; shuffle=true, obsdim=default_obsdim(data)) =
+    oversample(f, data, shuffle, obs_dim(obsdim))
 
-function oversample(f, data, shuffleobs::Bool, obsdim=default_obsdim(data))
+function oversample(f, data, shuffle::Bool, obsdim=default_obsdim(data))
     lm = labelmap(eachtarget(f, data, obsdim))
     maxcount = maximum(length, values(lm))
 
@@ -102,13 +102,12 @@ function oversample(f, data, shuffleobs::Bool, obsdim=default_obsdim(data))
         append!(inds, sample(inds_for_lbl, num_extra_needed; replace=false))
     end
 
-    # rather than using shuffleobs, cut out the middleman
-    shuffleobs && shuffle!(inds)
+    shuffle && shuffle!(inds)
     datasubset(data, inds, obsdim)
 end
 
 """
-    undersample([f], data, [shuffleobs = false], [obsdim])
+    undersample([f], data, [shuffle = false], [obsdim])
 
 Generates a class-balanced version of `data` by subsampling its
 observations in such a way that the number of observations is the
@@ -171,7 +170,7 @@ julia> getobs(undersample(row->row[:Y], data))
 │ 4   │ 0.147621 │ 0.527292 │ a │
 ```
 
-The convenience paramater `shuffleobs` determines if the
+The convenience paramater `shuffle` determines if the
 resulting data will be shuffled after its creation; if it is not
 shuffled then all the observations will be in their original
 order. Defaults to `false`.
@@ -181,16 +180,16 @@ dimension denotes the observations, if that concept makes sense
 for the type of `data`. See `?LearnBase.ObsDim` for more
 information.
 """
-undersample(data; shuffleobs=false, obsdim=default_obsdim(data)) =
-    undersample(identity, data, shuffleobs, obs_dim(obsdim))
+undersample(data; shuffle=false, obsdim=default_obsdim(data)) =
+    undersample(identity, data, shuffle, obs_dim(obsdim))
 
-undersample(data, shuffleobs::Bool, obsdim=default_obsdim(data)) =
-    undersample(identity, data, shuffleobs, obsdim)
+undersample(data, shuffle::Bool, obsdim=default_obsdim(data)) =
+    undersample(identity, data, shuffle, obsdim)
 
-undersample(f, data; shuffleobs=false, obsdim=default_obsdim(data)) =
-    undersample(f, data, shuffleobs, obsdim)
+undersample(f, data; shuffle=false, obsdim=default_obsdim(data)) =
+    undersample(f, data, shuffle, obs_dim(obsdim))
 
-function undersample(f, data, shuffleobs::Bool, obsdim=default_obsdim(data))
+function undersample(f, data, shuffle::Bool, obsdim=default_obsdim(data))
     lm = labelmap(eachtarget(f, data, obsdim))
     mincount = minimum(length, values(lm))
 
@@ -201,7 +200,7 @@ function undersample(f, data, shuffleobs::Bool, obsdim=default_obsdim(data))
         append!(inds, sample(inds_for_lbl, mincount; replace=false))
     end
 
-    shuffleobs ? shuffle!(inds) : sort!(inds)
+    shuffle ? shuffle!(inds) : sort!(inds)
     datasubset(data, inds, obsdim)
 end
 
