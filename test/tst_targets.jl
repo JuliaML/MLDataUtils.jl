@@ -4,21 +4,30 @@
     @test typeof(MLDataUtils._gettarget) <: Function
 
     @testset "Any" begin
-        @test @inferred(MLDataUtils._gettarget(:a)) == :a
-        @test @inferred(MLDataUtils._gettarget("test")) == "test"
+        @test_throws MethodError MLDataUtils._gettarget(:a)
+        @test_throws MethodError MLDataUtils._gettarget("test")
+        @test_throws MethodError MLDataUtils._gettarget(3.0)
+        @test_throws MethodError MLDataUtils._gettarget(2)
+        @test_throws MethodError MLDataUtils._gettarget(X)
         @test @inferred(MLDataUtils._gettarget(uppercase, "test")) == "TEST"
-        @test @inferred(MLDataUtils._gettarget(3.0)) === 3.0
-        @test @inferred(MLDataUtils._gettarget(2)) === 2
         @test @inferred(MLDataUtils._gettarget(_->_+1,2)) === 3
-        @test @inferred(MLDataUtils._gettarget(EmptyType())) === EmptyType()
-        @test @inferred(MLDataUtils._gettarget(CustomType())) === CustomType()
+        @test @inferred(MLDataUtils._gettarget(identity, X)) === X
+        @test @inferred(MLDataUtils._gettarget(identity, y)) === y
+        @test @inferred(MLDataUtils._gettarget(identity, yv)) !== yv
+        @test @inferred(MLDataUtils._gettarget(identity, yv)) == yv
+        @test @inferred(MLDataUtils._gettarget(identity, ys)) === ys
+        @test @inferred(MLDataUtils._gettarget(identity, EmptyType())) === EmptyType()
+        @test @inferred(MLDataUtils._gettarget(identity, CustomType())) === CustomType()
         @test @inferred(MLDataUtils._gettarget(9,CustomType())) === 9
     end
 
+    @testset "DataSubset" begin
+        @test_throws MethodError MLDataUtils._gettarget(DataSubset(CustomType()))
+        @test @inferred(MLDataUtils._gettarget(identity, DataSubset(CustomType()))) == collect(1:100)
+    end
+
     @testset "Array" begin
-        @test @inferred(MLDataUtils._gettarget(y)) === y
         @test @inferred(MLDataUtils._gettarget(identity, y)) === y
-        @test @inferred(MLDataUtils._gettarget(X)) === X
         @test @inferred(MLDataUtils._gettarget(identity, X)) === X
         @test @inferred(MLDataUtils._gettarget(x->x[1]>x[2], [2,1]))
         @test @inferred(MLDataUtils._gettarget(indmax, [2,3,1])) === 2
@@ -28,8 +37,6 @@
         tmp = [2,3,1]
         tmpv = view(tmp, :)
         @test @inferred(MLDataUtils._gettarget(indmax, tmpv)) === 2
-        @test @inferred(MLDataUtils._gettarget(yv)) !== yv
-        @test @inferred(MLDataUtils._gettarget(yv)) == yv
         @test @inferred(MLDataUtils._gettarget(identity, yv)) !== yv
         @test @inferred(MLDataUtils._gettarget(identity, yv)) == yv
     end
@@ -38,44 +45,46 @@
         tmp = [0,3,0,1]
         tmps = sparse(tmp)
         @test @inferred(MLDataUtils._gettarget(nnz, tmps)) === 2
-        @test @inferred(MLDataUtils._gettarget(ys)) === ys
         @test @inferred(MLDataUtils._gettarget(identity, ys)) === ys
     end
 
     @testset "DataSubset" begin
-        @test @inferred(MLDataUtils._gettarget(DataSubset(CustomType()))) == collect(1:100)
+        @test_throws MethodError MLDataUtils._gettarget(DataSubset(CustomType()))
         @test @inferred(MLDataUtils._gettarget(identity, DataSubset(CustomType()))) == collect(1:100)
     end
 
     @testset "Tuple" begin
-        @test @inferred(MLDataUtils._gettarget(("test",))) == "test"
+        @test_throws MethodError MLDataUtils._gettarget(("test",))
+        @test_throws MethodError MLDataUtils._gettarget((1,))
+        @test_throws MethodError MLDataUtils._gettarget((1,2.0))
+        @test @inferred(MLDataUtils._gettarget(identity, ("test",))) == "test"
         @test @inferred(MLDataUtils._gettarget(uppercase, ("test",))) == "TEST"
-        @test @inferred(MLDataUtils._gettarget((1,))) === 1
-        @test @inferred(MLDataUtils._gettarget((1,2.0))) === 2.0
+        @test @inferred(MLDataUtils._gettarget(identity, (1,))) === 1
+        @test @inferred(MLDataUtils._gettarget(identity, (1,2.0))) === 2.0
         @test @inferred(MLDataUtils._gettarget(_->_+2,(1,2.0))) === 4.0
-        @test @inferred(MLDataUtils._gettarget((1,2.0,:a))) === :a
+        @test @inferred(MLDataUtils._gettarget(identity, (1,2.0,:a))) === :a
 
         # nobs not checked
-        @test @inferred(MLDataUtils._gettarget((X,2))) === 2
-        @test @inferred(MLDataUtils._gettarget((X,Y))) === Y
+        @test @inferred(MLDataUtils._gettarget(identity, (X,2))) === 2
+        @test @inferred(MLDataUtils._gettarget(identity, (X,Y))) === Y
 
-        @test @inferred(MLDataUtils._gettarget((y,))) === y
-        @test @inferred(MLDataUtils._gettarget((ys,))) === ys
-        @test @inferred(MLDataUtils._gettarget((yv,))) !== yv
-        @test @inferred(MLDataUtils._gettarget((yv,))) == yv
-        @test @inferred(MLDataUtils._gettarget((ys,yv))) !== yv
-        @test @inferred(MLDataUtils._gettarget((ys,yv))) == yv
-        @test @inferred(MLDataUtils._gettarget((XX,X,y))) === y
-        @test @inferred(MLDataUtils._gettarget((XX,X,Y))) === Y
+        @test @inferred(MLDataUtils._gettarget(identity, (y,))) === y
+        @test @inferred(MLDataUtils._gettarget(identity, (ys,))) === ys
+        @test @inferred(MLDataUtils._gettarget(identity, (yv,))) !== yv
+        @test @inferred(MLDataUtils._gettarget(identity, (yv,))) == yv
+        @test @inferred(MLDataUtils._gettarget(identity, (ys,yv))) !== yv
+        @test @inferred(MLDataUtils._gettarget(identity, (ys,yv))) == yv
+        @test @inferred(MLDataUtils._gettarget(identity, (XX,X,y))) === y
+        @test @inferred(MLDataUtils._gettarget(identity, (XX,X,Y))) === Y
 
-        @test @inferred(MLDataUtils._gettarget((X,CustomType()))) === CustomType()
-        @test @inferred(MLDataUtils._gettarget((EmptyType(),))) === EmptyType()
-        @test @inferred(MLDataUtils._gettarget((y,DataSubset(CustomType())))) == collect(1:100)
+        @test @inferred(MLDataUtils._gettarget(identity, (X,CustomType()))) === CustomType()
+        @test @inferred(MLDataUtils._gettarget(identity, (EmptyType(),))) === EmptyType()
+        @test @inferred(MLDataUtils._gettarget(identity, (y,DataSubset(CustomType())))) == collect(1:100)
 
         # nested tuples
-        @test @inferred(MLDataUtils._gettarget((y,(y,Y)))) === (y,Y)
-        @test @inferred(MLDataUtils._gettarget((y,(yv,)))) !== (yv,)
-        @test @inferred(MLDataUtils._gettarget((y,(yv,)))) == (yv,)
+        @test @inferred(MLDataUtils._gettarget(identity, (y,(y,Y)))) === (y,Y)
+        @test @inferred(MLDataUtils._gettarget(identity, (y,(yv,)))) !== (yv,)
+        @test @inferred(MLDataUtils._gettarget(identity, (y,(yv,)))) == (yv,)
         @test @inferred(MLDataUtils._gettarget(x->map(round,x),(1,(3.1,4.9)))) === (3.,5.)
     end
 end
@@ -86,44 +95,65 @@ end
     @test typeof(MLDataUtils.gettarget) <: Function
 
     @testset "Any" begin
-        @test_throws MethodError MLDataUtils.gettarget(:a)
-        @test_throws MethodError MLDataUtils.gettarget("test")
-        @test_throws MethodError MLDataUtils.gettarget(3.0)
-        @test_throws MethodError MLDataUtils.gettarget(2)
-        @test_throws MethodError MLDataUtils.gettarget(X)
+        @test @inferred(MLDataUtils.gettarget(:a)) == :a
+        @test @inferred(MLDataUtils.gettarget("test")) == "test"
         @test @inferred(MLDataUtils.gettarget(uppercase, "test")) == "TEST"
+        @test @inferred(MLDataUtils.gettarget(3.0)) === 3.0
+        @test @inferred(MLDataUtils.gettarget(2)) === 2
         @test @inferred(MLDataUtils.gettarget(_->_+1,2)) === 3
-        @test @inferred(MLDataUtils.gettarget(identity, X)) === X
-        @test @inferred(MLDataUtils.gettarget(identity, y)) === y
-        @test @inferred(MLDataUtils.gettarget(identity, yv)) !== yv
-        @test @inferred(MLDataUtils.gettarget(identity, yv)) == yv
-        @test @inferred(MLDataUtils.gettarget(identity, ys)) === ys
-        @test @inferred(MLDataUtils.gettarget(identity, EmptyType())) === EmptyType()
-        @test @inferred(MLDataUtils.gettarget(identity, CustomType())) === CustomType()
+        @test @inferred(MLDataUtils.gettarget(EmptyType())) === EmptyType()
+        @test @inferred(MLDataUtils.gettarget(CustomType())) === CustomType()
         @test @inferred(MLDataUtils.gettarget(9,CustomType())) === 9
     end
 
+    @testset "Array" begin
+        @test @inferred(MLDataUtils.gettarget(y)) === y
+        @test @inferred(MLDataUtils.gettarget(identity, y)) === y
+        @test @inferred(MLDataUtils.gettarget(X)) === X
+        @test @inferred(MLDataUtils.gettarget(identity, X)) === X
+        @test @inferred(MLDataUtils.gettarget(x->x[1]>x[2], [2,1]))
+        @test @inferred(MLDataUtils.gettarget(indmax, [2,3,1])) === 2
+    end
+
+    @testset "SubArray" begin
+        tmp = [2,3,1]
+        tmpv = view(tmp, :)
+        @test @inferred(MLDataUtils.gettarget(indmax, tmpv)) === 2
+        @test @inferred(MLDataUtils.gettarget(yv)) !== yv
+        @test @inferred(MLDataUtils.gettarget(yv)) == yv
+        @test @inferred(MLDataUtils.gettarget(identity, yv)) !== yv
+        @test @inferred(MLDataUtils.gettarget(identity, yv)) == yv
+    end
+
+    @testset "AbstractSparseArray" begin
+        tmp = [0,3,0,1]
+        tmps = sparse(tmp)
+        @test @inferred(MLDataUtils.gettarget(nnz, tmps)) === 2
+        @test @inferred(MLDataUtils.gettarget(ys)) === ys
+        @test @inferred(MLDataUtils.gettarget(identity, ys)) === ys
+    end
+
     @testset "DataSubset" begin
-        @test_throws MethodError MLDataUtils.gettarget(DataSubset(CustomType()))
+        @test @inferred(MLDataUtils.gettarget(DataSubset(CustomType()))) == collect(1:100)
         @test @inferred(MLDataUtils.gettarget(identity, DataSubset(CustomType()))) == collect(1:100)
     end
 
     @testset "Tuple" begin
-        @test_throws MethodError MLDataUtils.gettarget(("test",))
+        @test @inferred(MLDataUtils.gettarget(("test",))) == ("test",)
         @test_throws MethodError MLDataUtils.gettarget(uppercase, ("test",))
         @test @inferred(MLDataUtils.gettarget(x->map(uppercase,x), ("test",))) == ("TEST",)
-        @test_throws MethodError MLDataUtils.gettarget((1,2.0))
+        @test @inferred(MLDataUtils.gettarget((1,2.0))) === (1,2.0)
         @test_throws MethodError MLDataUtils.gettarget(_->_+2,(1,2.0))
         @test @inferred(MLDataUtils.gettarget(x->map(_->_+2,x),(1,2.0))) === (3,4.0)
-        @test @inferred(MLDataUtils.gettarget(identity, (1,2.0,:a))) === (1,2.0,:a)
-        @test @inferred(MLDataUtils.gettarget(identity, (1,(2.0,:a)))) === (1,(2.0,:a))
-        @test @inferred(MLDataUtils.gettarget(identity, (y,))) === (y,)
-        @test @inferred(MLDataUtils.gettarget(identity, (Y,))) === (Y,)
-        @test @inferred(MLDataUtils.gettarget(identity, (yv,))) !== (yv,)
-        @test @inferred(MLDataUtils.gettarget(identity, (yv,))) == (yv,)
-        @test @inferred(MLDataUtils.gettarget(identity, (EmptyType(),))) === (EmptyType(),)
-        @test @inferred(MLDataUtils.gettarget(identity, (y,(y,Y)))) === (y,(y,Y))
-        @test @inferred(MLDataUtils.gettarget(identity, (y,DataSubset(CustomType())))) == (y,collect(1:100))
+        @test @inferred(MLDataUtils.gettarget((1,2.0,:a))) === (1,2.0,:a)
+        @test @inferred(MLDataUtils.gettarget((1,(2.0,:a)))) === (1,(2.0,:a))
+        @test @inferred(MLDataUtils.gettarget((y,))) === (y,)
+        @test @inferred(MLDataUtils.gettarget((Y,))) === (Y,)
+        @test @inferred(MLDataUtils.gettarget((yv,))) !== (yv,)
+        @test @inferred(MLDataUtils.gettarget((yv,))) == (yv,)
+        @test @inferred(MLDataUtils.gettarget((EmptyType(),))) === (EmptyType(),)
+        @test @inferred(MLDataUtils.gettarget((y,(y,Y)))) === (y,(y,Y))
+        @test @inferred(MLDataUtils.gettarget((y,DataSubset(CustomType())))) == (y,collect(1:100))
         @test_throws MethodError MLDataUtils.gettarget(9,(CustomType(),CustomType()))
     end
 end
@@ -145,6 +175,8 @@ end
         @test_throws DimensionMismatch targets((1:4,1:3))
         @test_throws DimensionMismatch targets((X,Yt))
         @test_throws DimensionMismatch targets((y,Yt))
+        @test_throws DimensionMismatch targets((X,y), (ObsDim.First(),))
+        @test_throws DimensionMismatch targets(identity, (X,y), (ObsDim.First(),))
     end
 
     @testset "Arrays" begin
@@ -239,6 +271,8 @@ end
         @test_throws DimensionMismatch eachtarget((1:4,1:3))
         @test_throws DimensionMismatch eachtarget((X,Yt))
         @test_throws DimensionMismatch eachtarget((y,Yt))
+        @test_throws DimensionMismatch eachtarget((X,y), (ObsDim.First(),))
+        @test_throws DimensionMismatch eachtarget(identity, (X,y), (ObsDim.First(),))
     end
 
     @testset "Arrays" begin

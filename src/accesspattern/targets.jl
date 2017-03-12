@@ -1,12 +1,12 @@
 # gettarget is intended to be defined by the user
 # that is also the reason for using @noinline
-@noinline gettarget(f, data) = f(getobs(data))
+@noinline gettarget(data) = getobs(data)
+@noinline gettarget(f, data) = f(gettarget(data))
 @noinline gettarget(f, data::DataSubset) = gettarget(f, getobs(data))
 # @noinline gettarget(f, data::AbstractArray) = f(data) # one of k, etc
 
 # custom "_" function to not recurse on tuples
 # identity is special and later dispatched on
-@inline _gettarget(data) = _gettarget(identity, data)
 @inline _gettarget(f, data) = gettarget(f, data)
 
 # no nobs check because this should be a single observation
@@ -25,7 +25,7 @@
 @inline targets(data, obsdim::ObsDimension) =
     targets(identity, data, obsdim)
 
-@inline targets{N}(tup::NTuple{N}, obsdim::NTuple{N}) =
+@inline targets(tup::Tuple, obsdim::Tuple) =
     targets(identity, tup, obsdim)
 
 # only dispatch on tuples once (nested tuples are not interpreted)
@@ -34,7 +34,7 @@ function targets{N}(f, tup::NTuple{N}, obsdim::ObsDimension)
     _targets(f, tup[N], obsdim)
 end
 
-function targets{N}(f, tup::NTuple{N}, obsdim::NTuple{N})
+function targets{N}(f, tup::NTuple{N}, obsdim::Tuple)
     _check_nobs(tup, obsdim)
     _targets(f, tup[N], obsdim[N])
 end
@@ -78,7 +78,7 @@ end
 @inline eachtarget(data, obsdim::ObsDimension) =
     eachtarget(identity, data, obsdim)
 
-@inline eachtarget{N}(tup::NTuple{N}, obsdim::NTuple{N}) =
+@inline eachtarget(tup::Tuple, obsdim::Tuple) =
     eachtarget(identity, tup, obsdim)
 
 @inline eachtarget(f, data, obsdim) =
