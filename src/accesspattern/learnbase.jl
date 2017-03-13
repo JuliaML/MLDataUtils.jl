@@ -21,11 +21,11 @@ julia> singleobs = DataFrame(X1=1.0, X2=0.5, Y=:a)
 ├─────┼─────┼─────┼───┤
 │ 1   │ 1.0 │ 0.5 │ a │
 
-julia> MLDataUtils.gettarget(x->x[:Y][1], singleobs)
+julia> MLDataUtils.gettarget(x->x[1,:Y], singleobs)
 :a
 ```
 
-While this function is not exported, it is intended to be
+Even though this function is not exported, it is intended to be
 extended by users to support their custom data storage types.
 While not always necessary, it can make working with that storage
 more convenient. The following example shows how to extend
@@ -34,7 +34,7 @@ that the first parameter is optional and need not be explicitly
 supported.
 
 ```julia
-julia> MLDataUtils.gettarget(col::Symbol, obs::DataFrame) = obs[col][1]
+julia> MLDataUtils.gettarget(col::Symbol, obs::DataFrame) = obs[1,col]
 
 julia> MLDataUtils.gettarget(:Y, singleobs)
 :a
@@ -68,14 +68,21 @@ julia> targets(:Y, data)
 function gettarget end
 
 """
+    gettargets(data, [idx], [obsdim])
+
+TODO
+"""
+function gettargets end
+
+"""
     targets([f], data, [obsdim])
 
-Extract the values of the targets from `data` and return them.
+Extract the concrete targets from `data` and return them.
 
 This function is eager in the sense that it will always call
 [`getobs`](@ref) unless a custom method for [`gettarget`](@ref)
-is implemented for the type of `data`. This will make sure actual
-values are returned (in contrast to placeholders such as
+is implemented for the type of `data`. This will make sure that
+actual values are returned (in contrast to placeholders such as
 `DataSubset` or `SubArray`).
 
 ```julia
