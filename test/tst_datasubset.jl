@@ -601,6 +601,8 @@ end
     end
 end
 
+println("<HEARTBEAT>")
+
 @testset "datasubset" begin
     @testset "Array and SubArray" begin
         @test @inferred(datasubset(X)) == Xv
@@ -657,6 +659,8 @@ end
         end
     end
 
+    println("<HEARTBEAT>")
+
     @testset "SparseArray" begin
         @test @inferred(datasubset(Xs)) === DataSubset(Xs)
         @test @inferred(datasubset(ys)) === DataSubset(ys)
@@ -710,6 +714,8 @@ end
     end
 end
 
+println("<HEARTBEAT>")
+
 @testset "shuffleobs" begin
     @test_throws DimensionMismatch shuffleobs((X, rand(149)))
     @test_throws DimensionMismatch shuffleobs((X, rand(149)), obsdim=:last)
@@ -741,6 +747,8 @@ end
         @test sum(shuffleobs(Y1)) == 11325
         @test sum(shuffleobs(Y1, obsdim=:first)) == 11325
     end
+
+    println("<HEARTBEAT>")
 
     @testset "Tuple of Array and SubArray" begin
         for var in ((X,yv), (Xv,y), tuples...)
@@ -797,6 +805,8 @@ end
     end
 end
 
+println("<HEARTBEAT>")
+
 @testset "splitobs" begin
     @test_throws DimensionMismatch splitobs((X, rand(149)))
     @test_throws DimensionMismatch splitobs((X, rand(149)), obsdim=:last)
@@ -852,6 +862,8 @@ end
         @test sum.(splitobs(Y1, obsdim=:first)) == [5565, 5760]
     end
 
+    println("<HEARTBEAT>")
+
     @testset "Tuple of Array, SparseArray, and SubArray" begin
         for tup in ((Xs,ys), (X,ys), (Xs,y), (Xs,Xs), (XX,X,ys), (X,yv), (Xv,y), tuples...)
             @test_throws MethodError splitobs(tup, 0.5, ObsDim.Undefined())
@@ -889,6 +901,8 @@ end
         @test all(getobs(test[1])' .== test[2])
     end
 end
+
+println("<HEARTBEAT>")
 
 @testset "deprecated" begin
     @test splitdata(X, y) == splitobs((X, y), at=0.5)

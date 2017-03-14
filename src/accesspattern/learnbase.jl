@@ -145,7 +145,7 @@ individual observation-vectors instead of one matrix.
 
 see `MLDataUtils.ObsView` and `MLDataUtils.BatchView` for examples.
 """
-abstract DataView{TElem, TData} <: AbstractVector{TElem}
+@compat abstract type DataView{TElem, TData} <: AbstractVector{TElem} end
 
 """
     abstract AbstractObsView{TElem, TData} <: DataView{TElem, TData}
@@ -155,7 +155,7 @@ that views it as some form or vector of observations.
 
 see `MLDataUtils.ObsView` for a concrete example.
 """
-abstract AbstractObsView{TElem, TData} <: DataView{TElem, TData}
+@compat abstract type AbstractObsView{TElem, TData} <: DataView{TElem, TData} end
 
 """
     abstract AbstractBatchView{TElem, TData} <: DataView{TElem, TData}
@@ -165,7 +165,7 @@ that views it as some form or vector of equally sized batches.
 
 see `MLDataUtils.BatchView` for a concrete example.
 """
-abstract AbstractBatchView{TElem, TData} <: DataView{TElem, TData}
+@compat abstract type AbstractBatchView{TElem, TData} <: DataView{TElem, TData} end
 
 # --------------------------------------------------------------------
 
@@ -182,7 +182,7 @@ true amount of observations available (if known).
 
 see `MLDataUtils.RandomObs`, `MLDataUtils.RandomBatches`
 """
-abstract DataIterator{TElem,TData}
+@compat abstract type DataIterator{TElem,TData} end
 
 """
     abstract ObsIterator{TElem,TData} <: DataIterator{TElem,TData}
@@ -201,7 +201,7 @@ end
 
 see `MLDataUtils.RandomObs`
 """
-abstract ObsIterator{TElem,TData} <: DataIterator{TElem,TData}
+@compat abstract type ObsIterator{TElem,TData} <: DataIterator{TElem,TData} end
 
 """
     abstract BatchIterator{TElem,TData} <: DataIterator{TElem,TData}
@@ -220,12 +220,11 @@ end
 
 see `MLDataUtils.RandomBatches`
 """
-abstract BatchIterator{TElem,TData} <: DataIterator{TElem,TData}
+@compat abstract type BatchIterator{TElem,TData} <: DataIterator{TElem,TData} end
 
 # --------------------------------------------------------------------
 
 # just for dispatch for those who care to
-typealias AbstractDataIterator{E,T}  Union{DataIterator{E,T}, DataView{E,T}}
-typealias AbstractObsIterator{E,T}   Union{ObsIterator{E,T},  AbstractObsView{E,T}}
-typealias AbstractBatchIterator{E,T} Union{BatchIterator{E,T},AbstractBatchView{E,T}}
-
+@compat const AbstractDataIterator{E,T}  = Union{DataIterator{E,T}, DataView{E,T}}
+@compat const AbstractObsIterator{E,T}   = Union{ObsIterator{E,T},  AbstractObsView{E,T}}
+@compat const AbstractBatchIterator{E,T} = Union{BatchIterator{E,T},AbstractBatchView{E,T}}

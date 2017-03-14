@@ -81,7 +81,7 @@ immutable KFolds{T,O}
     k::Int
     obsdim::O
 
-    function KFolds(data::T, k::Int, obsdim::O)
+    function (::Type{KFolds{T,O}}){T,O}(data::T, k::Int, obsdim::O)
         n = nobs(data, obsdim)
         1 < k <= n || throw(ArgumentError("k needs to be within 2:$(nobs(data,obsdim))"))
         # Compute the size of each fold. This is important because
@@ -95,7 +95,7 @@ immutable KFolds{T,O}
         end
         # Compute start index for each fold
         indices = cumsum(sizes) .- sizes .+ 1
-        new(data, indices, sizes, k, obsdim)
+        new{T,O}(data, indices, sizes, k, obsdim)
     end
 end
 

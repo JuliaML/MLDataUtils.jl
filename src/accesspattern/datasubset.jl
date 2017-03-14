@@ -194,13 +194,13 @@ immutable DataSubset{T, I<:Union{Int,AbstractVector}, O<:ObsDimension}
     indices::I
     obsdim::O
 
-    function DataSubset(data::T, indices::I, obsdim::O)
+    function (::Type{DataSubset{T,I,O}}){T,I,O}(data::T, indices::I, obsdim::O)
         if T <: Tuple
             error("Inner constructor should not be called using a Tuple")
         end
         1 <= minimum(indices) || throw(BoundsError(data, indices))
         maximum(indices) <= nobs(data, obsdim) || throw(BoundsError(data, indices))
-        new(data, indices, obsdim)
+        new{T,I,O}(data, indices, obsdim)
     end
 end
 

@@ -37,6 +37,8 @@
         @test A == ObsView(X',obsdim=:first)
     end
 
+    println("<HEARTBEAT>")
+
     @testset "typestability" begin
         @test_throws Exception @inferred(ObsView(X, obsdim=2))
         for var in (vars..., tuples..., Xs, ys)
@@ -54,6 +56,8 @@
         @test typeof(@inferred(ObsView(CustomType()))) <: ObsView
         @test typeof(@inferred(ObsView(CustomType(), ObsDim.Undefined()))) <: ObsView
     end
+
+    println("<HEARTBEAT>")
 
     @testset "AbstractArray interface" begin
         for var in (vars..., tuples..., Xs, ys)
@@ -90,6 +94,8 @@
         @test @inferred(getobs(A,111)) == getobs(X', 111, obsdim=1)
         @test @inferred(getobs(A,150)) == getobs(X', 150, obsdim=1)
     end
+
+    println("<HEARTBEAT>")
 
     @testset "subsetting" begin
         for var_raw in (vars..., tuples..., Xs, ys)
@@ -195,6 +201,8 @@ end
         @test A == BatchView(X',obsdim=:first)
     end
 
+    println("<HEARTBEAT>")
+
     @testset "typestability" begin
         for var in (vars..., tuples..., Xs, ys)
             @test typeof(@inferred(BatchView(var))) <: BatchView
@@ -212,6 +220,8 @@ end
         @test typeof(@inferred(BatchView(CustomType()))) <: BatchView
         @test typeof(@inferred(BatchView(CustomType(), 10, ObsDim.Undefined()))) <: BatchView
     end
+
+    println("<HEARTBEAT>")
 
     @testset "AbstractArray interface" begin
         for var in (vars..., tuples..., Xs, ys)
@@ -252,6 +262,8 @@ end
         @test @inferred(getobs(A,3)) == getobs(X', 31:45, obsdim=1)
     end
 
+    println("<HEARTBEAT>")
+
     @testset "subsetting" begin
         for var in (vars..., tuples..., Xs, ys)
             A = BatchView(var)
@@ -279,6 +291,8 @@ end
         @test @inferred(length(S)) == 5
         @test typeof(S.data) <: SubArray
     end
+
+    println("<HEARTBEAT>")
 
     @testset "nesting with ObsView" begin
         for var in vars
