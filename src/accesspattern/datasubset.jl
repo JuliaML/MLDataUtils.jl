@@ -19,9 +19,10 @@ _view(indices, i::Int) = indices[i] # to throw error in case
 _view(indices, i) = view(indices, i)
 
 """
-    nobs(data, [obsdim])
+    nobs(data, [obsdim]) -> Int
 
-Returns the number of observations contained in `data`.
+Return the total number of observations contained in `data`.
+
 The optional parameter `obsdim` can be used to specify which
 dimension denotes the observations, if that concept makes sense for
 the type of `data`. See `?LearnBase.ObsDim` for more information.
@@ -48,48 +49,57 @@ end
 Description
 ============
 
-Abstraction for a subset of some `data` of arbitrary type.
-The main purpose for the existence of `DataSubset` is to delay
-the evaluation until an actual batch of data or single observation
-is needed for some computation.
-This is particularily useful when the data is not located in memory,
-but on the harddrive or some remote location. In such a scenario
-one wants to load the required data only when needed.
+Used to represent a subset of some `data` of arbitrary type by
+storing which observation-indices the subset spans. Furthermore,
+subsequent subsettings are accumulated without needing to access
+actual data.
 
-The type is usually not constructed manually, but instead instantiated
-by calling `datsubset`, `shuffleobs`, or `splitobs`
+The main purpose for the existence of `DataSubset` is to delay
+data access and movement until an actual batch of data (or single
+observation) is needed for some computation. This is particularily
+useful when the data is not located in memory, but on the hard
+drive or some remote location. In such a scenario one wants to
+load the required data only when needed.
+
+This type is usually not constructed manually, but instead
+instantiated by calling [`datsubset`](@ref),
+[`shuffleobs`](@ref), or [`splitobs`](@ref)
 
 In case `data` is some `Tuple`, the constructor will be mapped
-over its elements. That means that the constructor returns a `Tuple`
-of `DataSubset` and instead of a `DataSubset` of `Tuple`.
+over its elements. That means that the constructor returns a
+`Tuple` of `DataSubset` instead of a `DataSubset` of `Tuple`.
 
 Arguments
 ==========
 
 - **`data`** : The object describing the dataset. Can be of any
-    type as long as it implements `getobs` and `nobs`.
+    type as long as it implements [`getobs`](@ref) and
+    [`nobs`](@ref) (see Details for more information).
 
-- **`indices`** : Optional. The index or indices of the observation(s)
-    in `data` that the subset should represent. Can be of type
-    `Int` or some subtype `AbstractVector`.
+- **`indices`** : Optional. The index or indices of the
+    observation(s) in `data` that the subset should represent.
+    Can be of type `Int` or some subtype of `AbstractVector`.
 
 - **`obsdim`** : Optional. If it makes sense for the type of `data`,
-    `obsdim` can be used to specify which dimension of `data` denotes
-    the observations. It can be specified in a typestable manner as a
-    positional argument (see `?ObsDim`), or more conveniently as a
-    smart keyword argument.
+    `obsdim` can be used to specify which dimension of `data`
+    denotes the observations. It can be specified in a typestable
+    manner as a positional argument (see `?LearnBase.ObsDim`), or
+    more conveniently as a smart keyword argument.
 
 Methods
 ========
 
 - **`getindex`** : Returns the observation(s) of the given
-    index/indices as a new `DataSubset`. No data is copied aside from
-    the required indices.
+    index/indices as a new `DataSubset`. No data is copied aside
+    from the required indices.
 
-- **`nobs`** : Returns the total number observations in the subset.
+- **`nobs`** : Returns the total number observations in the subset
+    (**not** the whole data set underneath).
 
 - **`getobs`** : Returns the underlying data that the `DataSubset`
-    represents at the given relative (to the subset) indices.
+    represents at the given relative indicies indices. Note that
+    these indices are in "subset space", and need not correspond
+    to the same indices in the underlying data set.
 
 Details
 ========
@@ -103,7 +113,7 @@ For `DataSubset` to work on some data structure, the desired type
     Note that `i` can be of type `Int` or `AbstractVector`.
 
 - `nobs(data::MyType, [obsdim::ObsDimension])` :
-    Should return the number of observations in `data`
+    Should return the total number of observations in `data`
 
 The following methods can also be provided and are optional:
 
@@ -120,12 +130,19 @@ The following methods can also be provided and are optional:
     `::ObsDim.Undefined` in the signature.
 
 - `getobs!(buffer, data::MyType, [i], [obsdim::ObsDimension])` :
-    Inplace version of `getobs(data, i, obsdim)`. If this method is
-    provided for `MyType`, then `eachobs` and `eachbatch` (among others)
-    can preallocate a buffer that is then reused every iteration.
-    Note: `buffer` should be equivalent to the return value of
-    `getobs(::MyType, ...)`, since this is how `buffer` is preallocated
-    by default.
+    Inplace version of `getobs(data, i, obsdim)`. If this method
+    is provided for `MyType`, then `eachobs` and `eachbatch`
+    (among others) can preallocate a buffer that is then reused
+    every iteration. Note: `buffer` should be equivalent to the
+    return value of `getobs(::MyType, ...)`, since this is how
+    `buffer` is preallocated by default.
+
+- `gettargets(data::MyType, i, [obsdim::ObsDimension])` :
+    If `MyType` has a special way to query targets without
+    needing to invoke `getobs`, then you can provide your own
+    logic here. This can be useful when the targets of your are
+    always loaded as metadata, while the data itself remains on
+    the hard disk until actually needed.
 
 Author(s)
 ==========
@@ -187,7 +204,9 @@ train, test = splitobs(shuffleobs((X,y)), at = 0.7)
 see also
 =========
 
-`datasubset`, `splitobs`, `KFolds`, `batches`, `eachbatch`, `shuffleobs`, `eachobs`, `getobs`
+[`datasubset`](@ref),  [`getobs`](@ref), [`nobs`](@ref),
+[`splitobs`](@ref), [`shuffleobs`](@ref),
+[`KFolds`](@ref), [`BatchView`](@ref), [`ObsView`](@ref),
 """
 immutable DataSubset{T, I<:Union{Int,AbstractVector}, O<:ObsDimension}
     data::T
@@ -326,18 +345,22 @@ for fun in (:DataSubset, :datasubset)
 end
 
 # --------------------------------------------------------------------
+# randobs
+
+# TODO: allow passing a rng as first parameter?
 
 """
     randobs(data, [n], [obsdim])
 
-Pick a random observation or a batch of `n` random observations from
-`data`.
+Pick a random observation or a batch of `n` random observations
+from `data`.
 
-The optional (keyword) parameter `obsdim` allows one to specify which
-dimension denotes the observations. see `ObsDim` for more detail.
+The optional (keyword) parameter `obsdim` allows one to specify
+which dimension denotes the observations. see `LearnBase.ObsDim`
+for more detail.
 
-For this function to work, the type of `data` must implement `nobs`
-and `getobs`
+For this function to work, the type of `data` must implement
+[`nobs`](@ref) and [`getobs`](@ref).
 """
 randobs(data, obsdim::Union{Tuple,ObsDimension}) =
     getobs(data, rand(1:nobs(data, obsdim)), obsdim)
@@ -510,9 +533,13 @@ end
 """
     shuffleobs(data, [obsdim])
 
-Returns a lazy subset of `data` (using all observations),
-with only the order of the indices randomized.
-This is non-copy (only the indices are shuffled).
+Return a "subset" of `data` that spans all observations, but
+has the order of the observations shuffled.
+
+The values of `data` itself are not copied. Instead only the
+indices are shuffled. This function calls [`datasubset`](@ref) to
+accomplish that, which means that the return value is likely of a
+different type than `data`.
 
 ```julia
 # For Arrays the subset will be of type SubArray
@@ -524,11 +551,13 @@ for (x) in eachobs(shuffleobs(X))
 end
 ```
 
-The optional (keyword) parameter `obsdim` allows one to specify which
-dimension denotes the observations. see `ObsDim` for more detail.
+The optional (keyword) parameter `obsdim` allows one to specify
+which dimension denotes the observations. see `LearnBase.ObsDim`
+for more detail.
 
-For this function to work, the type of `data` must implement `nobs`
-and `getobs`
+For this function to work, the type of `data` must implement
+[`nobs`](@ref) and [`getobs`](@ref). See [`DataSubset`](@ref)
+for more information.
 """
 shuffleobs(data; obsdim = default_obsdim(data)) =
     shuffleobs(data, obs_dim(obsdim))
@@ -542,33 +571,35 @@ end
 """
     splitobs(data, [at = 0.7], [obsdim])
 
-Splits the data into multiple subsets. Note that this function will
-perform the splits statically and thus not perform any randomization.
-The function creates a vector `DataSubset` in which the first
-N-1 elements/subsets contain the fraction of observations of `data`
-that is specified by `at`.
+Split the `data` into multiple subsets proportional to the
+value(s) of `at`.
 
-For example, if `at` is a Float64 then the return-value will be a
-vector with two elements (i.e. subsets), in which the first element
-contains the fracion of observations specified by `at` and the
-second element contains the rest.
-In the following code the first subset `train` will contain the
-first 70% of the observations and the second subset `test` the rest.
+Note that this function will perform the splits statically and
+thus not perform any randomization. The function creates a vector
+`DataSubset` in which the first N-1 elements/subsets contain the
+fraction of observations of `data` that is specified by `at`.
+
+For example, if `at` is a `Float64` then the return-value will be
+a vector with two elements (i.e. subsets), in which the first
+element contains the fracion of observations specified by `at`
+and the second element contains the rest. In the following code
+the first subset `train` will contain the first 70% of the
+observations and the second subset `test` the rest.
 
 ```julia
 train, test = splitobs(X, at = 0.7)
 ```
 
-If `at` is a tuple of `Float64` then additional subsets will be created.
-In this example `train` will have the first 50% of the observations,
-`val` will have next 30%, and `test` the last 20%
+If `at` is a tuple of `Float64` then additional subsets will be
+created. In this example `train` will have the first 50% of the
+observations, `val` will have next 30%, and `test` the last 20%
 
 ```julia
 train, val, test = splitobs(X, at = (0.5, 0.3))
 ```
 
-It is also possible to call it with multiple data arguments as tuple,
-which all must have the same number of total observations.
+It is also possible to call it with multiple data arguments as
+tuple, which all must have the same number of total observations.
 This is useful for labeled data.
 
 ```julia
@@ -585,8 +616,8 @@ train, test = splitobs(shuffleobs((X,y)), at = 0.7)
 ```
 
 When working with arrays one may want to choose which dimension
-represents the observations. By default the last dimension is assumed,
-but this can be overwritten.
+represents the observations. By default the last dimension is
+assumed, but this can be overwritten.
 
 ```julia
 # Here we say each row represents an observation
@@ -601,7 +632,7 @@ train, test = splitobs((X,y), 0.7)
 train, test = splitobs((X,y), 0.7, ObsDim.First())
 ```
 
-see `DataSubset` for more info.
+see [`DataSubset`](@ref) for more information.
 """
 splitobs(data; at = 0.7, obsdim = default_obsdim(data)) =
     splitobs(data, at, obs_dim(obsdim))

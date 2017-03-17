@@ -24,35 +24,39 @@ end
 Description
 ============
 
-Creates a view of the given `data` that represents is as a vector of
-individual observations. Any computation is delayed until `getindex`
-is called, and even `getindex` returns a lazy `datasubset` of the
-observation.
+Create a view of the given `data` in the form of a vector of
+individual observations. Any data access is delayed until
+`getindex` is called, and even `getindex` returns the result of
+[`datasubset`](@ref) which in general avoids data movement until
+[`getobs`](@ref) is called.
 
-If used as an iterator, the view will iterate over the dataset once,
-effectively denoting an epoch. Each iteration will return a lazy subset
-to the current observation.
+If used as an iterator, the view will iterate over the dataset
+once, effectively denoting an epoch. Each iteration will return a
+lazy subset to the current observation.
 
 Arguments
 ==========
 
 - **`data`** : The object describing the dataset. Can be of any
-    type as long as it implements `getobs` and `nobs`.
+    type as long as it implements [`getobs`](@ref) and
+    [`nobs`](@ref) (see Details for more information).
 
-- **`obsdim`** : Optional. If it makes sense for the type of `data`,
-    `obsdim` can be used to specify which dimension of `data` denotes
-    the observations. It can be specified in a typestable manner as a
-    positional argument (see `?ObsDim`), or more conveniently as a
-    smart keyword argument.
+- **`obsdim`** : Optional. If it makes sense for the type of
+    `data`, `obsdim` can be used to specify which dimension of
+    `data` denotes the observations. It can be specified in a
+    typestable manner as a positional argument (see
+    `?LearnBase.ObsDim`), or more conveniently as a smart keyword
+    argument.
 
 Methods
 ========
 
-Aside from the AbstractArray interface following additional methods
-are provided
+Aside from the `AbstractArray` interface following additional
+methods are provided:
 
 - **`getobs(data::ObsView, indices::AbstractVector)`** :
-    Returns a `Vector` of indivdual observations specified by `indices`.
+    Returns a `Vector` of indivdual observations specified by
+    `indices`.
 
 - **`nobs(data::ObsView)`** :
     Returns the number of observations in `data` that the
@@ -61,9 +65,9 @@ are provided
 Details
 ========
 
-For `ObsView` to work on some data structure, the type of the given
-variable `data` must implement the `DataSubset` interface.
-See `?DataSubset` for more info.
+For `ObsView` to work on some data structure, the type of the
+given variable `data` must implement the [`DataSubset`](@ref)
+interface. See `?DataSubset` for more info.
 
 Author(s)
 ==========
@@ -88,7 +92,7 @@ for x in obsview(X)
 end
 
 # iterate over each individual labeled observation
-for (x,y) in obsview(X,Y)
+for (x,y) in obsview((X,Y))
     @assert typeof(x) <: SubArray{Float64,1}
     @assert typeof(y) <: String
 end
@@ -103,7 +107,8 @@ end
 see also
 =========
 
-`eachobs`, `BatchView`, `shuffleobs`, `getobs`, `nobs`, `DataSubset`
+[`eachobs`](@ref), [`BatchView`](@ref), [`shuffleobs`](@ref),
+[`getobs`](@ref), [`nobs`](@ref), [`DataSubset`](@ref)
 """
 immutable ObsView{TElem,TData,O} <: AbstractObsView{TElem,TData}
     data::TData
@@ -195,56 +200,63 @@ end
 Description
 ============
 
-Creates a view of the given `data` that represents it as a vector of
-batches with equal number of observations in each one.
-Any computation is delayed until `getindex` is called, and even
-`getindex` returns a lazy `datasubset` of the batches.
+Create a view of the given `data` that represents it as a vector
+of batches. Each batch will contain an equal amount of
+observations in them. The number of batches and the batchsize
+which can be specified using (keyword) parameters `count` and
+`size`. In the case that the size of the dataset is not dividable
+by the specified (or inferred) `size`, the remaining observations
+will be ignored.
+
+Note that any data access is delayed until `getindex` is called,
+and even `getindex` returns the result of [`datasubset`](@ref)
+which in general avoids data movement until [`getobs`](@ref) is
+called.
 
 If used as an iterator, the object will iterate over the dataset
 once, effectively denoting an epoch. Each iteration will return a
-minibatch of constant `nobs`, which effectively allows to iterator
-over `data` one batch at a time.
-
-The number of batches and the batchsize which can be specified using
-keyword parameters `count` and `size`. In the case that the size of
-the dataset is not dividable by the specified (or inferred) `size`,
-the remaining observations will be ignored.
+minibatch of constant [`nobs`](@ref), which effectively allows to
+iterator over [`data`](@ref) one batch at a time.
 
 Arguments
 ==========
 
 - **`data`** : The object describing the dataset. Can be of any
-    type as long as it implements `getobs` and `nobs`.
+    type as long as it implements [`getobs`](@ref) and
+    [`nobs`](@ref) (see Details for more information).
 
 - **`size`** : The batch-size of each batch. I.e. the number of
-    observations that each batch should contain.
+    observations that each batch must contain.
 
 - **`count`** : The number of batches that the iterator will return.
 
-- **`obsdim`** : Optional. If it makes sense for the type of `data`,
-    `obsdim` can be used to specify which dimension of `data` denotes
-    the observations. It can be specified in a typestable manner as a
-    positional argument (see `?ObsDim`), or more conveniently as a
-    smart keyword argument.
+- **`obsdim`** : Optional. If it makes sense for the type of
+    `data`, `obsdim` can be used to specify which dimension of
+    `data` denotes the observations. It can be specified in a
+    typestable manner as a positional argument (see
+    `?LearnBase.ObsDim`), or more conveniently as a smart keyword
+    argument.
 
 Methods
 ========
 
-Aside from the AbstractArray interface following additional methods
-are provided
+Aside from the `AbstractArray` interface following additional
+methods are provided.
 
 - **`getobs(data::BatchView, batchindices)`** :
     Returns a `Vector` of the batches specified by `batchindices`.
 
 - **`nobs(data::BatchView)`** :
-    Returns the total number of observations in `data`.
+    Returns the total number of observations in `data`. Note that
+    unless the batch-size is 1, this number will differ from
+    `length`.
 
 Details
 ========
 
-For `ObsView` to work on some data structure, the type of the given
-variable `data` must implement the `DataSubset` interface.
-See `?DataSubset` for more info.
+For `BatchVIew` to work on some data structure, the type of the
+given variable `data` must implement the [`DataSubset`](@ref)
+interface. See `?DataSubset` for more info.
 
 Author(s)
 ==========
@@ -270,7 +282,6 @@ for x in batchview(X, size = 30)
     @assert nobs(x) === 30
 end
 
-# iterate over each individual labeled observation
 # 7 batches of size 20 observations
 # Note that the iris dataset has 150 observations,
 # which means that with a batchsize of 20, the last
@@ -281,13 +292,13 @@ for (x,y) in batchview((X,Y), size = 20)
     @assert nobs(x) === nobs(y) === 20
 end
 
-# Randomly assign observations to one and only one batch.
+# randomly assign observations to one and only one batch.
 for (x,y) in batchview(shuffleobs((X,Y)))
     @assert typeof(x) <: SubArray{Float64,2}
     @assert typeof(y) <: SubArray{String,1}
 end
 
-# Iterate over the first 2 batches of 15 observation each
+# iterate over the first 2 batches of 15 observation each
 for (x,y) in batchview((X,Y), size=15, count=2)
     @assert typeof(x) <: SubArray{Float64,2}
     @assert typeof(y) <: SubArray{String,1}
@@ -299,7 +310,8 @@ end
 see also
 =========
 
-`ObsView`, `shuffleobs`, `getobs`, `nobs`, `DataSubset`
+[`batchview`](@ref), [`ObsView`](@ref), [`shuffleobs`](@ref),
+[`getobs`](@ref), [`nobs`](@ref), [`DataSubset`](@ref)
 """
 immutable BatchView{TElem,TData,O} <: AbstractBatchView{TElem,TData}
     data::TData
@@ -362,4 +374,3 @@ for fun in (:DataSubset, :datasubset), O in (ObsDimension, Tuple)
         BatchView(($fun)(parent(A), i, obsdim), A.size, -1, obsdim)
     end
 end
-

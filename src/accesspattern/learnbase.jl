@@ -70,7 +70,25 @@ function gettarget end
 """
     gettargets(data, [idx], [obsdim])
 
-TODO
+Return the targets corresponding to the observation-index `idx`.
+Note that `idx` can be of type `Int` or `AbstractVector`.
+
+Implementing this function for a custom type of `data` is
+optional. It is particularly useful if the targets in `data` can
+be provided without invoking `getobs`. For example if you have a
+remote data-source where the labels are part of some metadata
+that is locally available.
+
+If implemented, calling [`targets`](@ref) will invoke this method
+instead of [`gettarget`](@ref) on the result of [`getobs`](@ref).
+This can make operations that require targets, such as
+`oversample`, much more efficient.
+
+If it makes sense for the type of `data`, `obsdim` can be used to
+specify which dimension of `data` denotes the observations. It
+can be specified in a typestable manner as a positional argument
+(see `?ObsDim`), or more conveniently as a smart keyword
+argument.
 """
 function gettargets end
 

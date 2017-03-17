@@ -6,11 +6,11 @@ Description
 
 The purpose of `KFolds` is to provide an abstraction to randomly
 partitioning some dataset into `k` disjoint folds. The resulting
-object can then be queried for it's individual splits using `getindex`.
+object can then be queried for its individual splits using `getindex`.
 
 `KFolds` is best utilized as an iterator. If used as such, the data
 will be split into different training and test portions in `k`
-different and unqiue ways, each time using a different fold as the
+different and unique ways, each time using a different fold as the
 testset.
 
 *Note*: The sizes of the folds may differ by up to 1 observation
@@ -20,17 +20,19 @@ Arguments
 ==========
 
 - **`data`** : The object describing the dataset. Can be of any
-    type as long as it implements `getobs` and `nobs`.
+    type as long as it implements [`getobs`](@ref) and
+    [`nobs`](@ref) (see Details for more information).
 
 - **`k`** : The number of folds that should be generated.
     A general rule of thumb is to use either `k = 5`, `k = 10`,
-
-- **`obsdim`** : Optional. If it makes sense for the type of `data`,
-    `obsdim` can be used to specify which dimension of `data` denotes
-    the observations. It can be specified in a typestable manner as a
-    positional argument (see `?ObsDim`), or more conveniently as a
-    smart keyword argument.
     or `k = nobs(data)`.
+
+- **`obsdim`** : Optional. If it makes sense for the type of
+    `data`, `obsdim` can be used to specify which dimension of
+    `data` denotes the observations. It can be specified in a
+    typestable manner as a positional argument (see
+    `?LearnBase.ObsDim`), or more conveniently as a smart keyword
+    argument.
 
 Methods
 ========
@@ -72,7 +74,8 @@ Examples
 see also
 =========
 
-`kfolds`, `leaveout`, `splitobs`, `DataSubset`
+[`kfolds`](@ref), [`leaveout`](@ref), [`splitobs`](@ref),
+[`DataSubset`](@ref)
 """
 immutable KFolds{T,O}
     data::T
@@ -140,10 +143,10 @@ end
 """
     kfolds(data, [k = 5], [obsdim])
 
-Iterate over a data source in `k` roughly equally partitioned folds
-of `size ≈ nobs(data) / k` by using the type `KFolds`.
-In the case that the size of the dataset is not dividable by
-the specified `k`, the remaining observations will be evenly
+Iterate over a data source in `k` roughly equally partitioned
+folds of `size ≈ nobs(data) / k` by using the type `KFolds`.
+In the case that the size of the dataset is not dividable by the
+specified `k`, the remaining observations will be evenly
 distributed among the folds.
 
 ```julia
@@ -167,7 +170,8 @@ for ((x_train, y_train), (x_test, y_test)) in kfolds((X, Y), k = 20)
 end
 ```
 
-see `KFolds` for more info, or `leaveout` for a related function.
+see [`KFolds`](@ref) for more info, or [`leaveout`](@ref) for a
+related function.
 """
 const kfolds = KFolds
 
@@ -175,8 +179,8 @@ const kfolds = KFolds
     leaveout(data, [size = 1], [obsdim])
 
 Creates a `KFolds` iterator by specifying the approximate `size`
-of each test-fold instead of `k` directly.
-Default is `size = 1`, which results in a "leave-one-out" paritioning.
+of each test-fold instead of `k` directly. Default is `size = 1`,
+which results in a "leave-one-out" paritioning.
 
 ```julia
 for (train, test) in leaveout(X, size = 2)
@@ -186,7 +190,8 @@ for (train, test) in leaveout(X, size = 2)
 end
 ```
 
-see `KFolds` for more info, or `kfolds` for a related function.
+see [`KFolds`](@ref) for more info, or [`kfolds`](@ref) for a
+related function.
 """
 function leaveout(data, size, obsdim)
     k = floor(Int, nobs(data, obsdim) / size)
@@ -201,4 +206,3 @@ leaveout(data; size = 1, obsdim = default_obsdim(data)) =
 
 leaveout(data, obsdim::Union{Tuple,ObsDimension}) =
     leaveout(data, 1, obsdim)
-

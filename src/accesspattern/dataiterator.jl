@@ -51,7 +51,7 @@ end
 Description
 ============
 
-Creates an iterator that generates `count` randomly sampled
+Create an iterator that generates `count` randomly sampled
 observations from `data`. In the case `count` is not provided,
 it will generate random samples indefinitely.
 
@@ -59,25 +59,27 @@ Arguments
 ==========
 
 - **`data`** : The object describing the dataset. Can be of any
-    type as long as it implements `getobs` and `nobs`.
+    type as long as it implements [`getobs`](@ref) and
+    [`nobs`](@ref) (see Details for more information).
 
-- **`count`** : Optional. The number of randomly sampled observations
-    that the iterator will generate before stopping.
-    If omited, the iterator will generate randomly sampled observations
-    forever.
+- **`count`** : Optional. The number of randomly sampled
+    observations that the iterator will generate before stopping.
+    If omited, the iterator will generate randomly sampled
+    observations forever.
 
-- **`obsdim`** : Optional. If it makes sense for the type of `data`,
-    `obsdim` can be used to specify which dimension of `data` denotes
-    the observations. It can be specified in a typestable manner as a
-    positional argument (see `?ObsDim`), or more conveniently as a
-    smart keyword argument.
+- **`obsdim`** : Optional. If it makes sense for the type of
+    `data`, `obsdim` can be used to specify which dimension of
+    `data` denotes the observations. It can be specified in a
+    typestable manner as a positional argument (see
+    `?LearnBase.ObsDim`), or more conveniently as a smart keyword
+    argument.
 
 Details
 ========
 
-For `RandomObs` to work on some data structure, the type of the given
-variable `data` must implement the `DataSubset` interface.
-See `?DataSubset` for more info.
+For `RandomObs` to work on some data structure, the type of the
+given variable `data` must implement the [`DataSubset`](@ref)
+interface. See `?DataSubset` for more info.
 
 Author(s)
 ==========
@@ -116,7 +118,8 @@ end
 see also
 =========
 
-`RandomBatches`, `ObsView`, `BatchView`, `shuffleobs`, `BufferGetObs`
+[`RandomBatches`](@ref), [`ObsView`](@ref), [`BatchView`](@ref),
+[`shuffleobs`](@ref), [`DataSubset`](@ref), [`BufferGetObs`](@ref)
 """
 immutable RandomObs{E,T,O,I} <: ObsIterator{E,T}
     data::T
@@ -163,7 +166,7 @@ nobs(iter::RandomObs) = nobs(iter.data, iter.obsdim)
 Description
 ============
 
-Creates an iterator that generates `count` randomly sampled
+Create an iterator that generates `count` randomly sampled
 batches from `data` with a batch-size of `size` .
 In the case `count` is not provided, it will generate random
 batches indefinitely.
@@ -172,28 +175,30 @@ Arguments
 ==========
 
 - **`data`** : The object describing the dataset. Can be of any
-    type as long as it implements `getobs` and `nobs`.
+    type as long as it implements [`getobs`](@ref) and
+    [`nobs`](@ref) (see Details for more information).
 
-- **`size`** : [Optional]The batch-size of each batch.
+- **`size`** : Optional. The batch-size of each batch.
     I.e. the number of randomly sampled observations in each batch
 
 - **`count`** : Optional. The number of randomly sampled batches
-    that the iterator will generate before stopping.
-    If omited, the iterator will generate randomly sampled observations
+    that the iterator will generate before stopping. If omited,
+    the iterator will generate randomly sampled observations
     forever.
 
-- **`obsdim`** : Optional. If it makes sense for the type of `data`,
-    `obsdim` can be used to specify which dimension of `data` denotes
-    the observations. It can be specified in a typestable manner as a
-    positional argument (see `?ObsDim`), or more conveniently as a
-    smart keyword argument.
+- **`obsdim`** : Optional. If it makes sense for the type of
+    `data`, `obsdim` can be used to specify which dimension of
+    `data` denotes the observations. It can be specified in a
+    typestable manner as a positional argument (see
+    `?LearnBase.ObsDim`), or more conveniently as a smart keyword
+    argument.
 
 Details
 ========
 
-For `RandomBatches` to work on some data structure, the type of the given
-variable `data` must implement the `DataSubset` interface.
-See `?DataSubset` for more info.
+For `RandomBatches` to work on some data structure, the type of
+the given variable `data` must implement the [`DataSubset`](@ref)
+interface. See `?DataSubset` for more info.
 
 Author(s)
 ==========
@@ -232,7 +237,8 @@ end
 see also
 =========
 
-`RandomObs`, `BatchView`, `ObsView`, `shuffleobs`, `BufferGetObs`
+[`RandomObs`](@ref), [`BatchView`](@ref), [`ObsView`](@ref),
+[`shuffleobs`](@ref), [`DataSubset`](@ref), [`BufferGetObs`](@ref)
 """
 immutable RandomBatches{E,T,O,I} <: BatchIterator{E,T}
     data::T
@@ -275,7 +281,7 @@ Base.done(iter::RandomBatches, idx) = idx > _length(iter)
 function Base.next(iter::RandomBatches, idx)
     # maybe use StatsBase.sample instead of rand in order to avoid
     # replacement. That said I would like to avoid keyword arguments
-    # and currentply sample needs replace to be specified as such
+    # and currently sample needs "replace" to be specified as such
     indices = rand(1:nobs(iter.data, iter.obsdim), iter.size)
     (datasubset(iter.data, indices, iter.obsdim), _next_idx(iter, idx))
 end
@@ -290,18 +296,19 @@ batchsize(iter::RandomBatches) = iter.size
 """
     BufferGetObs(iterator, [buffer])
 
-Stores the output of `next(iterator,state)` into `buffer` using
-`getobs!(buffer, ...)`. Depending on the type of data provided
-by `iterator` this may be more memory efficient than `getobs(...)`.
-In the case of array data, for example, this allows for cache efficient
+A stateful iterator that stores the output of
+`next(iterator,state)` into `buffer` using `getobs!(buffer,
+...)`. Depending on the type of data provided by `iterator` this
+may be more memory efficient than `getobs(...)`. In the case of
+array data, for example, this allows for cache-efficient
 processing of each element without allocating a temporary array.
 
 Note that not all types of data support buffering, because it is
 the author's choice to opt-in and implement a custom `getobs!`.
-For those types that do not provide a custom `getobs!`,
-the buffer will be ignored and the result of `getobs(...)` returned.
+For those types that do not provide a custom `getobs!`, the
+buffer will be ignored and the result of `getobs(...)` returned.
 
-see `eachobs` and `eachbatch` for concrete examples.
+see [`eachobs`](@ref) and [`eachbatch`](@ref) for concrete examples.
 """
 immutable BufferGetObs{TElem,TIter}
     iter::TIter
@@ -340,12 +347,13 @@ batchsize(b::BufferGetObs) = batchsize(b.iter)
 """
     eachobs(data, [obsdim])
 
-Iterates over `data` one observation at a time. If supported by the
-type of `data`, a buffer will be preallocated and reused for memory
-efficiency.
-Note: Thus avoid using `collect`, because in general each iteration
-could return the same object with mutated values. If that behaviour
-is undesired use `ObsView` instead.
+Iterate over `data` one observation at a time. If supported by
+the type of `data`, a buffer will be preallocated and reused for
+memory efficiency.
+
+IMPORTANT: Avoid using `collect`, because in general each
+iteration could return the same object with mutated values.
+If that behaviour is undesired use `obsview` instead.
 
 ```julia
 X = rand(4,100)
@@ -377,7 +385,7 @@ end
 ```
 
 Note that internally `eachobs(data, obsdim)` maps to
-`BufferGetObs(ObsView(data, obsdim))`.
+`BufferGetObs(obsview(data, obsdim))`.
 
 ```julia
 @assert typeof(eachobs(X)) <: BufferGetObs
@@ -396,14 +404,15 @@ is roughly equivalent to:
 
 ```julia
 obs = getobs(data, 1, obsdim) # use first element to preallocate buffer
-for _ in ObsView(data, obsdim)
+for _ in obsview(data, obsdim)
     getobs!(obs, _) # reuse buffer each iteration
     # ...
 end
 ```
 
-see `BufferGetObs`, `ObsView`, and `getobs!` for more info.
-also see `eachbatch` for a mini-batch version.
+see [`BufferGetObs`](@ref), [`obsview`](@ref), and
+[`getobs!`](@ref) for more info. also see [`eachbatch`](@ref) for
+a mini-batch version.
 """
 eachobs(data, obsdim) = BufferGetObs(ObsView(data, obsdim))
 eachobs(data; obsdim = default_obsdim(data)) = eachobs(data, obs_dim(obsdim))
@@ -413,17 +422,19 @@ eachobs(data; obsdim = default_obsdim(data)) = eachobs(data, obs_dim(obsdim))
 """
     eachbatch(data, [size], [count], [obsdim])
 
-Iterates over `data` one batch at a time. If supported by the type of
-`data`, a buffer will be preallocated and reused for memory efficiency.
-Note: Thus avoid using `collect`, because in general each iteration
-could return the same object with mutated values. If that behaviour
-is undesired use `BatchView` instead.
+Iterate over `data` one batch at a time. If supported by the type
+of `data`, a buffer will be preallocated and reused for memory
+efficiency.
 
-The (constant) batch-size can be either provided directly using `size`
-or indirectly using `count`, which derives `size` based on `nobs`.
-In the case that the size of the dataset is not dividable by
-the specified (or inferred) `size`, the remaining observations will
-be ignored.
+IMPORTANT: Avoid using `collect`, because in general each
+iteration could return the same object with mutated values.
+If that behaviour is undesired use `BatchView` instead.
+
+The (constant) batch-size can be either provided directly using
+`size` or indirectly using `count`, which derives `size` based on
+`nobs`. In the case that the size of the dataset is not dividable
+by the specified (or inferred) `size`, the remaining observations
+will be ignored.
 
 ```julia
 X = rand(4,150)
@@ -455,7 +466,7 @@ end
 ```
 
 Note that internally `eachbatch(data, ...)` maps to
-`BufferGetObs(BatchView(data, ...))`.
+`BufferGetObs(batchview(data, ...))`.
 
 ```julia
 @assert typeof(eachbatch(X)) <: BufferGetObs
@@ -474,14 +485,15 @@ is roughly equivalent to:
 
 ```julia
 batch = getobs(data, collect(1:batchsize), obsdim) # use first element to preallocate buffer
-for _ in BatchView(data, batchsize, obsdim)
+for _ in batchview(data, batchsize, obsdim)
     getobs!(batch, _) # reuse buffer each iteration
     # ...
 end
 ```
 
-see `BufferGetObs`, `BatchView`, and `getobs!` for more info.
-also see `eachobs` for a single-observation version.
+see [`BufferGetObs`](@ref), [`batchview`](@ref), and
+[`getobs!`](@ref) for more info. also see [`eachobs`](@ref) for a
+single-observation version.
 """
 eachbatch(data; size = -1, count = -1, obsdim = default_obsdim(data)) =
     BufferGetObs(BatchView(data, size, count, obs_dim(obsdim)))
@@ -494,4 +506,3 @@ eachbatch{T<:Union{Tuple,ObsDimension}}(data, size::Int, obsdim::T = default_obs
 
 eachbatch{T<:Union{Tuple,ObsDimension}}(data, size::Int, count::Int, obsdim::T = default_obsdim(data)) =
     BufferGetObs(BatchView(data, size, count, obsdim))
-
