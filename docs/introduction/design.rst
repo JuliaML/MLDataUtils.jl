@@ -39,9 +39,9 @@ not be feasible or sensible in other languages that suffer from
 the two-language problem much more significantly. Naturally,
 that is not as black or white as it sounds, since even Julia
 itself out-sources certain computation to BLAS (which is a good
-thing!). As a rough guide: unless it is in ``Base`` we only
-consider code that is written solely in Julia to be merged
-into the JuliaML ecosystem.
+thing!). As a rough guide: unless there is a really compelling
+argument, we only consider code that is written solely in Julia
+to be merged into the JuliaML ecosystem.
 
 # Data Agnostic
 ~~~~~~~~~~~~~~~~
@@ -174,7 +174,7 @@ any data-storage type must expose in order to achieve this in a
 clean and efficient manner.
 Luckily we found that this can be reduced to surprisingly little,
 as subsetting/partitioning of data really just breaks down to
-keeping track of indices, and don't actually involve the data
+keeping track of indices, and doesn't actually involve the data
 until the very end (see :doc:`motivation` for a thorough
 discussion of this).
 
@@ -230,7 +230,7 @@ To keep user-effort manageable, we provide a generic subset
 implementation for those types that do not want to implement
 their own special version.
 In other words: Unless a custom subset-type is provided, a
-subsets of some given data will be represented by a type called
+subset of some given data will be represented by a type called
 :class:`DataSubset`.  The main purpose for the existence of
 :class:`DataSubset` - or any special data subset for that matter
 - is two-fold:
@@ -255,11 +255,12 @@ So far we talked about data as if it were an universal truth that
 it can be split somewhere or sub-setted somehow. This need not
 be true for all kinds of data we are interested in working with.
 
-This package differentiates between two kinds of data that we
-will call **data-iterator**, and **data-container** respectively.
-None is the superset of the other, but a user type can be both.
-This also implies that none require a type to have some specific
-super-type.
+This package differentiates between two kinds of data source that
+we will call **iteration-based** (represented as *Data
+Iterator*), and **index-based** (represented as *Data Container*)
+respectively. None is the superset of the other, but a user type
+can be both. This also implies that none require a type to have
+some specific super-type.
 
 Data Iterator
     A data iterator is really just the same as a plain Julia

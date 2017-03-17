@@ -13,10 +13,12 @@ Where to begin?
 ----------------
 
 If this is the first time you consider using MLDataUtils for your
-machine learning related experiments, make sure to check out the
-"Getting Started" section; specifically "How to ...?", which
-lists some of most common scenarios and how to approach them
-using the functionality provided by this package.
+machine learning related experiments or packages, make sure to
+check out the "Getting Started" section; specifically "How to
+...?", which lists some of most common scenarios and links to the
+appropriate places that should guide you on how to approach these
+scenarios using the functionality provided by this or other
+packages.
 
 .. toctree::
    :maxdepth: 2

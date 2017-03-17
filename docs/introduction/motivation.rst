@@ -1,24 +1,25 @@
 Background and Motivation
 =============================
 
-In this section we discuss what that data-partitioning entails
-and how one could go about approaching this task efficiently when
-solving it by hand. Furthermore, we will outline some of the
+In this section we discuss what data-partitioning entails and how
+one could go about approaching this task efficiently when
+performing it manually. Furthermore, we will outline some of the
 pitfalls one might encounter when doing so, which will lead to
 the motivation of the design decisions that this package follows.
 
-When it comes to subsetting/partitioning data into individual
-*samples* (which we call **observations**), or groups of samples
-(which we will refer to as **batches** or *mini-batches*) the problem
-at hand really breaks down to one core task: **keeping track of
-indices**.
+When it comes to subsetting/partitioning **index-based** data
+into individual samples (which we call **observations**), or
+groups of samples (which we will refer to as **batches** or
+mini-batches) the problem at hand really breaks down to one core
+task: **keeping track of indices**.
 
-To get a better understanding of what exactly we mean by "tracking
-indices", let us together explore how one would typically approach
-data partitioning scenarios without the use of external packages
-(i.e. by getting our hands dirty and coding it ourselves!).
-We will do so using a number of different but commonly used forms
-of data storage such as *matrices* and *data frames*.
+To get a better understanding of what exactly we mean by
+"index-based data" and "tracking indices", let us together
+explore how one would typically approach data partitioning
+scenarios without the use of external packages (i.e. by getting
+our hands dirty and coding it ourselves!). We will do so using a
+number of different but commonly used forms of data storage such
+as *matrices* and *data frames*.
 
 .. warning::
 
@@ -27,6 +28,47 @@ of data storage such as *matrices* and *data frames*.
    and further to motivate the solution provided by this package.
    As such this section is **not** intended as a guide on how to
    apply this package.
+
+Two Kinds of Data Sources
+--------------------------
+
+In the context of this package, we differentiate between two
+"kinds" of data sources, which we will call **iteration-based**
+and **index-based** .
+
+Iteration-based Data (aka Data iterator)
+   To belong to this group, a data source must implement the
+   iterator interface. It may or may not know the total amount of
+   observations it can provide, which means that knowing
+   :math:`N` is not necessary.
+
+   The key requirement for a iteration-based data source is that
+   every iteration either returns a single observation or a batch
+   of observations.
+
+   These kind of data sources are primarily used for either
+   streaming data, or for large/remote data sets, where even
+   storing the indices requires too much memory.
+
+Index-based Data (aka Data Container)
+   For a data source to belong in this category it needs to be
+   able to provide two things:
+
+   1. The total number of observations :math:`N`, that the data
+      source contains.
+
+   2. A way to query a specific observation or set of
+      observations. This must be done using indices, where every
+      observation has a unique index :math:`i \in I` assigned
+      from the set of indices :math:`I = \{1, 2, ..., N\}`.
+
+We will go into more detail about data sources and their
+differences in a later section. The key takeaway from this little
+discussion here is that these two kinds of data sources offer
+distinct challenges and need to be reasoned with differently.
+
+For the rest of this document we will focus on working with
+**index-based** data.
 
 A Manual Solution for Arrays
 -----------------------------
@@ -37,13 +79,12 @@ As such, it is quite likely that you will find (or have already
 found) yourself in the position of working with such data sooner
 or later.
 
-Let's say you are interested in working with the Iris data set in
-order to test some clustering or classification algorithm that
-you are working on.
-This package provides a convenience function :func:`load_iris`
-for loading the data set in array form. Calling this function
-will give us two variables, the feature-matrix ``X`` and the
-target-vector of labels ``Y``.
+Let's say you are interested in working with the :ref:`Iris data
+set <iris>` in order to test some clustering or classification
+algorithm that you are working on. This package provides a
+convenience function :func:`load_iris` for loading the data set
+in array form. Calling this function will give us two variables,
+the feature-matrix ``X`` and the target-vector of labels ``Y``.
 
 .. code-block:: jlcon
 
@@ -116,9 +157,9 @@ may not be true for the data we are working with (and in fact it
 is not true for the Iris data set). But more on that later.
 
 To perform a static split we first need to decide how many
-observation we want in our training set and how many observation
-we would like to hold out on and put in our test set.
-It is often more convenient to think in terms of proportions
+observations we want in our training set and how many
+observations we would like to hold out on and put in our test
+set. It is often more convenient to think in terms of proportions
 instead of absolute numbers. Let's say we decide on using 80% of
 our data for training. To split our data set in such a way, we
 first need to derive which elements of ``X`` and ``Y`` we need
@@ -479,7 +520,7 @@ some data in a spreadsheet.
    when working with Julia. This has to do with how Julia arrays
    access their memory. For more information on this topic take a
    look at the corresponding section in the `Julia documentation
-   <http://docs.julialang.org/en/latest/manual/performance-tips/#access-arrays-in-memory-order-along-columns>`_
+   <http://docs.julialang.org/en/latest/manual/performance-tips.html#Access-arrays-in-memory-order,-along-columns-1>`_
 
 There have been many discussions on which convention is more
 useful and/or efficient, but the only answer you will find here
@@ -489,7 +530,7 @@ Consider the following scenario. Let's say we would again like to
 work with the Iris dataset, but this time we use the
 `RDatasets <https://github.com/johnmyleswhite/RDatasets.jl>`_
 package to load it. This will give us the same data, but in a
-different quite different data-storage type.
+quite different data-storage type.
 
 .. code-block:: jlcon
 

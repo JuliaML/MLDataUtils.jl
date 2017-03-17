@@ -11,9 +11,10 @@ serve as toy examples.
    provided by `JuliaML/MLDatasets.jl
    <https://github.com/JuliaML/MLDatasets.jl>`_ instead.
 
-
 Fisher's Iris data set
 -----------------------
+
+.. _iris:
 
 The Iris data set has become one of the most recognizable machine
 learning example datasets. It was originally published by Ronald
