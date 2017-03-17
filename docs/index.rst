@@ -53,14 +53,14 @@ Data Access Pattern
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 The core of the package, and indeed the part that thus far
-received the most attention, are the data access pattern. These
-include data-partitioning, -subsampling, and -iteration. The
-main design principle behind the access pattern is based on the
-assumption that the data a user is working with is likely of some
-very user-specific custom type. That said, there was also a lot
-of attention put into first class support for those types that
-are most commonly employed to represent the data of interest,
-such as ``Array``.
+received the most developer attention, are the data access
+pattern. These include data-partitioning, -subsampling, and
+-iteration. The main design principle behind the access pattern
+is based on the assumption that the data-source a user is working
+with is likely of some very user-specific custom type. That said,
+there was also a lot of attention put into first class support
+for those types that are most commonly employed to represent the
+data of interest, such as ``Array``.
 
 .. toctree::
    :maxdepth: 3

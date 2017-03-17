@@ -320,8 +320,75 @@ Data Container
 Tuples and Labeled Data
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-TODO: Tuple group obs
+We made the decision quite early in the development cycle of this
+package to give ``Tuple`` special semantics. More specifically,
+we use tuples to tie together different data-sources on a
+per-observation basis.
 
-TODO: Tuple last element contains target (if one exists)
+All the access-pattern provided by this packages can be called
+with data-sources or tuples of data-sources. For the later to
+work we need to understand the assumptions made when using
+``Tuple``.
 
-TODO: obs maps to target elementwise (important for iterators)
+1. All elements of the Tuple must contain the same total number of
+   observations
+
+2. If the data-set as a whole contains targets, these must be
+   part of the **last** element of the tuple.
+
+Consider the following toy problem. Let's say we have a numeric
+feature vector ``x`` with three observations. Furthermore we have
+a separate target vector ``y`` with the three corresponding
+targets.
+
+.. code-block:: jlcon
+
+   julia> x = [1,2,3]
+   3-element Array{Int64,1}:
+    1
+    2
+    3
+
+   julia> y = [:a,:b,:c]
+   3-element Array{Symbol,1}:
+    :a
+    :b
+    :c
+
+Naturally we think of these two data-sources as one data set.
+That means that we require the access-pattern to treat them as
+such. For example if you want to shuffle your data set, you can't
+just shuffle ``x`` and ``y`` independently, because that would
+break the connection between observations.
+
+.. code-block:: jlcon
+
+   # !!WRONG!!
+   julia> shuffleobs(x), shuffleobs(y)
+   ([1,3,2],Symbol[:b,:a,:c])
+
+This is why the access pattern provided by this package allow for
+``Tuple`` arguments. The functions will assume that the elements
+of the tuple are linked by observation index and make sure that
+all operations performed on the data preserves the
+per-observation link.
+
+.. code-block:: jlcon
+
+   # correct
+   julia> shuffleobs((x,y))
+   ([1,3,2],Symbol[:a,:c,:b])
+
+The second assumption we mentioned only concerns supervised data
+(i.e. data where each observation has a corresponding target).
+Simply put, if there are any targets, they must be contained in
+the last tuple element. All the access pattern provided by this
+package build on that convention.
+
+.. code-block:: jlcon
+
+   julia> targets((x,y))
+   3-element Array{Symbol,1}:
+    :a
+    :b
+    :c
