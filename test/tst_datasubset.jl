@@ -506,6 +506,7 @@ end
             @test @inferred(subset[20:25]) == DataSubset(var, 20:25)
             for idx in (1:100, [1,10,150,3], [2])
                 @test DataSubset(var)[idx] == DataSubset(var, idx)
+                @test DataSubset(var)[idx] == DataSubset(var, collect(idx))
                 subset = @inferred(DataSubset(var, idx))
                 @test typeof(subset) <: DataSubset{typeof(var), typeof(idx)}
                 @test subset.data === var
@@ -551,6 +552,7 @@ end
             @test typeof(@inferred(getobs(subset))) <: Array{Float64,2}
             @test @inferred(nobs(subset)) == length(subset) == 50
             @test @inferred(subset[10:20]) == DataSubset(X, 110:120)
+            @test @inferred(subset[11:21]) != DataSubset(X, 110:120)
             @test @inferred(getobs(subset, 10:20)) == X[:, 110:120]
             @test @inferred(getobs(subset, [11,10,14])) == X[:, [111,110,114]]
             @test typeof(subset[10:20]) <: DataSubset

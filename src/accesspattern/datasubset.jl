@@ -240,9 +240,12 @@ function Base.show(io::IO, subset::DataSubset)
     end
 end
 
+# compare if both subsets cover the same observations of the same data
+# we don't care how the indices are stored, just that they match
+# in order and values
 function Base.:(==)(s1::DataSubset,s2::DataSubset)
     s1.data == s2.data &&
-        s1.indices == s2.indices &&
+        all(i1==i2 for (i1,i2) in zip(s1.indices,s2.indices)) &&
         s1.obsdim == s2.obsdim
 end
 
