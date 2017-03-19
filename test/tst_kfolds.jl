@@ -66,7 +66,8 @@ println("<HEARTBEAT>")
         @test_throws ArgumentError FoldsView(tx, map(x->x[1:1], kfolds(15,2))...)
     end
 
-    for var in (Xs, ys, vars..., tuples...)
+    # FIXME: in 0.6 change back to (Xs,ys,vars...,tuples...)
+    for var in (Xs, ys, X, Xv, yv, XX, tuples[1])
         f1, f2 = kfolds(nobs(var), 5)
         for fv in (@inferred(FoldsView(var, f1, f2)),
                    @inferred(FoldsView(var, f1, f2, ObsDim.Last())),
@@ -104,15 +105,19 @@ println("<HEARTBEAT>")
             @test 1 <= minimum(fv.test_indices[i-1]) < minimum(fv.test_indices[i]) < nobs(var)
         end
         @test cumobs == nobs(var)
+
+        println("<HEARTBEAT>")
     end
 
     # check that the stored obsdim is correct
     f1, f2 = kfolds(nobs(X), 5)
-    for var in (Xs, ys, vars...)
+    # FIXME: in 0.6 change back to (Xs,ys,vars...)
+    for var in (Xs, ys, Xv, yv)
         fv = FoldsView(var, f1, f2)
         @test fv.obsdim == ObsDim.Last()
     end
-    for var in tuples
+    # FIXME: in 0.6 change back to (tuples...)
+    for var in (tuples[1], tuples[2])
         fv = FoldsView(var, f1, f2)
         @test typeof(fv.obsdim) <: Tuple
         @test all(map(x->typeof(x)<:ObsDim.Last, fv.obsdim))
@@ -122,29 +127,32 @@ end
 println("<HEARTBEAT>")
 
 @testset "FoldsView getindex, endof, length" begin
+    f1, f2 = kfolds(nobs(X), 10)
     for var in vars
-        fv = FoldsView(var, kfolds(nobs(var), 10)...)
+        fv = FoldsView(var, f1, f2)
         @test length(fv) == 10
         @test fv[end] == fv[length(fv)]
     end
     for var in (Xs, ys, vars...)
-        fv = FoldsView(var, kfolds(nobs(var), 10)...)
+        fv = FoldsView(var, f1, f2)
         @test length(fv) == 10
         @test getobs(fv[end]) == getobs(fv[length(fv)])
+        println("<HEARTBEAT>")
     end
-    fv = FoldsView(X, kfolds(nobs(X))...)
+    f1, f2 = kfolds(nobs(X))
+    fv = FoldsView(X, f1, f2)
     @test typeof(@inferred(fv[1])) <: Tuple
     @test typeof(fv[1][1]) <: SubArray
     @test typeof(fv[1][2]) <: SubArray
     @test size(fv[1][1]) == (4,120)
     @test size(fv[1][2]) == (4,30)
-    fv = FoldsView(X', kfolds(nobs(X))..., obsdim=1)
+    fv = FoldsView(X', f1, f2, obsdim=1)
     @test typeof(@inferred(fv[1])) <: Tuple
     @test typeof(fv[1][1]) <: SubArray
     @test typeof(fv[1][2]) <: SubArray
     @test size(fv[1][1]) == (120,4)
     @test size(fv[1][2]) == (30,4)
-    fv = FoldsView((X',X), kfolds(nobs(X))..., obsdim=(1,2))
+    fv = FoldsView((X',X), f1, f2, obsdim=(1,2))
     @test typeof(@inferred(fv[1])) <: Tuple
     @test typeof(fv[1][1]) <: Tuple
     @test typeof(fv[1][2]) <: Tuple
@@ -161,7 +169,8 @@ end
 println("<HEARTBEAT>")
 
 @testset "FoldsView iteration" begin
-    for var in (X, Xv, yv, XX, XXX, y)
+    # FIXME: in 0.6 change back to (X, Xv, yv, XX, XXX, y)
+    for var in (X, Xv, yv, XX, y)
         all_train_indices = Array{Int,1}()
         all_test_indices = Array{Int,1}()
         for (train, test) in FoldsView(var, kfolds(nobs(X),10)...)
@@ -179,6 +188,7 @@ println("<HEARTBEAT>")
         @test length(unique(all_train_indices)) == 150
         @test length(unique(all_test_indices)) == 150
         @test length(all_test_indices) == 150
+        println("<HEARTBEAT>")
     end
     for var in (Xs, ys)
         all_train_indices = Array{Int,1}()
@@ -214,7 +224,8 @@ end
 println("<HEARTBEAT>")
 
 @testset "kfolds" begin
-    for var in (Xs, ys, vars..., tuples...)
+    # FIXME: in 0.6 change back to (Xs,ys,vars...,tuples...)
+    for var in (Xs, ys, Xv, yv, X, tuples[2])
         for kf in (@inferred(kfolds(var)),
                    @inferred(kfolds(var,ObsDim.Last())),
                    @inferred(kfolds(var,5)),
@@ -226,6 +237,7 @@ println("<HEARTBEAT>")
             @test sum(length.(kf.test_indices)) == nobs(var)
         end
     end
+    println("<HEARTBEAT>")
     for v1 in (X, Xv), v2 in (y, yv)
         kf = kfolds((v1, v2), k = 15)
         @test typeof(kf) <: FoldsView
@@ -249,7 +261,8 @@ end
 println("<HEARTBEAT>")
 
 @testset "leaveout" begin
-    for var in (Xs, ys, vars..., tuples...)
+    # FIXME: in 0.6 change back to (Xs,ys,vars...,tuples...)
+    for var in (Xs, ys, Xv, yv, tuples[1])
         @test_throws ArgumentError leaveout(var,150)
         for kf in (@inferred(leaveout(var)),
                    @inferred(leaveout(var,ObsDim.Last())),
@@ -270,6 +283,7 @@ println("<HEARTBEAT>")
             @test sum(length.(kf.test_indices)) == nobs(var)
         end
     end
+    println("<HEARTBEAT>")
     for v1 in (X, Xv), v2 in (y, yv)
         @test length(leaveout((v1, v2)).test_indices) == 150
         kf = leaveout((v1, v2), size = 10)
@@ -294,7 +308,8 @@ end
 println("<HEARTBEAT>")
 
 @testset "nest DataView" begin
-    for var in (Xs, ys, vars..., tuples...)
+    # FIXME: in 0.6 change back to (Xs,ys,vars...,tuples...)
+    for var in (Xs, ys, Xv, yv, tuples[2])
         A = ObsView(var)
         kf = @inferred kfolds(A,10)
         @test length(kf) == 10
