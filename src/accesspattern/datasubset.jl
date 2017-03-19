@@ -461,7 +461,7 @@ end
 
 function _check_nobs(tup::Tuple, obsdims::Tuple)
     length(tup) == 0 && return
-    length(tup) == length(obsdims) || throw(DimensionMismatch("number of elements in obsdim doesn't match"))
+    length(tup) == length(obsdims) || throw(DimensionMismatch("number of elements in obsdim doesn't match data"))
     all(map(_-> typeof(_) <: Union{ObsDimension,Tuple}, obsdims)) || throw(MethodError(_check_nobs, (tup, obsdims)))
     n1 = nobs(tup[1], obsdims[1])
     for i=2:length(tup)

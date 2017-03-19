@@ -6,9 +6,9 @@ e_X = expand_poly(e_x, degree = 5)
 end
 
 @testset "Test center! and rescale!" begin
-    X1 = copy(e_X)
-    center!(X1)
-    @test sum(mean(X1, 2)) <= 10e-10
+    Xa = copy(e_X)
+    center!(Xa)
+    @test sum(mean(Xa, 2)) <= 10e-10
 
     x1 = copy(e_x)
     @test_approx_eq center!(x1) mean(e_x)

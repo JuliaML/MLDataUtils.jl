@@ -911,14 +911,3 @@ println("<HEARTBEAT>")
         @test all(getobs(test[1])' .== test[2])
     end
 end
-
-println("<HEARTBEAT>")
-
-@testset "deprecated" begin
-    @test splitdata(X, y) == splitobs((X, y), at=0.5)
-    (xtr,ytr), (xte,yte) = partitiondata(X1, Y1)
-    @test nobs(xtr) == nobs(xte) == nobs(ytr) == nobs(yte) == 75
-    @test vec(sum(xtr,2) + sum(xte,2)) == fill(11325,10)
-    @test sum(ytr) + sum(yte) == 11325
-end
-

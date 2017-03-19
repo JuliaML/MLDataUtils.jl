@@ -96,6 +96,8 @@
     end
 end
 
+println("<HEARTBEAT>")
+
 @testset "gettarget" begin
     @test_throws UndefVarError gettarget
     @test_throws UndefVarError gettarget(X)
@@ -176,6 +178,8 @@ end
         @test_throws MethodError MLDataUtils.gettarget("a",(CustomObs(),CustomObs()))
     end
 end
+
+println("<HEARTBEAT>")
 
 @testset "targets" begin
     @test typeof(targets) <: Function
@@ -321,6 +325,8 @@ end
     end
 end
 
+println("<HEARTBEAT>")
+
 @testset "eachtarget" begin
     @test typeof(eachtarget) <: Function
     @test eachtarget === MLDataUtils.eachtarget
@@ -386,6 +392,8 @@ end
         @test collect(@inferred(eachtarget(([:a,:b,:c],(1:3,4:6))))) == obsview((1:3,4:6))
         @test collect(@inferred(eachtarget(x->x[1]*x[2],([:a,:b,:c],(1:3,4:6))))) == [4,10,18]
     end
+
+    println("<HEARTBEAT>")
 
     @testset "ObsView" begin
         ft = rand(6)

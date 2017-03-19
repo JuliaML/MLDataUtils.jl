@@ -78,13 +78,20 @@ export
     targets,
     eachtarget,
 
-    KFolds,
+    FoldsView,
     kfolds,
     leaveout,
 
     # deprecation
     partitiondata,
-    splitdata
+    splitdata,
+    KFolds,
+    LabeledKFolds,
+    LOOFolds,
+    MiniBatches,
+    LabeledMiniBatches,
+    RandomSamples,
+    LabeledRandomSamples
 
 include("feature_scaling.jl")
 include("basis_expansion.jl")
@@ -102,5 +109,17 @@ include("accesspattern/sampling.jl")
 @deprecate partitiondata(X,y; at=0.5) splitobs(shuffleobs((X,y)); at=at)
 @deprecate splitdata(X; at=0.5) splitobs(X; at=at)
 @deprecate splitdata(X,y; at=0.5) splitobs((X,y); at=at)
+@deprecate KFolds(X; k=10) kfolds(X; k=k)
+@deprecate KFolds(X,y; k=10) kfolds((X,y); k=k)
+@deprecate KFolds(X,k::Int) kfolds(X,k)
+@deprecate KFolds(X,y,k::Int) kfolds((X,y),k)
+@deprecate LabeledKFolds(X,y; k=10) kfolds((X,y); k=k)
+@deprecate LabeledKFolds(X,y,k::Int) kfolds((X,y),k)
+@deprecate LOOFolds(X) leaveout(X)
+@deprecate LOOFolds(X,y) leaveout((X,y))
+MiniBatches(args...; kw...) = error("MiniBatches is deprecated. Use \"eachbatch\" or \"BatchView\" instead.")
+LabeledMiniBatches(args...; kw...) = error("LabeledMiniBatches is deprecated. Use \"eachbatch\" or \"BatchView\" instead.")
+RandomSamples(args...; kw...) = error("RandomSamples is deprecated. Use \"RandomObs\" or \"RandomBatches\" instead.")
+LabeledRandomSamples(args...; kw...) = error("LabeledRandomSamples is deprecated. Use \"RandomObs\" or \"RandomBatches\" instead.")
 
 end
