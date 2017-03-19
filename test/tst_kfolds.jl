@@ -42,6 +42,8 @@ end
     end
 end
 
+println("<HEARTBEAT>")
+
 @testset "FoldsView constructor" begin
     @test FoldsView <: AbstractVector
 
@@ -113,9 +115,11 @@ end
     for var in tuples
         fv = FoldsView(var, f1, f2)
         @test typeof(fv.obsdim) <: Tuple
-        @test all(map(_->typeof(_)<:ObsDim.Last, fv.obsdim))
+        @test all(map(x->typeof(x)<:ObsDim.Last, fv.obsdim))
     end
 end
+
+println("<HEARTBEAT>")
 
 @testset "FoldsView getindex, endof, length" begin
     for var in vars
@@ -153,6 +157,8 @@ end
     @test size(fv[1][2][1]) == (30,4)
     @test size(fv[1][2][2]) == (4,30)
 end
+
+println("<HEARTBEAT>")
 
 @testset "FoldsView iteration" begin
     for var in (X, Xv, yv, XX, XXX, y)
@@ -205,6 +211,8 @@ end
     end
 end
 
+println("<HEARTBEAT>")
+
 @testset "kfolds" begin
     for var in (Xs, ys, vars..., tuples...)
         for kf in (@inferred(kfolds(var)),
@@ -237,6 +245,8 @@ end
         @test typeof(kf) <: FoldsView
     end
 end
+
+println("<HEARTBEAT>")
 
 @testset "leaveout" begin
     for var in (Xs, ys, vars..., tuples...)
@@ -280,6 +290,8 @@ end
         @test typeof(kf) <: FoldsView
     end
 end
+
+println("<HEARTBEAT>")
 
 @testset "nest DataView" begin
     for var in (Xs, ys, vars..., tuples...)

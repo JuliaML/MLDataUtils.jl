@@ -4,7 +4,7 @@
 
     @test length(xtmp) == length(ytmp) == n
     for i = 1:length(xtmp)
-        @test_approx_eq sin(xtmp[i]) ytmp[i]
+        @test sin.(xtmp[i]) ≈ ytmp[i]
     end
     print(scatterplot(xtmp, ytmp; color = :blue, height = 5))
 end
@@ -15,7 +15,7 @@ end
 
     @test length(xtmp) == length(ytmp)
     for i = 1:length(xtmp)
-        @test_approx_eq (coef[1] * xtmp[i]^2 + coef[2] * xtmp[i]^1 + coef[3]) ytmp[i]
+        @test (coef[1] * xtmp[i]^2 + coef[2] * xtmp[i]^1 + coef[3]) ≈ ytmp[i]
     end
     print(scatterplot(xtmp, ytmp; color = :blue, height = 5))
 end

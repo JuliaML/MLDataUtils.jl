@@ -1,4 +1,3 @@
-
 """
     FoldsView(data, train_indices, test_indices, [obsdim])
 

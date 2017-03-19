@@ -8,7 +8,7 @@ lett = ["a","b","b","c","c","c","d","d","d","d","d"]
     @test oversample === MLDataUtils.oversample
 
     @testset "questionable results to unusual parameters" begin
-        @test_throws MethodError oversample(_->_+1, 1)
+        @test_throws MethodError oversample(x->x+1, 1)
         @test_throws MethodError oversample(uppercase, "test")
         @test_throws MethodError oversample((1,1:3))
         @test_throws MethodError oversample((1:3,1))
@@ -123,7 +123,7 @@ end
     @test undersample === MLDataUtils.undersample
 
     @testset "questionable results to unusual parameters" begin
-        @test_throws MethodError undersample(_->_+1, 1)
+        @test_throws MethodError undersample(x->x+1, 1)
         @test_throws MethodError undersample(uppercase, "test")
         @test_throws MethodError undersample((1,1:3))
         @test_throws MethodError undersample((1:3,1))

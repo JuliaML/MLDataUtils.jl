@@ -10,7 +10,7 @@
         @test_throws MethodError MLDataUtils._gettarget(2)
         @test_throws MethodError MLDataUtils._gettarget(X)
         @test @inferred(MLDataUtils._gettarget(uppercase, "test")) == "TEST"
-        @test @inferred(MLDataUtils._gettarget(_->_+1,2)) === 3
+        @test @inferred(MLDataUtils._gettarget(x->x+1,2)) === 3
         @test @inferred(MLDataUtils._gettarget(identity, X)) === X
         @test @inferred(MLDataUtils._gettarget(identity, y)) === y
         @test @inferred(MLDataUtils._gettarget(identity, yv)) !== yv
@@ -56,7 +56,7 @@
         @test @inferred(MLDataUtils._gettarget(uppercase, ("test",))) == "TEST"
         @test @inferred(MLDataUtils._gettarget(identity, (1,))) === 1
         @test @inferred(MLDataUtils._gettarget(identity, (1,2.0))) === 2.0
-        @test @inferred(MLDataUtils._gettarget(_->_+2,(1,2.0))) === 4.0
+        @test @inferred(MLDataUtils._gettarget(x->x+2,(1,2.0))) === 4.0
         @test @inferred(MLDataUtils._gettarget(identity, (1,2.0,:a))) === :a
 
         # nobs not checked
@@ -109,7 +109,7 @@ println("<HEARTBEAT>")
         @test @inferred(MLDataUtils.gettarget(uppercase, "test")) == "TEST"
         @test @inferred(MLDataUtils.gettarget(3.0)) === 3.0
         @test @inferred(MLDataUtils.gettarget(2)) === 2
-        @test @inferred(MLDataUtils.gettarget(_->_+1,2)) === 3
+        @test @inferred(MLDataUtils.gettarget(x->x+1,2)) === 3
     end
 
     @testset "Array" begin
@@ -150,8 +150,8 @@ println("<HEARTBEAT>")
         @test_throws MethodError MLDataUtils.gettarget(uppercase, ("test",))
         @test @inferred(MLDataUtils.gettarget(x->map(uppercase,x), ("test",))) == ("TEST",)
         @test @inferred(MLDataUtils.gettarget((1,2.0))) === (1,2.0)
-        @test_throws MethodError MLDataUtils.gettarget(_->_+2,(1,2.0))
-        @test @inferred(MLDataUtils.gettarget(x->map(_->_+2,x),(1,2.0))) === (3,4.0)
+        @test_throws MethodError MLDataUtils.gettarget(x->x+2,(1,2.0))
+        @test @inferred(MLDataUtils.gettarget(x->map(y->y+2,x),(1,2.0))) === (3,4.0)
         @test @inferred(MLDataUtils.gettarget((1,2.0,:a))) === (1,2.0,:a)
         @test @inferred(MLDataUtils.gettarget((1,(2.0,:a)))) === (1,(2.0,:a))
         @test @inferred(MLDataUtils.gettarget((y,))) === (y,)
@@ -186,7 +186,7 @@ println("<HEARTBEAT>")
     @test targets === MLDataUtils.targets
 
     @testset "questionable results to unusual parameters" begin
-        @test_throws MethodError targets(_->_+1, 1)
+        @test_throws MethodError targets(x->x+1, 1)
         @test_throws MethodError targets(uppercase, "test")
         @test_throws MethodError targets((1,1:3))
         @test_throws MethodError targets(x->x, (1,1:3))
@@ -332,7 +332,7 @@ println("<HEARTBEAT>")
     @test eachtarget === MLDataUtils.eachtarget
 
     @testset "questionable results to unusual parameters" begin
-        @test_throws MethodError eachtarget(_->_+1, 1)
+        @test_throws MethodError eachtarget(x->x+1, 1)
         @test_throws MethodError eachtarget(uppercase, "test")
         @test_throws MethodError eachtarget((1,1:3))
         @test_throws MethodError eachtarget((1:3,1))

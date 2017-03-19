@@ -462,7 +462,7 @@ end
 function _check_nobs(tup::Tuple, obsdims::Tuple)
     length(tup) == 0 && return
     length(tup) == length(obsdims) || throw(DimensionMismatch("number of elements in obsdim doesn't match data"))
-    all(map(_-> typeof(_) <: Union{ObsDimension,Tuple}, obsdims)) || throw(MethodError(_check_nobs, (tup, obsdims)))
+    all(map(x-> typeof(x) <: Union{ObsDimension,Tuple}, obsdims)) || throw(MethodError(_check_nobs, (tup, obsdims)))
     n1 = nobs(tup[1], obsdims[1])
     for i=2:length(tup)
         nobs(tup[i], obsdims[i]) != n1 && _check_nobs_error()
@@ -649,10 +649,12 @@ function splitobs(data, at::AbstractFloat, obsdim=default_obsdim(data))
     datasubset(data, 1:n1, obsdim), datasubset(data, n1+1:n, obsdim)
 end
 
+# has to be outside the generated function
+_ispos(x) = x > 0
 # partition into length(at)+1 sets
 @generated function splitobs{N,T<:AbstractFloat}(data, at::NTuple{N,T}, obsdim=default_obsdim(data))
     quote
-        (all(map(x->x>0, at)) && sum(at) < 1) || throw(ArgumentError("All elements in \"at\" must be positive and their sum must be smaller than 1"))
+        (all(map(_ispos, at)) && sum(at) < 1) || throw(ArgumentError("All elements in \"at\" must be positive and their sum must be smaller than 1"))
         n = nobs(data, obsdim)
         nleft = n
         lst = UnitRange{Int}[]

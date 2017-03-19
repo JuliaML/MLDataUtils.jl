@@ -1,4 +1,4 @@
-Base.linearindexing{T<:DataView}(::Type{T}) = Base.LinearFast()
+@compat Compat.IndexStyle{T<:DataView}(::Type{T}) = IndexLinear()
 Base.size(A::DataView) = (length(A),)
 Base.endof(A::DataView) = length(A)
 getobs(A::DataView) = getobs.(collect(A))

@@ -79,8 +79,8 @@ end
 @testset "getobs" begin
     @testset "Array and Subarray" begin
         # interpreted as idx
-        @test_throws ErrorException getobs(X, ObsDim.Undefined())
-        @test_throws ErrorException getobs(X, ObsDim.Constant(1))
+        @test_throws Exception getobs(X, ObsDim.Undefined())
+        @test_throws Exception getobs(X, ObsDim.Constant(1))
         # obsdim not defined without some idx
         @test_throws MethodError getobs(X, obsdim = ObsDim.Undefined())
         @test_throws MethodError getobs(X, obsdim = ObsDim.Constant(1))
@@ -757,8 +757,8 @@ println("<HEARTBEAT>")
             @test_throws MethodError shuffleobs(var, ObsDim.Undefined())
             @test_throws MethodError shuffleobs(var...)
             @test typeof(shuffleobs(var)) <: Tuple
-            @test all(map(_->(typeof(_)<:SubArray), shuffleobs(var)))
-            @test all(map(_->(nobs(_)===150), shuffleobs(var)))
+            @test all(map(x->(typeof(x)<:SubArray), shuffleobs(var)))
+            @test all(map(x->(nobs(x)===150), shuffleobs(var)))
         end
         # tests if all obs are still present and none duplicated
         # also tests that both paramter are shuffled identically
@@ -879,8 +879,8 @@ println("<HEARTBEAT>")
             @test_throws MethodError splitobs(tup, 0.5, ObsDim.Undefined())
             @test_throws MethodError splitobs(tup..., 0.5)
             @test_throws MethodError splitobs(tup...)
-            @test all(map(_->(typeof(_)<:Tuple), splitobs(tup)))
-            @test all(map(_->(typeof(_)<:Tuple), splitobs(tup,at=0.5)))
+            @test all(map(x->(typeof(x)<:Tuple), splitobs(tup)))
+            @test all(map(x->(typeof(x)<:Tuple), splitobs(tup,at=0.5)))
             @test nobs.(splitobs(tup)) == (105,45)
             @test nobs.(splitobs(tup, at=(.2,.3))) == (30,45,75)
             @test nobs.(splitobs(tup, at=(.2,.3), obsdim=:last)) == (30,45,75)

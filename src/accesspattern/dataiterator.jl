@@ -4,7 +4,7 @@ _length(iter, ::Base.HasShape)  = length(iter)
 _length(iter, ::Base.IsInfinite) = Inf
 _length(iter, ::Base.SizeUnknown) = "NA"
 
-Base.iteratoreltype{E,T}(::Type{DataIterator{E,T}}) = Base.HasEltype()
+Base.iteratoreltype{T<:DataIterator}(::Type{T}) = Base.HasEltype()
 Base.eltype{E,T}(::Type{DataIterator{E,T}}) = E
 
 # There is no contract that says these methods will work
@@ -154,6 +154,7 @@ function Base.next(iter::RandomObs, idx)
      _next_idx(iter,idx))
 end
 
+Base.eltype{E,T,O,I}(::Type{RandomObs{E,T,O,I}}) = E
 Base.iteratorsize{E,T,O,I}(::Type{RandomObs{E,T,O,I}}) = I()
 Base.length{E,T,O}(iter::RandomObs{E,T,O,Base.HasLength}) = iter.count
 nobs(iter::RandomObs) = nobs(iter.data, iter.obsdim)
@@ -286,6 +287,7 @@ function Base.next(iter::RandomBatches, idx)
     (datasubset(iter.data, indices, iter.obsdim), _next_idx(iter, idx))
 end
 
+Base.eltype{E,T,O,I}(::Type{RandomBatches{E,T,O,I}}) = E
 Base.iteratorsize{E,T,O,I}(::Type{RandomBatches{E,T,O,I}}) = I()
 Base.length{E,T,O}(iter::RandomBatches{E,T,O,Base.HasLength}) = iter.count
 nobs(iter::RandomBatches) = nobs(iter.data, iter.obsdim)

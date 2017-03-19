@@ -79,7 +79,7 @@
 @inline _gettarget(f, data) = gettarget(f, data)
 
 # no nobs check because this should be a single observation
-@inline _gettarget{N}(f, tup::NTuple{N}) = gettarget(f, tup[N])
+@inline _gettarget{N}(f, tup::NTuple{N,Any}) = gettarget(f, tup[N])
 
 # gettarget is intended to be defined by the user
 # that is also the reason for using @noinline
@@ -168,12 +168,12 @@ gettargets(tup::Tuple) = map(gettargets, tup)
 # should always be the one without an "_"
 # i.e. "targets" interprets tuple, while "_targets" does not
 # that means that "targets((X,(Y1,Y2)))" --> "(Y1,Y2)", and NOT "Y2"
-function targets{N}(f, tup::NTuple{N}, obsdim::ObsDimension)
+function targets{N}(f, tup::NTuple{N,Any}, obsdim::ObsDimension)
     _check_nobs(tup, obsdim)
     _targets(f, tup[N], obsdim)
 end
 
-function targets{N}(f, tup::NTuple{N}, obsdim::Tuple)
+function targets{N}(f, tup::NTuple{N,Any}, obsdim::Tuple)
     _check_nobs(tup, obsdim)
     _targets(f, tup[N], obsdim[N])
 end
@@ -217,12 +217,12 @@ targets(f, data::AbstractObsView, obsdim) =
 @inline eachtarget(f::typeof(identity), data, obsdim) =
     (_gettargets(data, i, obsdim) for i in 1:nobs(data,obsdim))
 
-function eachtarget{N}(f::typeof(identity), tup::NTuple{N}, obsdim)
+function eachtarget{N}(f::typeof(identity), tup::NTuple{N,Any}, obsdim)
     _check_nobs(tup, obsdim)
     (_gettargets(tup[N], i, obsdim) for i in 1:nobs(tup[N],obsdim))
 end
 
-function eachtarget{N}(f::typeof(identity), tup::NTuple{N}, obsdim::Tuple)
+function eachtarget{N}(f::typeof(identity), tup::NTuple{N,Any}, obsdim::Tuple)
     _check_nobs(tup, obsdim)
     (_gettargets(tup[N], i, obsdim[N]) for i in 1:nobs(tup[N],obsdim[N]))
 end

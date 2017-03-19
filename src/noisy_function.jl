@@ -7,7 +7,7 @@ by adding `noise .* f_randn(length(x))` to the result of `fun(x)`.
 function noisy_function{T<:Real}(fun::Function, x::AbstractVector{T}; noise::Real = 0.01, f_rand::Function = randn)
     x_vec = collect(x)
     n = length(x_vec)
-    y = fun(x_vec) + noise * f_rand(n)
+    y = fun.(x_vec) + noise * f_rand(n)
     x_vec, y
 end
 
