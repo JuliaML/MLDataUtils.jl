@@ -4,13 +4,21 @@
 Description
 ============
 
-The purpose of `FoldsView` is to provide an abstraction to
-partitioning some dataset into multiple disjoint folds. The
-resulting object can then be queried for its individual splits
-using `getindex` or iterated over.
+Create a vector-like representation of `data` where each
+individual element is a tuple of two data subset; a training and
+a test split. The first element of each tuple corresponds to the
+indices stored in the corresponding element of `train_indices`,
+while the second element of each tuple corresponds to
+`test_indices`.
 
-*Note*: The sizes of the folds may differ by up to 1 observation
-depending on if the total number of observations is dividable by `k`.
+The purpose of `FoldsView` is to apply precomputed fold indices
+to some data set in a convenient manner. By itself, `FoldsView`
+is agnoistic to any particular resampling strategy (such as
+k-folds). Instead the fold assignment indices, `train_indices`
+and `test_indices`, need to be precomputed by such a strategy and
+then passed to `FoldsView` with a concrete `data` set. The
+resulting object can then be queried for its individual splits
+using `getindex`, or simply iterated over.
 
 Arguments
 ==========
@@ -20,10 +28,14 @@ Arguments
     [`nobs`](@ref) (see Details for more information).
 
 - **`train_indices`** : Vector of integer vectors containing the
-    indices for the observatios in the training folds.
+    indices-vectors of each *training* fold. This means that each
+    element of this vector is a vector of observation-indices.
+    The length of this vector must match `test_indices`.
 
-- **`test_indices`** : Vector of integer vectors containing the
-    indices for the observatios in the test folds.
+- **`test_indices`** :  Vector of integer vectors containing the
+    indices-vectors of each *test* fold. This means that each
+    element of this vector is a vector of observation-indices.
+    The length of this vector must match `train_indices`.
 
 - **`obsdim`** : Optional. If it makes sense for the type of
     `data`, `obsdim` can be used to specify which dimension of
@@ -44,8 +56,13 @@ Examples
     # Load iris data for demonstration purposes
     X, y = load_iris()
 
-    # Compute train and test indices using kfolds
+    # Compute train- and test-fold indices using kfolds
     train_idx, test_idx = kfolds(nobs(X), 10)
+
+    # These two vectors contain the indices vector for each fold
+    @assert typeof(train_idx) <: Vector{Vector{Int64}}
+    @assert typeof(test_idx)  <: Vector{UnitRange{Int64}}
+    @assert length(train_idx) == length(test_idx) == 10
 
     # Using KFolds in an unsupervised setting
     for (train_X, test_X) in FoldsView(X, train_idx, test_idx)
@@ -130,7 +147,7 @@ end
 
 Compute the train/test indices for `k` folds for `n` observations
 and return them in the form of two vectors. A general rule of
-thumb is to use either `k = 5` or `k = 10`
+thumb is to use either `k = 5` or `k = 10`.
 
 *Note*: The sizes of the folds may differ by up to 1 observation
 depending on if the total number of observations is dividable by `k`.
@@ -153,9 +170,9 @@ julia> test_idx
  9:10
 ```
 
-Each observation is once (and only once) part of the test
-indices. Note that there is no random assignment of observations
-to folds, which means that adjacent observations are likely to be
+Each observation is assigned to the test indices once (and only
+once). Note that there is no random assignment of observations to
+folds, which means that adjacent observations are likely to be
 part of the same fold.
 """
 function kfolds(n::Integer, k::Integer = 5)
@@ -263,10 +280,10 @@ julia> test_idx
  9:10
 ```
 
-Each observation is once (and only once) part of the test
-indices. Note however that there is no random assignment of
-observations to folds, which means that adjacent observations are
-likely to be part of the same fold.
+Each observation is assigned to the test indices once (and only
+once). Note that there is no random assignment of observations to
+folds, which means that adjacent observations are likely to be
+part of the same fold.
 """
 function leaveout(n::Integer, size::Integer = 1)
     1 <= size <= floor(n/2) || throw(ArgumentError("size must to be within 1:$(floor(Int,n/2))"))
