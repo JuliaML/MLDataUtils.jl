@@ -1,11 +1,75 @@
 Data Subsetting
 ==================
 
-It is a common requirement in machine learning related experiments
-to partition the data set at hand in one way or the other.
-Details on how to perform specific sub-setting task with this
-package will be discussed towards the end.
+It is a common requirement in machine learning related
+experiments to partition some data set in one way or the other.
+At its essence, data partitioning can be thought of as a process
+that assigns observations to one or more subsets of the original
+data. This abstraction is also true for other important and
+widely used data access pattern in machine learning (e.g. over-
+and under-sampling labeled data).
 
+In other words, the core problem that needs to be addressed first
+is how to create and represent data subsets efficiently. Once we
+can subset **arbitrary** index-based data, more complicated tasks
+such as data *partitioning*, *shuffling*, or *resampling* can be
+expressed through data subsetting in a coherent manner.
+
+Before we move on let us quickly discuss what we mean when we
+talk about a data "subset". We don't think about the term
+"subset" in the mathematical sense of the word. Instead, when we
+attempt to subset some data, what we want is a representation
+(aka. subset) of a specific sequence of observations from the
+original data. We specify which observations we want to be part
+of this subset, by using observation-indices from the set
+:math:`I = \{1,2,...,N\}`. Here `N` is the total number of
+observations in our original dataset. This interpretation of
+"subset" implies the following:
+
+1. Each observation in our original data set has a unique
+   observation-index :math:`i \in I` assigned to it.
+
+2. When specifying a subset, the order of the requested
+   observation-indices matter. That means that different index
+   permutations will cause conceptually different "subsets".
+
+3. A subset can contain the same exact observation for an
+   arbitrary number of times (including zero). Furthermore, an
+   observation can be part of multiple distinct subsets.
+
+In the next section we will discuss how to use this package to
+create data subsets and how they are represented. After
+introducing the basics, we will go over the multiple high-level
+functions that create data subsets for you. These include
+splitting your data into train and test portion, shuffling your
+data, and resampling your data using kfolds.
+
+Data Container Interface
+-------------------------
+
+In the context of this package, we differentiate between two
+"kinds" of data sources, which we will call *iteration-based* and
+*index-based* respectively. Of main interest in this section are
+index-based data sources, which we will henceforth refer to as
+**Data Container**. For a data source to qualify as such, it
+must be able to provide the following:
+
+1. The total number of observations :math:`N`, that the data
+   source contains.
+
+2. A way to query a specific observation or set of observations.
+   This must be done using indices, where every observation has a
+   unique index :math:`i \in I` assigned to it from the set of
+   indices :math:`I = \{1, 2, ..., N\}`.
+
+
+Creating a Data Subset
+------------------------
+
+We have seen before that when working with **data container**,
+all we really need to do is reason about the observation-indices
+instead of the actual observation-values (see :ref:`background`
+for an in-depth discussion).
 
 Splitting into Train and Test
 ------------------------------
