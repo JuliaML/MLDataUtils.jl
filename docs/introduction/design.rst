@@ -54,7 +54,7 @@ computing and want to make sure that working with custom types is
 not penalized when using basic functionality such as
 data-partitioning. Thus we made it a key design priority to
 make as little assumptions as possible about the data at hand.
-For example, we do not require custom data-storage types to share
+For example, we do not require custom data-source-types to share
 a common super-type.
 
 # Type Stable
@@ -117,7 +117,7 @@ requirement.
 
 Furthermore, all the functions and (abstract) types, that are
 necessary in order for you to be able to provide support for your
-own custom data-storage-type, are defined in a special
+own custom data-source-type, are defined in a special
 light-weight package called
 `LearnBase <https://github.com/JuliaML/LearnBase.jl>`_.
 This way package developers need not pollute their ``REQUIRE``
@@ -167,10 +167,10 @@ Support for Custom Data Container
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We identified quite early in our design discussions, that we
-wanted to support custom data-container types as first class
+wanted to support custom data-container-types as first class
 citizen in our data-access pattern. Consequently, we had to
 carefully think about what kind of functionality and information
-any data-storage type must expose in order to achieve this in a
+any data-source-type must expose in order to achieve this in a
 clean and efficient manner.
 Luckily we found that this can be reduced to surprisingly little,
 as subsetting/partitioning of data really just breaks down to
@@ -181,7 +181,7 @@ discussion of this).
 Furthermore, we wanted to make sure that the decision to opt-in
 to our ecosystem had as little impact to the overall design of
 the user code as possible. This had the consequence of not being
-able to require a common super-type for data-containers.
+able to require a common super-type for data containers.
 Additionally, we could not rely on ``Base`` functions, such as
 ``size``, to be implemented for the data at hand. Worse, we could
 not be confident that (even if implemented) these methods would
@@ -191,7 +191,7 @@ what denotes the *number of observations*.
 Thus we decided to define custom functions with singular
 interpretation for these purposes. This has a price, however.
 If a user would like to provide support for his/her custom
-data-storage type, he/she would need to add at least some JuliaML
+data-source-type, he/she would need to add at least some JuliaML
 dependency in order to define methods for the required functions.
 To keep this dependency reasonable small, we created a
 light-weight package called
@@ -209,13 +209,13 @@ Representing Data Subsets
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 As we mentioned before, as long as we can somehow keep track of
-the indices, we don't actually require the data-storage to offer
+the indices, we don't actually require the data source to offer
 a lot of special functionality. The question that remained,
 though, is how to track the indices in a sensible and
 non-intrusive manner. When in doubt, we try to follow the Julia
 design by example. Consider the ``SubArray`` type. In our current
 context, we can think about it as really just a special case
-implementation for a data-container decorator that keeps track of
+implementation for a data container decorator that keeps track of
 the indices (especially since the release of 0.5).
 
 We will call an object that connects some data-container to some
@@ -252,7 +252,7 @@ What about Streaming Data?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 So far we talked about data as if it were an universal truth that
-it can be split somewhere or sub-setted somehow. This need not
+it can be split somewhere or subsetted somehow. This need not
 be true for all kinds of data we are interested in working with.
 
 This package differentiates between two kinds of data source that
@@ -302,9 +302,9 @@ Data Container
     some specific type. What it returns is up to the data
     container. The only requirement is that it is consistent. A
     single observation should always have the same type and
-    structure, as should a batch of some specific size. see TODO
-    for more information of what makes some type a data
-    container.
+    structure, as should a batch of some specific size. Take a
+    look at the section on :ref:`container` for more information
+    about the interface and requirements.
 
     A data container need not also be a data iterator! There is
     no contract that iterating over a data container makes sense
@@ -315,18 +315,18 @@ Data Container
     Any data container can be promoted to be a data iterator as
     well as a data container by boxing it into a
     :class:`DataView`, such as :class:`BatchView` or
-    :class:`ObsView`. See TOD for more information on data views.
+    :class:`ObsView`. See TODO for more information on data views.
 
 Tuples and Labeled Data
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 We made the decision quite early in the development cycle of this
 package to give ``Tuple`` special semantics. More specifically,
-we use tuples to tie together different data-sources on a
+we use tuples to tie together different data sources on a
 per-observation basis.
 
 All the access-pattern provided by this packages can be called
-with data-sources or tuples of data-sources. For the later to
+with data sources or tuples of data sources. For the later to
 work we need to understand the assumptions made when using
 ``Tuple``.
 
@@ -355,7 +355,7 @@ targets.
     :b
     :c
 
-Naturally we think of these two data-sources as one data set.
+Naturally we think of these two data sources as one data set.
 That means that we require the access-pattern to treat them as
 such. For example if you want to shuffle your data set, you can't
 just shuffle ``x`` and ``y`` independently, because that would

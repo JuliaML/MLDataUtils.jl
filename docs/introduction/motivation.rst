@@ -38,7 +38,7 @@ In the context of this package, we differentiate between two
 "kinds" of data sources, which we will call **iteration-based**
 and **index-based** .
 
-Iteration-based Data (aka Data iterator)
+Iteration-based (aka Data iterator)
    To belong to this group, a data source must implement the
    iterator interface. It may or may not know the total amount of
    observations it can provide, which means that knowing
@@ -52,7 +52,7 @@ Iteration-based Data (aka Data iterator)
    streaming data, or for large/remote data sets, where even
    storing the indices requires too much memory.
 
-Index-based Data (aka Data Container)
+Index-based (aka Data Container)
    For a data source to belong in this category it needs to be
    able to provide two things:
 
@@ -65,7 +65,7 @@ Index-based Data (aka Data Container)
       from the set of indices :math:`I = \{1, 2, ..., N\}`.
 
 We will go into more detail about data sources and their
-differences in a later section. The key takeaway from this little
+differences in later sections. The key takeaway from this little
 discussion here is that these two kinds of data sources offer
 distinct challenges and need to be reasoned with differently.
 

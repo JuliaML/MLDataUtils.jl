@@ -44,24 +44,6 @@ functions that create data subsets for you. These include
 splitting your data into train and test portion, shuffling your
 data, and resampling your data using kfolds.
 
-Data Container Interface
--------------------------
-
-In the context of this package, we differentiate between two
-"kinds" of data sources, which we will call *iteration-based* and
-*index-based* respectively. Of main interest in this section are
-index-based data sources, which we will henceforth refer to as
-**Data Container**. For a data source to qualify as such, it
-must be able to provide the following:
-
-1. The total number of observations :math:`N`, that the data
-   source contains.
-
-2. A way to query a specific observation or set of observations.
-   This must be done using indices, where every observation has a
-   unique index :math:`i \in I` assigned to it from the set of
-   indices :math:`I = \{1, 2, ..., N\}`.
-
 
 Creating a Data Subset
 ------------------------
@@ -132,5 +114,3 @@ TODO: example KFolds
    is dividable by :math:`k`.
 
 
-Observation Dimension
-----------------------

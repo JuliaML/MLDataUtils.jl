@@ -65,6 +65,7 @@ data of interest, such as ``Array``.
 .. toctree::
    :maxdepth: 3
 
+   accesspattern/container
    accesspattern/subsetting
    accesspattern/iteration
    accesspattern/custom
