@@ -53,6 +53,14 @@ all we really need to do is reason about the observation-indices
 instead of the actual observation-values (see :ref:`background`
 for an in-depth discussion).
 
+.. function:: datasubset(data, idx, [obsdim])
+
+   If your custom type has its own kind of subset type, you can
+   return it here. An example for such a case are `SubArray` for
+   representing a subset of some `AbstractArray`.  Note: If your
+   type has no use for `obsdim` then dispatch on
+   `::ObsDim.Undefined` in the signature.
+
 Splitting into Train and Test
 ------------------------------
 
