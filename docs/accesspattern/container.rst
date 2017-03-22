@@ -20,15 +20,14 @@ information:
    indices :math:`I = \{1, 2, ..., N\}`.
 
 If a data source implements the required interface to be
-considered data container, a lot of additional and complex
-functionality comes for free. Yet the required interface is
-rather unobtrusive and flexible when it comes to implementation
-details of the data container itself.
+considered a data container, a lot of additional much more
+complex functionality comes for free. Yet the required interface
+is rather unobtrusive and simple to implement.
 
-- What makes a data source a data container are the implemented
+- What makes a Julia type a data container are the implemented
   functions. That means that any custom type can be marked as a
   data container by simply implementing the required interface.
-  This methodology is often called "duck typing". In other words
+  This methodology is often called "duck typing". In other words,
   there is no abstract type that needs to be sub-typed. This fact
   makes the interface much less intrusive and allows package
   developers to opt-in more easily, without forcing them to make
@@ -49,7 +48,10 @@ details of the data container itself.
   it returns.
 
 We will spend the rest of this document on discussing data
-containers in all its details.
+containers in all its details. First, we will provide a rough
+overview of how the interface looks like. After that, we will
+take a closer look at every single function individually, and
+even see some code examples showing off their behaviour.
 
 Interface Overview
 -------------------------
@@ -58,9 +60,11 @@ For any Julia type to be considered a data container it must
 implement a minimal set of functions. All of these functions are
 defined in a small utility package called `LearnBase.jl
 <https://github.com/JuliaML/LearnBase.jl>`_. This means that in
-order to implement the interface, one has to import that package
-first. More importantly, it implies that one does **not** need to
-depend on ``MLDataUtils.jl`` itself.
+order to implement the interface for some custom type, one has to
+import that package first. More importantly, it implies that one
+does **not** need to depend on ``MLDataUtils.jl`` itself. This
+allows package developers to keep dependencies at a minimum,
+while still taking part in the JuliaML ecosystem.
 
 There are only two methods that *must* be implemented for every
 data container. In other words, implementing these two methods is
@@ -74,22 +78,38 @@ Required methods                         Brief description
 ``getobs(data, idx, [obsdim])``          Returns the observation(s) from ``data`` indexed by ``idx``
 =======================================  ===================================================================
 
-Aside from the required interface there are a number of
-optional methods that can be implemented. The main reason to
-provide these methods as well is that they can offer a
-significant boost in performance.
+Aside from the required interface, there are a number of optional
+methods that can be implemented. The main motivation to provide
+these methods as well, is that they can allow for a significant
+boost in performance.
 
 =======================================  ===================================================================
 Optional methods                         Brief description
 =======================================  ===================================================================
 ``getobs(data)``                         Returns all observations contained ``data`` in native form
 ``getobs!(buf, data, [idx], [obsdim])``  Inplace version of ``getobs(data, idx, obsdim)`` using ``buf``
-``datasubset(data, idx, obsdim)``        Returns an object representing a lazy subset of ``data`` at ``idx``
 ``gettargets(data, idx, [obsdim])``      Returns the target(s) for the observation(s) in ``data`` at ``idx``
+``datasubset(data, idx, obsdim)``        Returns an object representing a lazy subset of ``data`` at ``idx``
 =======================================  ===================================================================
+
+Out of the box, this package implements the full data container
+interface for all subtypes of ``AbstractArray``. Furthermore,
+``Tuples`` can be used to link multiple data containers together,
+and thus are considered quasi data container. They are accepted
+everywhere data containers are expected, but they do have very
+special semantics in the context of this package. For more
+information about how ``Tuples`` are interpreted, take a look at
+:ref:`tuples`.
 
 Number of Observations
 ------------------------
+
+Every data container must be able to report how many observations
+it contains and can provide. To that end it must implement the
+function :func:`nobs`. For some data containers the meaning of
+"observations" can be ambiguous and depend on a user convention.
+For such cases it is possible to specify and additional argument,
+that denotes the observation dimension.
 
 .. function:: nobs(data, [obsdim]) -> Int
 
@@ -112,10 +132,27 @@ Number of Observations
 
    :return: The number of observations in `data` as an Integer
 
-Out of the box, :func:`nobs` is implemented for any subtype of
-``AbstractArray``. This is also true for higher order arrays
-(e.g. images), in which case all dimensions but the observation
-dimension are assumed to be features.
+We mentioned before that :func:`nobs` is implemented for any
+subtype of ``AbstractArray``. This is also true for arrays of any
+order, even higher order arrays (e.g. images).
+
+.. code-block:: jlcon
+
+   julia> y = rand(5)
+   5-element Array{Float64,1}:
+    0.542858
+    0.28541
+    0.613669
+    0.217321
+    0.018931
+
+   julia> nobs(X)
+   5
+
+If there is more than one array dimension, all but the
+observation dimension are implicitly assumed to be features (i.e.
+part of that observation). This implies that the observations
+have to be explicitly laid out along some dimension.
 
 .. code-block:: jlcon
 
@@ -128,7 +165,7 @@ dimension are assumed to be features.
    5
 
 As you can see, the default assumption is that the last array
-dimension denotes the observations. This can be overwritten by
+dimension enumerates the observations. This can be overwritten by
 explicitly specifying the ``obsdim``.
 
 .. code-block:: jlcon
@@ -136,12 +173,16 @@ explicitly specifying the ``obsdim``.
    julia> nobs(X, ObsDim.First())
    2
 
-   julia> nobs(X, obsdim=1)
+   julia> nobs(X, obsdim = :first)
    2
 
-Note how ``obsdim`` can be provided using type-stable positional
-arguments from the namespace ``ObsDim``, or by using a more
-convenient keyword argument.
+   julia> nobs(X, obsdim = 1)
+   2
+
+Note how ``obsdim`` can either be provided using type-stable
+positional arguments from the namespace ``ObsDim``, or by using a
+more flexible and convenient keyword argument. We will discuss
+observation dimensions in more detail in a later section.
 
 Request Observation(s)
 ------------------------------

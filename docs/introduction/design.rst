@@ -317,6 +317,8 @@ Data Container
     :class:`DataView`, such as :class:`BatchView` or
     :class:`ObsView`. See TODO for more information on data views.
 
+.. _tuples:
+
 Tuples and Labeled Data
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
