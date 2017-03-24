@@ -410,7 +410,8 @@ nobs{T,N}(A::AbstractArray{T,N}, ::ObsDim.Last)::Int = size(A, N)
 
 getobs(A::Array) = A
 getobs(A::AbstractSparseArray) = A
-getobs(A::AbstractArray) = copy(A)
+getobs(A::SubArray) = copy(A)
+getobs(A::AbstractArray) = collect(A)
 
 getobs!(buffer, A::AbstractSparseArray, idx, obsdim) = getobs(A, idx, obsdim)
 getobs!(buffer, A::AbstractSparseArray) = getobs(A)

@@ -247,7 +247,7 @@ println("<HEARTBEAT>")
         @test @inferred(targets(identity,(Yt,yt),(ObsDim.First(),ObsDim.Last()))) === yt
         @test @inferred(targets(identity,(Y,Yt),(ObsDim.Last(),ObsDim.First()))) === Yt
 
-        @test @inferred(targets(([:a,:b,:c],1:3))) === 1:3
+        @test @inferred(targets(([:a,:b,:c],1:3))) == [1,2,3]
         @test @inferred(targets(x->x^2,([:a,:b,:c],1:3))) == [1,4,9]
         # nested tuples
         @test @inferred(targets(([:a,:b,:c],(1:3,4:6)))) === (1:3,4:6)

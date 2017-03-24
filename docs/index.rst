@@ -5,7 +5,7 @@ This package represents a community effort to provide a common
 interface for handling Machine Learning data sets in Julia. This
 includes widely used access pattern for shuffling, partitioning,
 and resampling data sets. More importantly, the package was
-designed around the core requirement of allowing any user-defined
+designed around the core premise of allowing any user-defined
 type to serve as custom data sources and/or access pattern in a
 first class manner.
 
