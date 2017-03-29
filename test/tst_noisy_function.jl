@@ -1,26 +1,30 @@
-# ==============================================================
-
 @testset "Test noisy_sin" begin
     n = 50
-    x, y = noisy_sin(n; noise = 0.)
+    xtmp, ytmp = noisy_sin(n; noise = 0.)
 
-    @test length(x) == length(y) == n
-    for i = 1:length(x)
-        @test_approx_eq sin(x[i]) y[i]
+    @test length(xtmp) == length(ytmp) == n
+    for i = 1:length(xtmp)
+        @test sin.(xtmp[i]) ≈ ytmp[i]
     end
-    print(scatterplot(x, y; color = :blue, height = 5))
+    print(scatterplot(xtmp, ytmp; color = :blue, height = 5))
 end
-
-# ==============================================================
 
 @testset "Test noisy_poly" begin
     coef = [.8, .5, 2]
-    x, y = noisy_poly(coef, -10:.1:10; noise = 0)
+    xtmp, ytmp = noisy_poly(coef, -10:.1:10; noise = 0)
 
-    @test length(x) == length(y)
-    for i = 1:length(x)
-        @test_approx_eq (coef[1] * x[i]^2 + coef[2] * x[i]^1 + coef[3]) y[i]
+    @test length(xtmp) == length(ytmp)
+    for i = 1:length(xtmp)
+        @test (coef[1] * xtmp[i]^2 + coef[2] * xtmp[i]^1 + coef[3]) ≈ ytmp[i]
     end
-    print(scatterplot(x, y; color = :blue, height = 5))
+    print(scatterplot(xtmp, ytmp; color = :blue, height = 5))
 end
 
+@testset "Test noisy_spiral" begin
+    n = 97
+    xtmp, ytmp = noisy_spiral(n; noise = 0.)
+
+    @test length(xtmp[1, :]) == length(ytmp) == 2*n
+    test_plot = scatterplot(xtmp[1, 1:97], xtmp[2, 1:97], title="Spiral Function", color=:blue, name="pos")
+    print(scatterplot!(test_plot, xtmp[1, 98:194], xtmp[2, 98:194], color=:yellow, name="neg" ))
+end
