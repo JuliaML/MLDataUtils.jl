@@ -76,7 +76,7 @@ sections. To start off, we will discuss what makes some type a
 data container and what that term entails.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
    accesspattern/container
 

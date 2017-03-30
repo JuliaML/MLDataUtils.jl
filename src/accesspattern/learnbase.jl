@@ -98,7 +98,7 @@ function gettargets end
 Extract the concrete targets from `data` and return them.
 
 This function is eager in the sense that it will always call
-[`getobs`](@ref) unless a custom method for [`gettarget`](@ref)
+[`getobs`](@ref) unless a custom method for [`gettargets`](@ref)
 is implemented for the type of `data`. This will make sure that
 actual values are returned (in contrast to placeholders such as
 `DataSubset` or `SubArray`).

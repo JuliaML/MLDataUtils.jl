@@ -1,12 +1,12 @@
 # The targets logic is in some ways a bit more complex than the
 # getobs logic. The main reason for this is that we want to
 # support a wide variety of data storage types, as well as
-# both, streaming data and index based data.
+# both, interation-based data and index-based data.
 #
 # A package author has two ways to customize the logic behind
-# "targets" for their own data types:
+# "targets" for their own data container types:
 #
-#   1. implementing "gettargets" for the data-storage type,
+#   1. implementing "gettargets" for the data container type,
 #      which bypasses "getobs" entirely.
 
 #   2. implementing "gettarget" for the observation type,
