@@ -11,7 +11,7 @@ function center!(X::AbstractMatrix, mu::AbstractArray)
   mu
 end
 
-center!(X::AbstractMatrix, obsdim::Int) = center!(X, mean(X, obsdim))
+center!(X::AbstractMatrix, obsdim::Int=2) = center!(X, mean(X, obsdim))
 
 
 """
@@ -25,9 +25,10 @@ function rescale!(X::AbstractMatrix, mu::AbstractArray, s::AbstractArray)
    s[s.== 0] = 1
    X .= X .- mu
    X .= X ./ s
+   return mu, s
 end
 
-rescale!(X::AbstractMatrix, obsdim::Int) = rescale!(X, mean(X, obsdim), std(X, obsdim))
+rescale!(X::AbstractMatrix, obsdim::Int=2) = rescale!(X, mean(X, obsdim), std(X, obsdim))
 
 immutable FeatureNormalizer
     offset::Vector{Float64}
