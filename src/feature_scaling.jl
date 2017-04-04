@@ -1,56 +1,33 @@
 """
-`μ = center!(X[, μ])`
+`μ = center!(X, obsdim[, μ])`
 
-Centers each row of `X` around the corresponding entry in the vector `μ`.
+Centers `X` along obsdim around the corresponding entry in the vector `μ`.
 If `μ` is not specified then it defaults to `mean(X, 2)`.
 """
-function center!{T<:AbstractFloat}(X::AbstractMatrix{T}, μ::AbstractVector = vec(mean(X, 2)))
-    k, n = size(X)
-    @inbounds for j = 1:k
-        for i = 1:n
-            X[j, i] = X[j, i] - μ[j]
-        end
-    end
-    μ
+
+
+function center!(X::AbstractMatrix, mu::AbstractArray)
+  X .= X .- mu
+  mu
 end
 
-function center!{T<:AbstractFloat}(x::AbstractVector{T}, μ::Real = mean(x))
-    for i = 1:length(x)
-        x[i] -= μ
-    end
-    μ
-end
+center!(X::AbstractMatrix, obsdim::Int) = center!(X, mean(X, obsdim))
+
 
 """
-`μ, σ = rescale!(X[, μ, σ])`
+`μ, σ = rescale!(X, obsdim[, μ, σ])`
 
-Centers each row of `X` around the corresponding entry in the vector `μ`
+Centers `X` along obsdim around the corresponding entry in the vector `μ`
 and then rescaled using the corresponding entry in the vector `σ`.
-If `μ` is not specified then it defaults to `mean(X, 2)`.
-If `σ` is not specified then it defaults to `std(X, 2)`.
 """
-function rescale!{T<:AbstractFloat}(X::AbstractMatrix{T}, μ::AbstractVector = vec(mean(X, 2)), σ::AbstractVector = vec(std(X, 2)))
-    k, n = size(X)
-    @inbounds for j = 1:k
-        for i = 1:n
-            X[j, i] = X[j, i] - μ[j]
-            if σ[j] > 0
-                X[j, i] = X[j, i] / σ[j]
-            end
-        end
-    end
-    μ, σ
+
+function rescale!(X::AbstractMatrix, mu::AbstractArray, s::AbstractArray) 
+   s[s.== 0] = 1
+   X .= X .- mu
+   X .= X ./ s
 end
 
-function rescale!{T<:AbstractFloat}(x::AbstractVector{T}, μ::Real = mean(x), σ::Real = std(x))
-    for i = 1:length(x)
-        x[i] -= μ
-        if σ > 0
-            x[i] /= σ
-        end
-    end
-    μ, σ
-end
+rescale!(X::AbstractMatrix, obsdim::Int) = rescale!(X, mean(X, obsdim), std(X, obsdim))
 
 immutable FeatureNormalizer
     offset::Vector{Float64}
