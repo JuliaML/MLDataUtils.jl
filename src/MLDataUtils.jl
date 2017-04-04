@@ -24,8 +24,6 @@ export
 
     center!,
     rescale!,
-    ccenter!,
-    rrescale!,
 
     FeatureNormalizer,
 
