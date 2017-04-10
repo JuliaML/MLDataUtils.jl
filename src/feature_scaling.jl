@@ -4,15 +4,46 @@
 Centers `X` along obsdim around the corresponding entry in the vector `μ`.
 If `μ` is not specified then it defaults to `mean(X, 2)`.
 """
+function center!(X, mu; obsdim=LearnBase.default_obsdim(X))
+  center!(X, mu, LearnBase.obs_dim(obsdim))
+end
 
+function center!(X; obsdim=LearnBase.default_obsdim(X))
+  center!(X, LearnBase.obs_dim(obsdim))
+end
 
-function center!(X::AbstractMatrix, mu::AbstractArray)
-  X .= X .- mu
+function center!{T,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M})
+  mu = vec(mean(X, M))
+  center!(X, mu, obsdim)
+end
+
+function center!(X::AbstractMatrix, mu::AbstractVector, o::ObsDim.Constant{1})
+  nObs, nVars = size(X)
+  for iVar in 1:nVars
+    @inbounds for iObs in 1:nObs
+      X[iObs, iVar] = X[iObs, iVar] - mu[iVar]
+    end
+  end
   mu
 end
 
-center!(X::AbstractMatrix, obsdim::Int=2) = center!(X, mean(X, obsdim))
+function center!(X::AbstractMatrix, mu::AbstractVector, o::ObsDim.Constant{2})
+  nVars, nObs = size(X)
+  for iObs in 1:nObs
+    @inbounds for iVar in 1:nVars
+      X[iVar, iObs] = X[iVar, iObs] - mu[iVar]
+    end
+  end
+  mu
+end
 
+function center!(X::AbstractVector, mu::AbstractVector)
+  @inbounds for i in 1:length(X)
+    X[i] = X[i] - mu[i]
+  end
+  mu
+end
+   
 
 """
 `μ, σ = rescale!(X, obsdim[, μ, σ])`
@@ -20,15 +51,41 @@ center!(X::AbstractMatrix, obsdim::Int=2) = center!(X, mean(X, obsdim))
 Centers `X` along obsdim around the corresponding entry in the vector `μ`
 and then rescaled using the corresponding entry in the vector `σ`.
 """
-
-function rescale!(X::AbstractMatrix, mu::AbstractArray, s::AbstractArray) 
-   s[s.== 0] = 1
-   X .= X .- mu
-   X .= X ./ s
-   return mu, s
+function rescale!(X, mu, sigma; obsdim=LearnBase.default_obsdim(X))
+  rescale!(X, mu, sigma, LearnBase.obs_dim(obsdim))
 end
 
-rescale!(X::AbstractMatrix, obsdim::Int=2) = rescale!(X, mean(X, obsdim), std(X, obsdim))
+function rescale!(X; obsdim=LearnBase.default_obsdim(X))
+  rescale!(X, LearnBase.obs_dim(obsdim))
+end
+
+function rescale!{T,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M})
+  mu = vec(mean(X, M))
+  sigma = vec(std(X, M))
+  rescale!(X, mu, sigma, obsdim)
+end
+
+function rescale!(X::AbstractMatrix, mu::AbstractVector, sigma::AbstractVector, o::ObsDim.Constant{2})
+  sigma[sigma .== 0] = 1
+  nVars, nObs = size(X)
+  for iObs in 1:nObs
+    @inbounds for iVar in 1:nVars
+      X[iVar, iObs] = (X[iVar, iObs] - mu[iVar]) / sigma[iVar]
+    end
+  end
+  mu, sigma
+end
+
+function rescale!(X::AbstractMatrix, mu::AbstractVector, sigma::AbstractVector, o::ObsDim.Constant{1})
+  sigma[sigma .== 0] = 1
+  nObs, nVars = size(X)
+  for iVar in 1:nVars
+    @inbounds for iObs in 1:nObs
+      X[iObs, iVar] = (X[iObs, iVar] - mu[iVar]) / sigma[iVar]
+    end
+  end
+  mu, sigma
+end
 
 immutable FeatureNormalizer
     offset::Vector{Float64}
