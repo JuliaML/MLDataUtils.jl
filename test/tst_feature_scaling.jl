@@ -8,23 +8,71 @@ end
 @testset "Test center! and rescale!" begin
     Xa = copy(e_X)
     center!(Xa)
-    @test sum(mean(Xa, 2)) <= 10e-10
+    @test abs(sum(mean(Xa, 2))) <= 10e-10
 
-    x1 = copy(e_x)
-    @test center!(x1) ≈ mean(e_x)
-    @test mean(x1) <= 10e-10
+    Xa = copy(e_X)
+    center!(Xa, obsdim=1)
+    @test abs(sum(mean(Xa, 1))) <= 10e-10
 
-    X2 = copy(e_X)
-    rescale!(X2)
-    @test sum(mean(X2, 2)) <= 10e-10
-    @test std(X2, 2) ≈ [1, 1, 1, 1, 1]
+    Xa = copy(e_X)
+    center!(Xa, ObsDim.First())
+    @test abs(sum(mean(Xa, 1))) <= 10e-10
 
-    x2 = copy(e_x)
-    mu, sigma = rescale!(x2)
+    Xa = copy(e_X)
+    center!(Xa, obsdim=2)
+    @test abs(sum(mean(Xa, 2))) <= 10e-10
+
+    Xa = copy(e_X)
+    center!(Xa, ObsDim.Last())
+    @test abs(sum(mean(Xa, 2))) <= 10e-10
+
+    Xa = copy(e_X)
+    mu = vec(mean(Xa, 1))
+    sigma = vec(std(Xa, 1))
+    center!(Xa, mu, obsdim=1)
+    @test abs(sum(mean(Xa, 1))) <= 10e-10
+
+    Xa = copy(e_X)
+    mu = vec(mean(Xa, 2))
+    center!(Xa, mu, obsdim=2)
+    @test abs(sum(mean(Xa, 2))) <= 10e-10
+
+    xa = copy(e_x)
+    @test center!(xa) ≈ mean(e_x)
+    @test abs(mean(xa)) <= 10e-10
+
+    Xa = copy(e_X)
+    rescale!(Xa)
+    @test abs(sum(mean(Xa, 2))) <= 10e-10
+    @test std(Xa, 2) ≈ [1, 1, 1, 1, 1]
+
+    Xa = copy(e_X)
+    rescale!(Xa, obsdim=2)
+    @test abs(sum(mean(Xa, 2))) <= 10e-10
+    @test std(Xa, 2) ≈ [1, 1, 1, 1, 1]
+
+    Xa = copy(e_X)
+    rescale!(Xa, obsdim=1)
+    @test abs(sum(mean(Xa, 1))) <= 10e-10
+
+    xa = copy(e_x)
+    mu, sigma = rescale!(xa)
     @test mu ≈ mean(e_x)
     @test sigma ≈ std(e_x)
-    @test mean(x2) <= 10e-10
-    @test std(x2) ≈ 1
+    @test abs(mean(xa)) <= 10e-10
+    @test std(xa) ≈ 1
+
+    Xa = copy(e_X)
+    mu = vec(mean(Xa, 1))
+    sigma = vec(std(Xa, 1))
+    rescale!(Xa, mu, sigma, obsdim=1)
+    @test abs(sum(mean(Xa, 1))) <= 10e-10
+
+    Xa = copy(e_X)
+    mu = vec(mean(Xa, 2))
+    sigma = vec(std(Xa, 2))
+    rescale!(Xa, mu, sigma, obsdim=2)
+    @test abs(sum(mean(Xa, 2))) <= 10e-10
 end
 
 @testset "Test FeatureNormalizer model" begin
@@ -35,8 +83,8 @@ end
     @test vec(mean(e_X, 2)) ≈ cs.offset
     @test vec(std(e_X, 2)) ≈ cs.scale
 
-    X4 = predict(cs, e_X)
-    @test X4 != e_X
-    @test sum(mean(X4, 2)) <= 10e-10
-    @test std(X4, 2) ≈ [1, 1, 1]
+    Xa = predict(cs, e_X)
+    @test Xa != e_X
+    @test abs(sum(mean(Xa, 2))) <= 10e-10
+    @test std(Xa, 2) ≈ [1, 1, 1]
 end
