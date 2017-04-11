@@ -20,7 +20,7 @@ function center!{T,N}(X::AbstractArray{T,N}, ::ObsDim.Last)
     center!(X, ObsDim.Constant{N}())
 end
 
-function center!{T,N,M}(X::AbstractArray{T,N}, ::ObsDim.Constant{M})
+function center!{T,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M})
     mu = vec(mean(X, M))
     center!(X, mu, obsdim)
 end
