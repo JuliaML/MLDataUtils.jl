@@ -12,9 +12,25 @@ function center!(X; obsdim=LearnBase.default_obsdim(X))
   center!(X, LearnBase.obs_dim(obsdim))
 end
 
+function center!{T,N}(X::AbstractArray{T,N}, mu::AbstractVector, ::ObsDim.Last)
+  center!(X, mu,  ObsDim.Constant{N}())
+end
+
+function center!{T,N}(X::AbstractArray{T,N}, ::ObsDim.Last)
+  center!(X, ObsDim.Constant{N}())
+end
+
 function center!{T,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M})
   mu = vec(mean(X, M))
   center!(X, mu, obsdim)
+end
+
+function center!{T}(X::AbstractVector{T}, bosdim::ObsDim.Constant{1})
+  mu = mean(X)
+  for i in 1:length(X)
+    X[i] = X[i] - mu
+  end
+  mu
 end
 
 function center!(X::AbstractMatrix, mu::AbstractVector, o::ObsDim.Constant{1})
@@ -37,7 +53,7 @@ function center!(X::AbstractMatrix, mu::AbstractVector, o::ObsDim.Constant{2})
   mu
 end
 
-function center!(X::AbstractVector, mu::AbstractVector)
+function center!(X::AbstractVector, mu::AbstractVector, o::ObsDim.Constant{1})
   @inbounds for i in 1:length(X)
     X[i] = X[i] - mu[i]
   end
@@ -55,14 +71,31 @@ function rescale!(X, mu, sigma; obsdim=LearnBase.default_obsdim(X))
   rescale!(X, mu, sigma, LearnBase.obs_dim(obsdim))
 end
 
+function rescale!{T,N}(X::AbstractArray{T,N}, mu, sigma, ::ObsDim.Last)
+  rescale!(X, mu, sigma, ObsDim.Constant{N}())
+end
+
 function rescale!(X; obsdim=LearnBase.default_obsdim(X))
   rescale!(X, LearnBase.obs_dim(obsdim))
+end
+
+function rescale!{T,N}(X::AbstractArray{T,N}, ::ObsDim.Last)
+  rescale!(X, ObsDim.Constant{N}())
 end
 
 function rescale!{T,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M})
   mu = vec(mean(X, M))
   sigma = vec(std(X, M))
   rescale!(X, mu, sigma, obsdim)
+end
+
+function rescale!(X::AbstractVector, obsdim::ObsDim.Constant{1})
+  mu = mean(X)
+  sigma = std(X)
+  for i in 1:length(X)
+    X[i] = (X[i] - mu) / sigma
+  end
+  mu, sigma
 end
 
 function rescale!(X::AbstractMatrix, mu::AbstractVector, sigma::AbstractVector, o::ObsDim.Constant{2})
@@ -83,6 +116,13 @@ function rescale!(X::AbstractMatrix, mu::AbstractVector, sigma::AbstractVector, 
     @inbounds for iObs in 1:nObs
       X[iObs, iVar] = (X[iObs, iVar] - mu[iVar]) / sigma[iVar]
     end
+  end
+  mu, sigma
+end
+
+function rescale!(X::AbstractVector, mu::AbstractVector, sigma::AbstractVector, o::ObsDim.Constant{1})
+  @inbounds for i in 1:length(X)
+    X[i] = (X[i] - mu[i]) / sigma[i]
   end
   mu, sigma
 end
