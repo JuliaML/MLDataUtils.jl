@@ -6,6 +6,22 @@ e_X = expand_poly(e_x, degree = 5)
 end
 
 @testset "Test center! and rescale!" begin
+    # Center Vectors
+    xa = copy(e_x)
+    @test center!(xa) ≈ mean(e_x)
+    @test abs(mean(xa)) <= 10e-10
+
+    xa = copy(e_x)
+    mu = mean(xa)
+    center!(xa, mu, obsdim=1)
+    @test abs(mean(xa)) <= 10e-10
+
+    xa = copy(e_x)
+    mu = vec(ones(xa))
+    center!(xa, mu, obsdim=1)
+    @test sum(e_x .- mean(xa)) ≈ length(mu)
+
+    # Center Matrix w/o mu
     Xa = copy(e_X)
     center!(Xa)
     @test abs(sum(mean(Xa, 2))) <= 10e-10
@@ -26,9 +42,10 @@ end
     center!(Xa, ObsDim.Last())
     @test abs(sum(mean(Xa, 2))) <= 10e-10
 
+
+    # Center Matrix with mu as input
     Xa = copy(e_X)
     mu = vec(mean(Xa, 1))
-    sigma = vec(std(Xa, 1))
     center!(Xa, mu, obsdim=1)
     @test abs(sum(mean(Xa, 1))) <= 10e-10
 
@@ -37,9 +54,25 @@ end
     center!(Xa, mu, obsdim=2)
     @test abs(sum(mean(Xa, 2))) <= 10e-10
 
+    Xa = copy(e_X)
+    mu = vec(mean(Xa, 2))
+    center!(Xa, mu, ObsDim.Last())
+    @test abs(sum(mean(Xa, 2))) <= 10e-10
+
+
+    # Rescale Vector
     xa = copy(e_x)
-    @test center!(xa) ≈ mean(e_x)
+    mu, sigma = rescale!(xa)
+    @test mu ≈ mean(e_x)
+    @test sigma ≈ std(e_x)
     @test abs(mean(xa)) <= 10e-10
+    @test std(xa) ≈ 1
+
+    xa = copy(e_x)
+    mu, sigma = rescale!(xa, mu, sigma)
+    @test abs(mean(xa)) <= 10e-10
+    @test std(xa) ≈ 1
+
 
     Xa = copy(e_X)
     rescale!(Xa)
@@ -55,12 +88,6 @@ end
     rescale!(Xa, obsdim=1)
     @test abs(sum(mean(Xa, 1))) <= 10e-10
 
-    xa = copy(e_x)
-    mu, sigma = rescale!(xa)
-    @test mu ≈ mean(e_x)
-    @test sigma ≈ std(e_x)
-    @test abs(mean(xa)) <= 10e-10
-    @test std(xa) ≈ 1
 
     Xa = copy(e_X)
     mu = vec(mean(Xa, 1))
