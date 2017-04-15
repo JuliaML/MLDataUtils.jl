@@ -1,18 +1,14 @@
 MLDataUtils.jl's documentation
 =================================
 
-This package represents a community effort to provide a common
-interface for handling Machine Learning data sets in Julia. This
-includes widely used access pattern for shuffling, partitioning,
-and resampling data sets. More importantly, the package was
-designed around the core premise of allowing any user-defined
-type to serve as custom data sources and/or access pattern in a
-first class manner.
-
-MLDataUtils is a part of the `JuliaML <https://github.com/JuliaML>`_
-ecosystem. In contrast to other data-centered packages, it
-focuses specifically on functionality utilized in a Machine
-Learning context.
+This package is designed to be the end-user facing frond-end to
+all the data related functionalty that is spread out accross the
+`JuliaML <https://github.com/JuliaML>`_ ecosystem. Most of the
+following sub-categories are covered by a single back-end package
+that is specialized on that specific problem. Consequently, if
+one of the following topics is of special interest to you, make
+sure to check out the corresponding documentation of that
+package.
 
 Where to begin?
 ----------------
@@ -30,23 +26,6 @@ packages.
 
    introduction/gettingstarted
 
-Introduction and Motivation
------------------------------
-
-If you are new to Machine Learning in Julia, or are simply
-interested in how and why this package works the way it works,
-feel free to take a look at the following documents.
-There we discuss the problem of data-partitioning itself and what
-challenges it entails.
-Further we will provide some insight on how this package
-approaches the task conceptually.
-
-.. toctree::
-   :maxdepth: 2
-
-   introduction/motivation
-   introduction/design
-
 Using MLDataUtils.jl
 ---------------------
 
@@ -54,59 +33,55 @@ While the sole focus of the whole package is on data-related
 functionality, we can further divide the provided types and functions
 into a number of quite heterogeneous sub-categories.
 
-Data Access Pattern
+Label Encodings
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The core of the package, and indeed the part that thus far
-received the most developer attention, are the data access
-pattern. These include data-partitioning, -subsampling, and
--iteration. The main design principle behind the access pattern
-is based on the assumption that the data source a user is working
-with, is likely of some user-specific custom type. That said,
-there was also a lot of attention put into first class support
-for those types that are most commonly employed to represent the
-data of interest, such as ``Array``.
-
-The first topic we will cover is about **data containers**. These
-represent a large subgroup of data sources, that all know how
-many observations they contain as well as how to access specific
-observation(s). As such they are the most flexible kind of data
-sources and will thus be at the heart of most of the subsequent
-sections. To start off, we will discuss what makes some type a
-data container and what that term entails.
+In a classification setting, one usually treats the desired
+output variable (also called ground truths, or targets) as a
+discrete categorical variable. That is true even if the values
+themself are of numerical type, which they often are for
+practical reasons. This package provides various tools needed to
+deal with classification targets of arbitrary format. This
+includes asserting if the targets are of a desired encoding,
+inferring the concrete encoding the targets are in and how many
+classes they represent, and converting from their native encoding
+to the desired one.
 
 .. toctree::
    :maxdepth: 2
 
-   accesspattern/container
+   data/labels
 
-Once we understand what data containers are and how they can be
-interacted with, we can introduce more interesting behaviour on
-top of them. The most enabling of them all is the idea of a
-**data subset**. A data subset is in essence just a lazy
-representation of a specific sequence of observations from a data
-container, and itself again a data container. What that means and
-why that is useful will be discussed in detail in the following
-section.
+Provided by `JuliaML/MLLabelUtils.jl
+<https://github.com/JuliaML/MLLabelUtils.jl>`_. See the [`full
+documentation <http://mllabelutilsjl.readthedocs.io/>`_] for more
+information.
 
-.. toctree::
-   :maxdepth: 3
+Data Access Pattern
+~~~~~~~~~~~~~~~~~~~~~~~
 
-   accesspattern/subsetting
-
-A common pattern when interacting with data in machine learning,
-is iteration over it in some manner. The next section will focus
-on the group of pattern we call **data iterators**. These
-implement the Julia iterator interface in such a way that each
-iteration returns either a single observation or a batch of
-observations. With this way of thinking we can also work with
-data sources that do not fall into the category of data
-containers.
+Typical Machine Learning experiments require a lot of rather
+mundane but error prone data handling glue code. One particularly
+interesting category of data handling functionality are what we
+call **data access pattern**. These "pattern" include
+*subsetting*, *resampling*, *iteration*, and *partitioning* of
+various types of data sets. The functionalty was designed around
+the key requirement of allowing any user-defined type to serve as
+a custom data source and/or access pattern in a first class
+manner. That said, there was also a lot of attention focused on
+first class support for those types that are most commonly
+employed to represent the data of interest, such as ``DataFrame``
+and ``Array``.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
-   accesspattern/iteration
+   data/pattern
+
+Provided by `JuliaML/MLDataPattern.jl
+<https://github.com/JuliaML/MLDataPattern.jl>`_. See the [`full
+documentation <http://mldatapatternjl.readthedocs.io/>`_] for
+more information.
 
 Data Processing
 ~~~~~~~~~~~~~~~~~~~~~~~
