@@ -5,11 +5,11 @@ Centers `X` along obsdim around the corresponding entry in the vector `μ`.
 If `μ` is not specified then it defaults to `mean(X, 2)`.
 """
 function center!(X, μ; obsdim=LearnBase.default_obsdim(X))
-    center!(X, μ, LearnBase.obs_dim(obsdim))
+    center!(X, μ, convert(ObsDimension, obsdim))
 end
 
 function center!(X; obsdim=LearnBase.default_obsdim(X))
-    center!(X, LearnBase.obs_dim(obsdim))
+    center!(X, convert(ObsDimension, obsdim))
 end
 
 function center!{T,N}(X::AbstractArray{T,N}, μ::AbstractVector, ::ObsDim.Last)
@@ -75,7 +75,7 @@ Centers `X` along obsdim around the corresponding entry in the vector `μ`
 and then rescaled using the corresponding entry in the vector `σ`.
 """
 function rescale!(X, μ, σ; obsdim=LearnBase.default_obsdim(X))
-    rescale!(X, μ, σ, LearnBase.obs_dim(obsdim))
+    rescale!(X, μ, σ, convert(ObsDimension, obsdim))
 end
 
 function rescale!{T,N}(X::AbstractArray{T,N}, μ, σ, ::ObsDim.Last)
@@ -83,7 +83,7 @@ function rescale!{T,N}(X::AbstractArray{T,N}, μ, σ, ::ObsDim.Last)
 end
 
 function rescale!(X; obsdim=LearnBase.default_obsdim(X))
-    rescale!(X, LearnBase.obs_dim(obsdim))
+    rescale!(X, convert(ObsDimension, obsdim))
 end
 
 function rescale!{T,N}(X::AbstractArray{T,N}, ::ObsDim.Last)
@@ -127,14 +127,14 @@ function rescale!(X::AbstractMatrix, μ::AbstractVector, σ::AbstractVector, ::O
     μ, σ
 end
 
-function rescale!(X::AbstractVector, μ::AbstractVector, σ::AbstractVector, ::ObsDim.Constant{1})
+function rescale!(X::AbstractVector, μ::AbstractVector, σ::AbstractVector, ::ObsDim.Constant)
     @inbounds for i in 1:length(X)
         X[i] = (X[i] - μ[i]) / σ[i]
     end
     μ, σ
 end
 
-function rescale!(X::AbstractVector, μ::AbstractFloat, σ::AbstractFloat, ::ObsDim.Constant{1})
+function rescale!(X::AbstractVector, μ::AbstractFloat, σ::AbstractFloat, ::ObsDim.Constant)
     @inbounds for i in 1:length(X)
         X[i] = (X[i] - μ) / σ
     end
