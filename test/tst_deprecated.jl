@@ -1,3 +1,7 @@
+X, y = load_iris()
+X1 = hcat((1:150 for i = 1:10)...)'
+Y1 = collect(1:150)
+
 @testset "splitdata" begin
     @test splitdata(X, y) == splitobs((X, y), at=0.5)
     (xtr,ytr), (xte,yte) = partitiondata(X1, Y1)
