@@ -127,14 +127,14 @@ function rescale!(X::AbstractMatrix, μ::AbstractVector, σ::AbstractVector, ::O
     μ, σ
 end
 
-function rescale!(X::AbstractVector, μ::AbstractVector, σ::AbstractVector, ::ObsDim.Constant)
+function rescale!(X::AbstractVector, μ::AbstractVector, σ::AbstractVector, ::ObsDim.Constant{1})
     @inbounds for i in 1:length(X)
         X[i] = (X[i] - μ[i]) / σ[i]
     end
     μ, σ
 end
 
-function rescale!(X::AbstractVector, μ::AbstractFloat, σ::AbstractFloat, ::ObsDim.Constant)
+function rescale!(X::AbstractVector, μ::AbstractFloat, σ::AbstractFloat, ::ObsDim.Constant{1})
     @inbounds for i in 1:length(X)
         X[i] = (X[i] - μ) / σ
     end
