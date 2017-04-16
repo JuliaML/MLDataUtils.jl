@@ -73,6 +73,10 @@ end
     @test abs(mean(xa)) <= 10e-10
     @test std(xa) ≈ 1
 
+    xa = copy(e_x)
+    mu, sigma = rescale!(xa, mu, sigma, obsdim=1)
+    @test abs(mean(xa)) <= 10e-10
+    @test std(xa) ≈ 1
 
     Xa = copy(e_X)
     rescale!(Xa)
