@@ -100,6 +100,97 @@ package.
     to represent the data of interest, such as ``DataFrame`` and
     ``Array``.
 
+    - [[docs](http://mldatapatternjl.readthedocs.io/en/latest/documentation/datasubset.html)] Create a lazy data subset of some data.
+
+      ```julia
+      julia> X = rand(2, 6)
+      # 2×6 Array{Float64,2}:
+      #  0.226582  0.933372  0.505208   0.0443222  0.812814  0.11202
+      #  0.504629  0.522172  0.0997825  0.722906   0.245457  0.000341996
+
+      julia> datasubset(X, 2:3)
+      # 2×2 SubArray{Float64,2,Array{Float64,2},Tuple{Colon,UnitRange{Int64}},true}:
+      #  0.933372  0.505208
+      #  0.522172  0.0997825
+      ```
+
+    - [[docs](http://mldatapatternjl.readthedocs.io/en/latest/documentation/datasubset.html#shuffle)] Shuffle the observations of a data container.
+
+      ```julia
+      julia> shuffleobs(X)
+      # 2×6 SubArray{Float64,2,Array{Float64,2},Tuple{Colon,Array{Int64,1}},false}:
+      #  0.505208   0.812814  0.11202      0.0443222  0.933372  0.226582
+      #  0.0997825  0.245457  0.000341996  0.722906   0.522172  0.504629
+      ```
+
+    - [[docs](http://mldatapatternjl.readthedocs.io/en/latest/documentation/datasubset.html#split)] Split data into train/test subsets.
+
+      ```julia
+      julia> train, test = splitobs(X, 0.7);
+
+      julia> train
+      # 2×4 SubArray{Float64,2,Array{Float64,2},Tuple{Colon,UnitRange{Int64}},true}:
+      #  0.226582  0.933372  0.505208   0.0443222
+      #  0.504629  0.522172  0.0997825  0.722906
+
+      julia> test
+      # 2×2 SubArray{Float64,2,Array{Float64,2},Tuple{Colon,UnitRange{Int64}},true}:
+      #  0.812814  0.11202
+      #  0.245457  0.000341996
+      ```
+
+    - [[docs](http://mldatapatternjl.readthedocs.io/en/latest/introduction/design.html#tuples)] Group multiple variables together and treat them as a single data set.
+
+      ```julia
+      julia> shuffleobs(([1,2,3], [:a,:b,:c]))
+      ([3,1,2],Symbol[:c,:a,:b])
+      ```
+
+    - [[docs](http://mldatapatternjl.readthedocs.io/en/latest/documentation/datasubset.html#customsubset)] Support my own custom user-defined data container type.
+
+      ```julia
+      julia> using DataTables, LearnBase
+
+      julia> LearnBase.nobs(dt::AbstractDataTable) = nrow(dt)
+
+      julia> LearnBase.getobs(dt::AbstractDataTable, idx) = dt[idx,:]
+
+      julia> LearnBase.datasubset(dt::AbstractDataTable, idx, ::ObsDim.Undefined) = view(dt, idx)
+      ```
+
+    - [[docs](http://mldatapatternjl.readthedocs.io/en/latest/documentation/targets.html#resampling)] Over- or undersample an imbalanced labeled data set.
+
+      ```julia
+      julia> undersample([:a,:b,:b,:a,:b,:b])
+      # 4-element SubArray{Symbol,1,Array{Symbol,1},Tuple{Array{Int64,1}},false}:
+      #  :a
+      #  :b
+      #  :b
+      #  :a
+      ```
+
+    - [[docs](http://mldatapatternjl.readthedocs.io/en/latest/documentation/folds.html#k-folds)] Repartition a data container using a k-folds scheme.
+
+      ```julia
+      julia> folds = kfolds([1,2,3,4,5,6,7,8,9,10], k = 5)
+      # 5-element MLDataPattern.FoldsView{Tuple{SubArray{Int64,1,Array{Int64,1},Tuple{Array{Int64,1}},false},SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},true}},Array{Int64,1},LearnBase.ObsDim.Last,Array{Array{Int64,1},1},Array{UnitRange{Int64},1}}:
+      #  ([3,4,5,6,7,8,9,10],[1,2])
+      #  ([1,2,5,6,7,8,9,10],[3,4])
+      #  ([1,2,3,4,7,8,9,10],[5,6])
+      #  ([1,2,3,4,5,6,9,10],[7,8])
+      #  ([1,2,3,4,5,6,7,8],[9,10])
+      ```
+
+    - [[docs](http://mldatapatternjl.readthedocs.io/en/latest/documentation/dataview.html)] Iterate over my data one observation or batch at a time.
+
+      ```julia
+      julia> obsview(([1 2 3; 4 5 6], [:a, :b, :c]))
+      # 3-element MLDataPattern.ObsView{Tuple{SubArray{Int64,1,Array{Int64,2},Tuple{Colon,Int64},true},SubArray{Symbol,0,Array{Symbol,1},Tuple{Int64},false}},Tuple{Array{Int64,2},Array{Symbol,1}},Tuple{LearnBase.ObsDim.Last,LearnBase.ObsDim.Last}}:
+      #  ([1,4],:a)
+      #  ([2,5],:b)
+      #  ([3,6],:c)
+      ```
+
 - **Data Processing:**
     This package contains a number of simple pre-processing
     strategies that are often applied for ML purposes, such as
