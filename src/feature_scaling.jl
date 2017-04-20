@@ -68,6 +68,36 @@ function center!(X::AbstractMatrix, μ::AbstractVector, ::ObsDim.Constant{2})
     μ
 end
 
+function center!(D::AbstractDataFrame)
+    flt = Bool[T <: Real for T in eltypes(D)]
+    for colname in names(D)[flt]
+        μ = mean(D[colname])
+        D[colname] = D[colname] .- μ
+    end
+end
+
+function center!{T<:Real}(D::AbstractDataFrame, μ::AbstractVector{T})
+    nobs = size(D, 1)
+    for (icol, colname) in enumerate(names(D))
+        D[colname] = D[colname] .- μ[icol]
+    end
+end
+
+function center!(D::AbstractDataFrame, colnames::AbstractVector{Symbol})
+    nobs = size(D, 1)
+    for colname in colnames
+        μ = mean(D[colname])
+        D[colname] = D[colname] .- μ
+    end
+end
+
+function center!{T<:Real}(D::AbstractDataFrame, μ::AbstractVector{T}, colnames::AbstractVector{Symbol})
+    @assert length(colnames) == length(μ)
+    nobs = size(D, 1)
+    for (icol, colname) in enumerate(colnames)
+        D[colname] = D[colname] .- μ[icol]
+    end
+end
 
 """
     μ, σ = rescale!(X[, μ, σ, obsdim])
