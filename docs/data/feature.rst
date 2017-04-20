@@ -4,8 +4,9 @@ Feature Normalization
 .. warning::
 
    This section will likely be subject to larger changes and/or
-   redesigns. For example none of these function are of yet
-   adapted to work with :class:`ObsDimension`
+   redesigns. It may be the case that the preprocessing
+   functionalty will get out-sources into a back-end package (see
+   `#29 <https://github.com/JuliaML/MLDataUtils.jl/issues/29>`_).
 
 This package contains a simple model called :class:`FeatureNormalizer`,
 that can be used to normalize training and test data with the
@@ -34,15 +35,25 @@ The underlying functions can also be used directly
 Centering
 ----------
 
-.. function:: center!(X, [μ])
+.. function:: center!(X, [μ], [obsdim])
 
-   Centers each row of ``X`` around the corresponding entry in the
-   vector ``μ``. In other words performs feature-wise centering.
+   Center ``X`` along ``obsdim`` around the corresponding entry
+   in the vector ``μ``. In other words performs feature-wise
+   centering.
 
    :param Array X: Feature matrix that should be centered in-place.
 
    :param Vector μ: Vector of means. If not specified then it
-        defaults to ``mean(X, 2)``.
+        defaults to the feature specific means.
+
+   :param obsdim: \
+        Optional. If it makes sense for the type of `X`, then
+        `obsdim` can be used to specify which dimension of `X`
+        denotes the observations. It can be specified in a
+        type-stable manner as a positional argument, or as a more
+        convenient keyword parameter. See `Observation Dimension
+        <http://mldatapatternjl.readthedocs.io/en/latest/documentation/container.html#observation-dimension>`_
+        for more information.
 
    :return: Returns the parameters ``μ`` itself.
 
@@ -54,20 +65,29 @@ Centering
 Rescaling
 ----------
 
-.. function:: rescale!(X, [μ], [σ])
+.. function:: rescale!(X, [μ], [σ], [obsdim])
 
-   Centers each row of ``X`` around the corresponding entry in the
-   vector ``μ`` and then rescaled using the corresponding entry in
-   the vector ``σ``.
+   Center ``X`` along ``obsdim`` around the corresponding entry
+   in the vector ``μ`` and then rescale each feature using the
+   corresponding entry in the vector ``σ``.
 
    :param Array X: Feature matrix that should be centered and
         rescaled in-place.
 
    :param Vector μ: Vector of means. If not specified then it
-        defaults to ``mean(X, 2)``.
+        defaults to the feature specific means.
 
    :param Vector σ: Vector of standard deviations. If not
-        specified then it defaults to ``std(X, 2)``.
+        defaults to the feature specific standard deviations.
+
+   :param obsdim: \
+        Optional. If it makes sense for the type of `X`, then
+        `obsdim` can be used to specify which dimension of `X`
+        denotes the observations. It can be specified in a
+        type-stable manner as a positional argument, or as a more
+        convenient keyword parameter. See `Observation Dimension
+        <http://mldatapatternjl.readthedocs.io/en/latest/documentation/container.html#observation-dimension>`_
+        for more information.
 
    :return: Returns the parameters ``μ`` and ``σ`` itself.
 

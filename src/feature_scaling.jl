@@ -1,8 +1,9 @@
 """
-`μ = center!(X[, μ, obsdim])`
+    μ = center!(X[, μ, obsdim])
 
-Centers `X` along obsdim around the corresponding entry in the vector `μ`.
-If `μ` is not specified then it defaults to `mean(X, 2)`.
+Center `X` along `obsdim` around the corresponding entry in the
+vector `μ`. If `μ` is not specified then it defaults to the
+feature specific means.
 """
 function center!(X, μ; obsdim=LearnBase.default_obsdim(X))
     center!(X, μ, convert(ObsDimension, obsdim))
@@ -69,10 +70,11 @@ end
 
 
 """
-`μ, σ = rescale!(X[, μ, σ, obsdim])`
+    μ, σ = rescale!(X[, μ, σ, obsdim])
 
-Centers `X` along obsdim around the corresponding entry in the vector `μ`
-and then rescaled using the corresponding entry in the vector `σ`.
+Center `X` along `obsdim` around the corresponding entry in the
+vector `μ` and then rescale each feature using the corresponding
+entry in the vector `σ`.
 """
 function rescale!(X, μ, σ; obsdim=LearnBase.default_obsdim(X))
     rescale!(X, μ, σ, convert(ObsDimension, obsdim))
