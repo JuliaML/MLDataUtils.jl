@@ -1,8 +1,8 @@
 MLDataUtils.jl's documentation
 =================================
 
-This package is designed to be the end-user facing frond-end to
-all the data related functionalty that is spread out accross the
+This package is designed to be the end-user facing front-end to
+all the data related functionality that is spread out across the
 `JuliaML <https://github.com/JuliaML>`_ ecosystem. Most of the
 following sub-categories are covered by a single back-end package
 that is specialized on that specific problem. Consequently, if
@@ -65,7 +65,7 @@ mundane but error prone data handling glue code. One particularly
 interesting category of data handling functionality are what we
 call **data access pattern**. These "pattern" include
 *subsetting*, *resampling*, *iteration*, and *partitioning* of
-various types of data sets. The functionalty was designed around
+various types of data sets. The functionality was designed around
 the key requirement of allowing any user-defined type to serve as
 a custom data source and/or access pattern in a first class
 manner. That said, there was also a lot of attention focused on
