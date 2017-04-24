@@ -68,6 +68,55 @@ function center!(X::AbstractMatrix, μ::AbstractVector, ::ObsDim.Constant{2})
     μ
 end
 
+function center!(D::AbstractDataFrame)
+    T = typeof(0.0)
+    μ_vec = T[]
+
+    flt = Bool[T <: Real for T in eltypes(D)]
+    for colname in names(D)[flt]
+        μ = mean(D[colname])
+        center!(D, colname, μ)
+        push!(μ_vec, μ)
+    end
+    μ_vec
+end
+
+function center!(D::AbstractDataFrame, colnames::AbstractVector{Symbol})
+    T = typeof(0.0)
+    μ_vec = T[]
+    for colname in colnames
+        if eltype(D[colname]) <: Real
+            μ = mean(D[colname])
+            center!(D, colname, μ)
+            push!(μ_vec, μ)
+        else
+            warn("Skipping $colname, centering only valid for columns of type T <: Real.")
+        end
+    end
+    μ_vec
+end
+
+function center!(D::AbstractDataFrame, colnames::AbstractVector{Symbol}, μ::AbstractVector)
+    for (icol, colname) in enumerate(colnames)
+        if eltype(D[colname]) <: Real
+            center!(D, colname, μ[icol])
+        else
+            warn("Skipping $colname, centering only valid for columns of type T <: Real.")
+        end
+    end
+    μ
+end
+
+function center!(D::AbstractDataFrame, colname::Symbol, μ)
+    T = typeof(0.0)
+    newcol::Vector{T} = convert(Vector{T}, D[colname])
+    nobs = length(newcol)
+    for i in eachindex(newcol)
+        newcol[i] -= μ
+    end
+    D[colname] = newcol
+    μ
+end
 
 """
     μ, σ = rescale!(X[, μ, σ, obsdim])
@@ -142,6 +191,63 @@ function rescale!(X::AbstractVector, μ::AbstractFloat, σ::AbstractFloat, ::Obs
     end
     μ, σ
 end
+
+function rescale!(D::AbstractDataFrame)
+    T = typeof(0.0)
+    μ_vec = T[]
+    σ_vec = T[]
+
+    flt = Bool[T <: Real for T in eltypes(D)]
+    for colname in names(D)[flt]
+        μ = mean(D[colname])
+        σ = std(D[colname])
+        rescale!(D, colname, μ, σ)
+        push!(μ_vec, μ)
+        push!(σ_vec, σ)
+    end
+    μ_vec, σ_vec
+end
+
+function rescale!(D::AbstractDataFrame, colnames::Vector{Symbol})
+    T = typeof(0.0)
+    μ_vec = T[]
+    σ_vec = T[]
+    for colname in colnames 
+        if eltype(D[colname]) <: Real
+            μ = mean(D[colname])
+            σ = std(D[colname])
+            rescale!(D, colname, μ, σ)
+            push!(μ_vec, μ)
+            push!(σ_vec, σ)
+        else
+            warn("Skipping $colname, centering only valid for columns of type T <: Real.")
+        end
+    end
+    μ_vec, σ_vec
+end
+
+function rescale!(D::AbstractDataFrame, colnames::Vector{Symbol}, μ::AbstractVector, σ::AbstractVector)
+    for (icol, colname) in enumerate(colnames)
+        if eltype(D[colname]) <: Real
+            rescale!(D, colname, μ[icol], σ[icol])
+        else
+            warn("Skipping $colname, rescaling only valid for columns of type T <: Real.")
+        end
+    end
+    μ, σ
+end
+
+function rescale!(D::AbstractDataFrame, colname::Symbol, μ, σ)
+    T = typeof(0.0)
+    newcol::Vector{T} = convert(Vector{T}, D[colname])
+    nobs = length(newcol)
+    for i in eachindex(newcol)
+        newcol[i] = (newcol[i] - μ) / σ
+    end
+    D[colname] = newcol
+    μ, σ
+end
+
 
 immutable FeatureNormalizer
     offset::Vector{Float64}
