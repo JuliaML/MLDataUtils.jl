@@ -5,6 +5,7 @@ using StatsBase
 using LearnBase
 using MLLabelUtils
 using MLDataPattern
+using DataFrames
 
 using LearnBase: ObsDimension, obs_dim
 import LearnBase: nobs, getobs, getobs!, datasubset, default_obsdim
