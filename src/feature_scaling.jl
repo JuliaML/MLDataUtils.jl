@@ -87,6 +87,10 @@ function center!(D::AbstractDataFrame, colnames::AbstractVector{Symbol})
     for colname in colnames
         if eltype(D[colname]) <: Real
             μ = mean(D[colname])
+            if isna(μ)
+                warn("Column $colname contains NA values, skipping rescaling of this column!")
+                continue
+            end
             center!(D, colname, μ)
             push!(μ_vec, μ)
         else
@@ -108,13 +112,17 @@ function center!(D::AbstractDataFrame, colnames::AbstractVector{Symbol}, μ::Abs
 end
 
 function center!(D::AbstractDataFrame, colname::Symbol, μ)
-    T = typeof(0.0)
-    newcol::Vector{T} = convert(Vector{T}, D[colname])
-    nobs = length(newcol)
-    for i in eachindex(newcol)
-        newcol[i] -= μ
+    if sum(isna(D[colname])) > 0 
+        warn("Column $colname contains NA values, skipping centering on this column!")
+    else
+        T = typeof(0.0)
+        newcol::Vector{T} = convert(Vector{T}, D[colname])
+        nobs = length(newcol)
+        @inbounds for i in eachindex(newcol)
+            newcol[i] -= μ
+        end
+        D[colname] = newcol
     end
-    D[colname] = newcol
     μ
 end
 
@@ -150,7 +158,7 @@ end
 function rescale!(X::AbstractVector, ::ObsDim.Constant{1})
     μ = mean(X)
     σ = std(X)
-    for i in 1:length(X)
+    @inbounds for i in 1:length(X)
         X[i] = (X[i] - μ) / σ
     end
     μ, σ
@@ -216,17 +224,22 @@ function rescale!(D::AbstractDataFrame, colnames::Vector{Symbol})
         if eltype(D[colname]) <: Real
             μ = mean(D[colname])
             σ = std(D[colname])
+            if isna(μ)
+                warn("Column $colname contains NA values, skipping rescaling of this column!")
+                continue
+            end
             rescale!(D, colname, μ, σ)
             push!(μ_vec, μ)
             push!(σ_vec, σ)
         else
-            warn("Skipping $colname, centering only valid for columns of type T <: Real.")
+            warn("Skipping $colname, rescaling only valid for columns of type T <: Real.")
         end
     end
     μ_vec, σ_vec
 end
 
 function rescale!(D::AbstractDataFrame, colnames::Vector{Symbol}, μ::AbstractVector, σ::AbstractVector)
+    σ[σ .== 0] = 1
     for (icol, colname) in enumerate(colnames)
         if eltype(D[colname]) <: Real
             rescale!(D, colname, μ[icol], σ[icol])
@@ -238,16 +251,19 @@ function rescale!(D::AbstractDataFrame, colnames::Vector{Symbol}, μ::AbstractVe
 end
 
 function rescale!(D::AbstractDataFrame, colname::Symbol, μ, σ)
-    T = typeof(0.0)
-    newcol::Vector{T} = convert(Vector{T}, D[colname])
-    nobs = length(newcol)
-    for i in eachindex(newcol)
-        newcol[i] = (newcol[i] - μ) / σ
+    if sum(isna(D[colname])) > 0 
+        warn("Column $colname contains NA values, skipping rescaling of this column!")
+    else
+        T = typeof(0.0)
+        newcol::Vector{T} = convert(Vector{T}, D[colname])
+        nobs = length(newcol)
+        @inbounds for i in eachindex(newcol)
+            newcol[i] = (newcol[i] - μ) / σ
+        end
+        D[colname] = newcol
     end
-    D[colname] = newcol
     μ, σ
 end
-
 
 immutable FeatureNormalizer
     offset::Vector{Float64}
