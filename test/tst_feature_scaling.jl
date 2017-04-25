@@ -81,6 +81,12 @@ end
 
     # skip columns that contain NA values
     D = copy(df_na)
+    mu = center!(D, [:A, :B])
+    @test isna(D[1, :A])
+    @test all(D[2:end, :A] .== df_na[2:end, :A])
+    @test abs(mean(D[:B])) < 10e-10
+
+    D = copy(df_na)
     mu_check = [mean(D[colname]) for colname in names(D)[1:2]]
     mu = center!(D, [:A, :B], mu_check)
     @test isna(D[1, :A])
@@ -105,6 +111,12 @@ end
     @test abs(mean(xa)) <= 10e-10
     @test std(xa) ≈ 1
 
+    xa = copy(e_x)
+    mu = copy(e_x) .- 1
+    sigma = ones(e_x)
+    mu, sigma = rescale!(xa, mu, sigma, obsdim=1)
+    @test mean(xa) ≈ 1
+
     Xa = copy(e_X)
     rescale!(Xa)
     @test abs(sum(mean(Xa, 2))) <= 10e-10
@@ -118,7 +130,6 @@ end
     Xa = copy(e_X)
     rescale!(Xa, obsdim=1)
     @test abs(sum(mean(Xa, 1))) <= 10e-10
-
 
     Xa = copy(e_X)
     mu = vec(mean(Xa, 1))
@@ -156,6 +167,15 @@ end
     @test all(D[2:end, :A] .== df_na[2:end, :A])
     @test abs(mean(D[:B])) < 10e-10
     @test abs(std(D[:B])) - 1 < 10e-10
+
+    D = copy(df_na)
+    mu_check = [mean(D[colname]) for colname in names(D)[1:2]]
+    sigma_check = [std(D[colname]) for colname in names(D)[1:2]]
+    mu, sigma = rescale!(D, [:A, :B], mu_check, sigma_check)
+    #= @test isna(D[1, :A]) =#
+    #= @test all(D[2:end, :A] .== df_na[2:end, :A]) =#
+    #= @test abs(mean(D[:B])) < 10e-10 =#
+    #= @test (abs(std(D[:B])) - 1) < 10e-10 =#
 end
 
 @testset "Test FeatureNormalizer model" begin
