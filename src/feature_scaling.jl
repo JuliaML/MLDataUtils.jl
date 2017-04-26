@@ -69,8 +69,7 @@ function center!(X::AbstractMatrix, μ::AbstractVector, ::ObsDim.Constant{2})
 end
 
 function center!(D::AbstractDataFrame)
-    T = typeof(0.0)
-    μ_vec = T[]
+    μ_vec = Float64[]
 
     flt = Bool[T <: Real for T in eltypes(D)]
     for colname in names(D)[flt]
@@ -82,8 +81,7 @@ function center!(D::AbstractDataFrame)
 end
 
 function center!(D::AbstractDataFrame, colnames::AbstractVector{Symbol})
-    T = typeof(0.0)
-    μ_vec = T[]
+    μ_vec = Float64[]
     for colname in colnames
         if eltype(D[colname]) <: Real
             μ = mean(D[colname])
@@ -115,8 +113,7 @@ function center!(D::AbstractDataFrame, colname::Symbol, μ)
     if sum(isna(D[colname])) > 0 
         warn("Column \"$colname\" contains NA values, skipping centering on this column!")
     else
-        T = typeof(0.0)
-        newcol::Vector{T} = convert(Vector{T}, D[colname])
+        newcol::Vector{Float64} = convert(Vector{Float64}, D[colname])
         nobs = length(newcol)
         @inbounds for i in eachindex(newcol)
             newcol[i] -= μ
@@ -201,9 +198,8 @@ function rescale!(X::AbstractVector, μ::AbstractFloat, σ::AbstractFloat, ::Obs
 end
 
 function rescale!(D::AbstractDataFrame)
-    T = typeof(0.0)
-    μ_vec = T[]
-    σ_vec = T[]
+    μ_vec = Float64[]
+    σ_vec = Float64[]
 
     flt = Bool[T <: Real for T in eltypes(D)]
     for colname in names(D)[flt]
@@ -217,9 +213,8 @@ function rescale!(D::AbstractDataFrame)
 end
 
 function rescale!(D::AbstractDataFrame, colnames::Vector{Symbol})
-    T = typeof(0.0)
-    μ_vec = T[]
-    σ_vec = T[]
+    μ_vec = Float64[]
+    σ_vec = Float64[]
     for colname in colnames 
         if eltype(D[colname]) <: Real
             μ = mean(D[colname])
@@ -254,8 +249,7 @@ function rescale!(D::AbstractDataFrame, colname::Symbol, μ, σ)
         warn("Column \"$colname\" contains NA values, skipping rescaling of this column!")
     else
         σ_div = σ == 0 ? one(σ) : σ
-        T = typeof(0.0)
-        newcol::Vector{T} = convert(Vector{T}, D[colname])
+        newcol::Vector{Float64} = convert(Vector{Float64}, D[colname])
         nobs = length(newcol)
         @inbounds for i in eachindex(newcol)
             newcol[i] = (newcol[i] - μ) / σ_div
