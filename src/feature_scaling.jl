@@ -1,9 +1,30 @@
 """
     μ = center!(X[, μ, obsdim])
+    
+or
+
+    μ = center!(D[, colnames, μ])
+
+where `X` is of type Matrix or Vector and `D` of type DataFrame.
 
 Center `X` along `obsdim` around the corresponding entry in the
 vector `μ`. If `μ` is not specified then it defaults to the
 feature specific means.
+
+For DataFrames, `obsdim` is obsolete and centering is done column wise.
+Instead the vector `colnames` allows to specify which columns to center.
+If `colnames` is not provided all columns of type T<:Real are centered.
+
+Example:
+
+    X = rand(4, 100)
+    D = DataFrame(A=rand(10), B=collect(1:10), C=[string(x) for x in 1:10])
+
+    μ = center!(X, obsdim=2)
+    μ = center!(X, ObsDim.First())
+    μ = center!(D)
+    μ = center!(D, [:A, :B])
+
 """
 function center!(X, μ; obsdim=LearnBase.default_obsdim(X))
     center!(X, μ, convert(ObsDimension, obsdim))
@@ -126,9 +147,30 @@ end
 """
     μ, σ = rescale!(X[, μ, σ, obsdim])
 
+or 
+
+    μ, σ = rescale!(D[, colnames, μ, σ])
+
+where `X` is of type Matrix or Vector and `D` of type DataFrame.
+
 Center `X` along `obsdim` around the corresponding entry in the
 vector `μ` and then rescale each feature using the corresponding
 entry in the vector `σ`.
+
+For DataFrames, `obsdim` is obsolete and centering is done column wise.
+The vector `colnames` allows to specify which columns to center.
+If `colnames` is not provided all columns of type T<:Real are centered.
+
+Example:
+
+    X = rand(4, 100)
+    D = DataFrame(A=rand(10), B=collect(1:10), C=[string(x) for x in 1:10])
+
+    μ, σ = rescale!(X, obsdim=2)
+    μ, σ = rescale!(X, ObsDim.First())
+    μ, σ = rescale!(D)
+    μ, σ = rescale!(D, [:A, :B])
+
 """
 function rescale!(X, μ, σ; obsdim=LearnBase.default_obsdim(X))
     rescale!(X, μ, σ, convert(ObsDimension, obsdim))
