@@ -126,7 +126,7 @@ package.
     - [[docs](http://mldatapatternjl.readthedocs.io/en/latest/documentation/datasubset.html#split)] Split data into train/test subsets.
 
       ```julia
-      julia> train, test = splitobs(X, 0.7);
+      julia> train, test = splitobs(X, at = 0.7);
 
       julia> train
       # 2×4 SubArray{Float64,2,Array{Float64,2},Tuple{Colon,UnitRange{Int64}},true}:
@@ -137,6 +137,25 @@ package.
       # 2×2 SubArray{Float64,2,Array{Float64,2},Tuple{Colon,UnitRange{Int64}},true}:
       #  0.812814  0.11202
       #  0.245457  0.000341996
+      ```
+
+    - [[docs](http://mldatapatternjl.readthedocs.io/en/latest/documentation/targets.html#stratified)] Partition data into train/test subsets using stratified sampling.
+
+      ```julia
+      julia> train, test = stratifiedobs([:a,:a,:b,:b,:b,:b], p = 0.5)
+      # (Symbol[:b,:b,:a],Symbol[:b,:b,:a])
+
+      julia> train
+      # 3-element SubArray{Symbol,1,Array{Symbol,1},Tuple{Array{Int64,1}},false}:
+      # :b
+      # :b
+      # :a
+
+      julia> test
+      # 3-element SubArray{Symbol,1,Array{Symbol,1},Tuple{Array{Int64,1}},false}:
+      # :b
+      # :b
+      # :a
       ```
 
     - [[docs](http://mldatapatternjl.readthedocs.io/en/latest/introduction/design.html#tuples)] Group multiple variables together and treat them as a single data set.

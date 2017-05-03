@@ -316,19 +316,39 @@ set. In fact, it makes no difference.
     0.226582  0.933372  0.505208   0.0443222  0.812814  0.11202
     0.504629  0.522172  0.0997825  0.722906   0.245457  0.000341996
 
-   julia> y = ["a", "b", "b", "b", "b", "a"]
+   julia> y = ["a", "a", "b", "b", "b", "b"]
    6-element Array{String,1}:
     "a"
-    "b"
-    "b"
-    "b"
-    "b"
     "a"
+    "b"
+    "b"
+    "b"
+    "b"
 
-   julia> (X1, y1), (X2, y2) = splitobs((X, y), at = 0.6);
+   julia> (X1, y1), (X2, y2) = splitobs((X, y), at = 0.5);
 
    julia> y1, y2
-   (String["a","b","b","b"],String["b","a"])
+   (String["a","a","b"],String["b","b","b"])
+
+Stratified Sampling
+-----------------------
+
+Usually it is a good idea to make sure that we actively try to
+preserve the class distribution for every data subset. This will
+help to make sure that the data subsets are similar in structure
+and more likely to be representative of the full data set.
+
+.. code-block:: jlcon
+
+   julia> (X1, y1), (X2, y2) = stratifiedobs((X, y), p = 0.5);
+
+   julia> y1, y2
+   (String["b","a","b"],String["b","b","a"])
+
+Note how both, ``y1`` and ``y2``, contain twice as many ``"b"``
+as ``"a"``, just like ``y`` does. For more information on
+stratified sampling, take a look at `Stratified Sampling
+<http://mldatapatternjl.readthedocs.io/en/latest/documentation/targets.html#stratified>`_
 
 Over- and Undersampling
 ----------------------------
