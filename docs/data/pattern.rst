@@ -442,12 +442,11 @@ take a look at `Repartitioning Strategies
   julia> x = collect(1:10);
 
   julia> folds = kfolds(x, k = 5)
-  5-element MLDataPattern.FoldsView{Tuple{SubArray{Int64,1,Array{Int64,1},Tuple{Array{Int64,1}},false}, ...
-   ([3,4,5,6,7,8,9,10],[1,2])
-   ([1,2,5,6,7,8,9,10],[3,4])
-   ([1,2,3,4,7,8,9,10],[5,6])
-   ([1,2,3,4,5,6,9,10],[7,8])
-   ([1,2,3,4,5,6,7,8],[9,10])
+  5-fold MLDataPattern.FoldsView of 10 observations:
+    data: 10-element Array{Int64,1}
+    training: 8 observations/fold
+    validation: 2 observations/fold
+    obsdim: :last
 
   julia> train, val = folds[1] # access first fold
   ([3,4,5,6,7,8,9,10],[1,2])
@@ -469,7 +468,7 @@ into or iterated over.
     0.504629  0.522172  0.0997825  0.722906   0.245457  0.000341996
 
    julia> ov = obsview(X)
-   6-element MLDataPattern.ObsView{SubArray{Float64,1,Array{Float64,2},Tuple{Colon,Int64},true},Array{Float64,2},LearnBase.ObsDim.Last}:
+   6-element obsview(::Array{Float64,2}, ObsDim.Last()) with element type SubArray{...}:
     [0.226582,0.504629]
     [0.933372,0.522172]
     [0.505208,0.0997825]
@@ -479,17 +478,53 @@ into or iterated over.
 
 Similarly, the function :func:`batchview` creates a decorator
 that makes the given data container appear as a vector of equally
-sized mini-batches. For more information take a look at the
-section on `Data Views
-<http://mldatapatternjl.readthedocs.io/en/latest/documentation/dataview.html>`_.
+sized mini-batches.
 
 .. code-block:: jlcon
 
    julia> bv = batchview(X, size = 2)
-   3-element MLDataPattern.BatchView{SubArray{Float64,2,Array{Float64,2},Tuple{Colon,UnitRange{Int64}},true},Array{Float64,2},LearnBase.ObsDim.Last}:
+   3-element batchview(::Array{Float64,2}, 2, 3, ObsDim.Last()) with element type SubArray{...}
     [0.226582 0.933372; 0.504629 0.522172]
     [0.505208 0.0443222; 0.0997825 0.722906]
     [0.812814 0.11202; 0.245457 0.000341996]
+
+A third but conceptually different kind of view is provided by
+:func:`slidingwindow`. This function is particularly useful for
+preparing sequence data for various training tasks. For more
+information take a look at the section on `Data Views
+<http://mldatapatternjl.readthedocs.io/en/latest/documentation/dataview.html>`_.
+
+.. code-block:: jlcon
+
+   julia> data = split("The quick brown fox jumps over the lazy dog")
+   9-element Array{SubString{String},1}:
+    "The"
+    "quick"
+    "brown"
+    "fox"
+    "jumps"
+    "over"
+    "the"
+    "lazy"
+    "dog"
+
+   julia> A = slidingwindow(i->i+2, data, 2, stride=1)
+   7-element slidingwindow(::##9#10, ::Array{SubString{String},1}, 2, stride = 1) with element type Tuple{...}:
+    (["The", "quick"], "brown")
+    (["quick", "brown"], "fox")
+    (["brown", "fox"], "jumps")
+    (["fox", "jumps"], "over")
+    (["jumps", "over"], "the")
+    (["over", "the"], "lazy")
+    (["the", "lazy"], "dog")
+
+   julia> A = slidingwindow(i->[i-2:i-1; i+1:i+2], data, 1)
+   5-element slidingwindow(::##11#12, ::Array{SubString{String},1}, 1) with element type Tuple{...}:
+    (["brown"], ["The", "quick", "fox", "jumps"])
+    (["fox"], ["quick", "brown", "jumps", "over"])
+    (["jumps"], ["brown", "fox", "over", "the"])
+    (["over"], ["fox", "jumps", "the", "lazy"])
+    (["the"], ["jumps", "over", "lazy", "dog"])
 
 Aside from data containers, there is also another sub-category of
 data sources, called **data iterators**, that can not be indexed
@@ -500,7 +535,7 @@ observation (with replacement) from the given data container.
 .. code-block:: jlcon
 
    julia> iter = RandomObs(X)
-   MLDataPattern.RandomObs{SubArray{Float64,1,Array{Float64,2},Tuple{Colon,Int64},true},Array{Float64,2},LearnBase.ObsDim.Last,Base.IsInfinite}
+   RandomObs(::Array{Float64,2}, ObsDim.Last())
     Iterator providing Inf observations
 
 To give a second example for a data iterator, the type
@@ -512,12 +547,12 @@ at the section on `Data Iterators
 .. code-block:: jlcon
 
    julia> iter = RandomBatches(X, size = 10)
-   MLDataPattern.RandomBatches{SubArray{Float64,2,Array{Float64,2},Tuple{Colon,Array{Int64,1}},false},Array{Float64,2},LearnBase.ObsDim.Last,Base.IsInfinite}
-    Iterator providing Inf batches with size 10
+   RandomBatches(::Array{Float64,2}, 10, ObsDim.Last())
+    Iterator providing Inf batches of size 10
 
    julia> iter = RandomBatches(X, count = 50, size = 10)
-   MLDataPattern.RandomBatches{SubArray{Float64,2,Array{Float64,2},Tuple{Colon,Array{Int64,1}},false},Array{Float64,2},LearnBase.ObsDim.Last,Base.HasLength}
-    Iterator providing 50 batches with size 10
+   RandomBatches(::Array{Float64,2}, 10, 50, ObsDim.Last())
+    Iterator providing 50 batches of size 10
 
 Putting it all together
 ----------------------------

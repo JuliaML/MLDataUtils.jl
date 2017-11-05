@@ -192,12 +192,14 @@ package.
 
       ```julia
       julia> folds = kfolds([1,2,3,4,5,6,7,8,9,10], k = 5)
-      # 5-element MLDataPattern.FoldsView{Tuple{SubArray{Int64,1,Array{Int64,1},Tuple{Array{Int64,1}},false},SubArray{Int64,1,Array{Int64,1},Tuple{UnitRange{Int64}},true}},Array{Int64,1},LearnBase.ObsDim.Last,Array{Array{Int64,1},1},Array{UnitRange{Int64},1}}:
-      #  ([3,4,5,6,7,8,9,10],[1,2])
-      #  ([1,2,5,6,7,8,9,10],[3,4])
-      #  ([1,2,3,4,7,8,9,10],[5,6])
-      #  ([1,2,3,4,5,6,9,10],[7,8])
-      #  ([1,2,3,4,5,6,7,8],[9,10])
+      # 5-fold MLDataPattern.FoldsView of 10 observations:
+      #   data: 10-element Array{Int64,1}
+      #   training: 8 observations/fold
+      #   validation: 2 observations/fold
+      #   obsdim: :last
+
+      julia> folds[1]
+      # ([3, 4, 5, 6, 7, 8, 9, 10], [1, 2])
       ```
 
     - [[docs](http://mldatapatternjl.readthedocs.io/en/latest/documentation/dataview.html)] Iterate over my data one observation or batch at a time.
@@ -208,6 +210,38 @@ package.
       #  ([1,4],:a)
       #  ([2,5],:b)
       #  ([3,6],:c)
+      ```
+
+    - [[docs](http://mldatapatternjl.readthedocs.io/en/latest/documentation/dataview.html)] Prepare sequence data such as text for supervised learning.
+
+      ```julia
+      julia> txt = split("The quick brown fox jumps over the lazy dog")
+      # 9-element Array{SubString{String},1}:
+      # "The"
+      # "quick"
+      # "brown"
+      # ⋮
+      # "the"
+      # "lazy"
+      # "dog"
+
+      julia> seq = slidingwindow(i->i+2, txt, 2, stride=1)
+      # 7-element slidingwindow(::##9#10, ::Array{SubString{String},1}, 2, stride = 1) with element type Tuple{...}:
+      # (["The", "quick"], "brown")
+      # (["quick", "brown"], "fox")
+      # (["brown", "fox"], "jumps")
+      # (["fox", "jumps"], "over")
+      # (["jumps", "over"], "the")
+      # (["over", "the"], "lazy")
+      # (["the", "lazy"], "dog")
+
+      julia> seq = slidingwindow(i->[i-2:i-1; i+1:i+2], txt, 1)
+      # 5-element slidingwindow(::##11#12, ::Array{SubString{String},1}, 1) with element type Tuple{...}:
+      # (["brown"], ["The", "quick", "fox", "jumps"])
+      # (["fox"], ["quick", "brown", "jumps", "over"])
+      # (["jumps"], ["brown", "fox", "over", "the"])
+      # (["over"], ["fox", "jumps", "the", "lazy"])
+      # (["the"], ["jumps", "over", "lazy", "dog"])
       ```
 
 - **Data Processing:**
