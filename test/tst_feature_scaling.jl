@@ -2,7 +2,8 @@ e_x, _ = noisy_sin(50; noise = 0.)
 e_X = expand_poly(e_x, degree = 5)
 df = DataFrame(A=rand(10), B=collect(1:10), C=[string(x) for x in 1:10])
 df_na = deepcopy(df)
-df_na[1, :A] = NA
+df_na[:A] = allowmissing(df_na[:A])
+df_na[1, :A] = missing
 
 @testset "Test expand_poly" begin
     @test size(e_X) == (5, 50)
@@ -79,17 +80,17 @@ end
     mu = center!(D, [:A, :B], mu_check)
     @test abs(sum([mean(D[colname]) for colname in names(D)[1:2]])) <= 10e-10
 
-    # skip columns that contain NA values
+    # skip columns that contain missing values
     D = copy(df_na)
     mu = center!(D, [:A, :B])
-    @test isna(D[1, :A])
+    @test ismissing(D[1, :A])
     @test all(D[2:end, :A] .== df_na[2:end, :A])
     @test abs(mean(D[:B])) < 10e-10
 
     D = copy(df_na)
     mu_check = [mean(D[colname]) for colname in names(D)[1:2]]
     mu = center!(D, [:A, :B], mu_check)
-    @test isna(D[1, :A])
+    @test ismissing(D[1, :A])
     @test all(D[2:end, :A] .== df_na[2:end, :A])
     @test abs(mean(D[:B])) < 10e-10
 
@@ -160,19 +161,21 @@ end
     @test abs(sum([mean(D[colname]) for colname in names(D)[1:2]])) <= 10e-10
     @test mean([std(D[colname]) for colname in names(D)[1:2]]) - 1 <= 10e-10 
 
-    # skip columns that contain NA values
+    # skip columns that contain missing values
     D = copy(df_na)
     mu, sigma = rescale!(D, [:A, :B])
-    @test isna(D[1, :A])
+    @test ismissing(D[1, :A])
     @test all(D[2:end, :A] .== df_na[2:end, :A])
     @test abs(mean(D[:B])) < 10e-10
     @test abs(std(D[:B])) - 1 < 10e-10
 
     D = copy(df_na)
     mu_check = [mean(D[colname]) for colname in names(D)[1:2]]
-    sigma_check = [std(D[colname]) for colname in names(D)[1:2]]
-    mu, sigma = rescale!(D, [:A, :B], mu_check, sigma_check)
-    #= @test isna(D[1, :A]) =#
+    if VERSION >= v"0.7.0-DEV.2035"
+        sigma_check = [std(D[colname]) for colname in names(D)[1:2]]
+        mu, sigma = rescale!(D, [:A, :B], mu_check, sigma_check)
+    end
+    #= @test ismissing(D[1, :A]) =#
     #= @test all(D[2:end, :A] .== df_na[2:end, :A]) =#
     #= @test abs(mean(D[:B])) < 10e-10 =#
     #= @test (abs(std(D[:B])) - 1) < 10e-10 =#

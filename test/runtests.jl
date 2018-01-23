@@ -2,6 +2,7 @@ using Base.Test
 using MLDataUtils
 using StatsBase
 using UnicodePlots
+using Missings
 
 tests = [
     "tst_datapattern.jl"

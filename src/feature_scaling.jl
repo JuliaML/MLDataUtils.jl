@@ -1,6 +1,6 @@
 """
     μ = center!(X[, μ, obsdim])
-    
+
 or
 
     μ = center!(D[, colnames, μ])
@@ -106,8 +106,8 @@ function center!(D::AbstractDataFrame, colnames::AbstractVector{Symbol})
     for colname in colnames
         if eltype(D[colname]) <: Real
             μ = mean(D[colname])
-            if isna(μ)
-                warn("Column \"$colname\" contains NA values, skipping rescaling of this column!")
+            if ismissing(μ)
+                warn("Column \"$colname\" contains missing values, skipping rescaling of this column!")
                 continue
             end
             center!(D, colname, μ)
@@ -131,8 +131,8 @@ function center!(D::AbstractDataFrame, colnames::AbstractVector{Symbol}, μ::Abs
 end
 
 function center!(D::AbstractDataFrame, colname::Symbol, μ)
-    if sum(isna(D[colname])) > 0 
-        warn("Column \"$colname\" contains NA values, skipping centering on this column!")
+    if any(ismissing, D[colname])
+        warn("Column \"$colname\" contains missing values, skipping centering on this column!")
     else
         newcol::Vector{Float64} = convert(Vector{Float64}, D[colname])
         nobs = length(newcol)
@@ -147,7 +147,7 @@ end
 """
     μ, σ = rescale!(X[, μ, σ, obsdim])
 
-or 
+or
 
     μ, σ = rescale!(D[, colnames, μ, σ])
 
@@ -257,12 +257,12 @@ end
 function rescale!(D::AbstractDataFrame, colnames::Vector{Symbol})
     μ_vec = Float64[]
     σ_vec = Float64[]
-    for colname in colnames 
+    for colname in colnames
         if eltype(D[colname]) <: Real
             μ = mean(D[colname])
             σ = std(D[colname])
-            if isna(μ)
-                warn("Column \"$colname\" contains NA values, skipping rescaling of this column!")
+            if ismissing(μ)
+                warn("Column \"$colname\" contains missing values, skipping rescaling of this column!")
                 continue
             end
             rescale!(D, colname, μ, σ)
@@ -287,8 +287,8 @@ function rescale!(D::AbstractDataFrame, colnames::Vector{Symbol}, μ::AbstractVe
 end
 
 function rescale!(D::AbstractDataFrame, colname::Symbol, μ, σ)
-    if sum(isna(D[colname])) > 0 
-        warn("Column \"$colname\" contains NA values, skipping rescaling of this column!")
+    if any(ismissing, D[colname])
+        warn("Column \"$colname\" contains missing values, skipping rescaling of this column!")
     else
         σ_div = σ == 0 ? one(σ) : σ
         newcol::Vector{Float64} = convert(Vector{Float64}, D[colname])
