@@ -7,7 +7,7 @@ The return value `X` is a matrix of size `(degree, length(x))`.
 
 Note: all the features of `X` are centered and rescaled.
 """
-function expand_poly{T<:Number}(x::AbstractVector{T}; degree::Int = 5)
+function expand_poly(x::AbstractVector{T}; degree::Int = 5) where T<:Number
     n = length(x)
     x_vec = convert(Vector{Float64}, copy(collect(x)))
     X = zeros(Float64, (degree, n))

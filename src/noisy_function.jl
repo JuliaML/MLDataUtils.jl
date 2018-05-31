@@ -4,7 +4,7 @@
 Generates a noisy response `y` for the given function `fun`
 by adding `noise .* f_randn(length(x))` to the result of `fun(x)`.
 """
-function noisy_function{T<:Real}(fun::Function, x::AbstractVector{T}; noise::Real = 0.01, f_rand::Function = randn)
+function noisy_function(fun::Function, x::AbstractVector{T}; noise::Real = 0.01, f_rand::Function = randn) where T<:Real
     x_vec = collect(x)
     n = length(x_vec)
     y = fun.(x_vec) + noise * f_rand(n)
@@ -30,7 +30,7 @@ The vector `coef` contains the coefficients for the terms of the polynome.
 The first element of `coef` denotes the coefficient for the term with
 the highest degree, while the last element of `coef` denotes the intercept.
 """
-function noisy_poly{T<:Real,R<:Real}(coef::AbstractVector{R}, x::AbstractVector{T}; noise::Real = 0.1, f_rand::Function = randn)
+function noisy_poly(coef::AbstractVector{R}, x::AbstractVector{T}; noise::Real = 0.1, f_rand::Function = randn) where {T<:Real,R<:Real}
     n = length(x)
     m = length(coef)
     x_vec = collect(x)
