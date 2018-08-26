@@ -34,20 +34,20 @@ function center!(X; obsdim=LearnBase.default_obsdim(X))
     center!(X, convert(ObsDimension, obsdim))
 end
 
-function center!{T,N}(X::AbstractArray{T,N}, μ::AbstractVector, ::ObsDim.Last)
+function center!(X::AbstractArray{T,N}, μ::AbstractVector, ::ObsDim.Last) where {T,N}
     center!(X, μ, ObsDim.Constant{N}())
 end
 
-function center!{T,N}(X::AbstractArray{T,N}, ::ObsDim.Last)
+function center!(X::AbstractArray{T,N}, ::ObsDim.Last) where {T,N}
     center!(X, ObsDim.Constant{N}())
 end
 
-function center!{T,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M})
+function center!(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}) where {T,N,M}
     μ = vec(mean(X, M))
     center!(X, μ, obsdim)
 end
 
-function center!{T}(X::AbstractVector{T}, ::ObsDim.Constant{1})
+function center!(X::AbstractVector{T}, ::ObsDim.Constant{1}) where T
     μ = mean(X)
     for i in 1:length(X)
         X[i] = X[i] - μ
@@ -176,7 +176,7 @@ function rescale!(X, μ, σ; obsdim=LearnBase.default_obsdim(X))
     rescale!(X, μ, σ, convert(ObsDimension, obsdim))
 end
 
-function rescale!{T,N}(X::AbstractArray{T,N}, μ, σ, ::ObsDim.Last)
+function rescale!(X::AbstractArray{T,N}, μ, σ, ::ObsDim.Last) where {T,N}
     rescale!(X, μ, σ, ObsDim.Constant{N}())
 end
 
@@ -184,11 +184,11 @@ function rescale!(X; obsdim=LearnBase.default_obsdim(X))
     rescale!(X, convert(ObsDimension, obsdim))
 end
 
-function rescale!{T,N}(X::AbstractArray{T,N}, ::ObsDim.Last)
+function rescale!(X::AbstractArray{T,N}, ::ObsDim.Last) where {T,N}
     rescale!(X, ObsDim.Constant{N}())
 end
 
-function rescale!{T,N,M}(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M})
+function rescale!(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}) where {T,N,M}
     μ = vec(mean(X, M))
     σ = vec(std(X, M))
     rescale!(X, μ, σ, obsdim)
@@ -301,7 +301,7 @@ function rescale!(D::AbstractDataFrame, colname::Symbol, μ, σ)
     μ, σ
 end
 
-immutable FeatureNormalizer
+struct FeatureNormalizer
     offset::Vector{Float64}
     scale::Vector{Float64}
 
@@ -311,26 +311,26 @@ immutable FeatureNormalizer
     end
 end
 
-function FeatureNormalizer{T<:Real}(X::AbstractMatrix{T})
+function FeatureNormalizer(X::AbstractMatrix{T}) where T<:Real
     FeatureNormalizer(vec(mean(X, 2)), vec(std(X, 2)))
 end
 
-function StatsBase.fit{T<:Real}(::Type{FeatureNormalizer}, X::AbstractMatrix{T})
+function StatsBase.fit(::Type{FeatureNormalizer}, X::AbstractMatrix{T}) where T<:Real
     FeatureNormalizer(X)
 end
 
-function StatsBase.predict!{T<:Real}(cs::FeatureNormalizer, X::AbstractMatrix{T})
+function StatsBase.predict!(cs::FeatureNormalizer, X::AbstractMatrix{T}) where T<:Real
     @assert length(cs.offset) == size(X, 1)
     rescale!(X, cs.offset, cs.scale)
     X
 end
 
-function StatsBase.predict{T<:AbstractFloat}(cs::FeatureNormalizer, X::AbstractMatrix{T})
+function StatsBase.predict(cs::FeatureNormalizer, X::AbstractMatrix{T}) where T<:AbstractFloat
     Xnew = copy(X)
     StatsBase.predict!(cs, Xnew)
 end
 
-function StatsBase.predict{T<:Real}(cs::FeatureNormalizer, X::AbstractMatrix{T})
+function StatsBase.predict(cs::FeatureNormalizer, X::AbstractMatrix{T}) where T<:Real
     X = convert(AbstractMatrix{AbstractFloat}, X)
     StatsBase.predict!(cs, X)
 end
