@@ -280,15 +280,8 @@ as usual. Just start up Julia and type the following code-snipped
 into the REPL. It makes use of the native Julia package manger.
 
 ```julia
+import Pkg
 Pkg.add("MLDataUtils")
-```
-
-Additionally, for example if you encounter any sudden issues, or
-in the case you would like to contribute to the package, you can
-manually choose to be on the latest (untagged) version.
-
-```Julia
-Pkg.checkout("MLDataUtils")
 ```
 
 ## License
