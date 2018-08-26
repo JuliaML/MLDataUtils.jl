@@ -12,8 +12,8 @@ The optional vector `vars` contains the names of the features (i.e. rows of `X`)
 """
 function load_iris(n::Int = 150)
     @assert 0 < n <= 150
-    path = joinpath(Pkg.dir("MLDataUtils"), "data", "iris.csv")
-    raw_csv = readcsv(path)
+    path = joinpath(@__DIR__, "..", "data", "iris.csv")
+    raw_csv = readdlm(path, ',')
     X = convert(Matrix{Float64}, raw_csv[1:n, 1:4]')
     y = convert(Vector{String}, raw_csv[1:n, 5])
     vars = ["Sepal length", "Sepal width", "Petal length", "Petal width"]
@@ -30,8 +30,8 @@ The vector `y` contains `sin(x)` plus some gaussian noise
 The optional vector `vars` contains descriptive names for `x` and `y`
 """
 function load_sin()
-    path = joinpath(Pkg.dir("MLDataUtils"), "data", "sin.csv")
-    raw_csv = readcsv(path)
+    path = joinpath(@__DIR__, "..", "data", "sin.csv")
+    raw_csv = readdlm(path, ',')
     x = convert(Vector{Float64}, raw_csv[:, 1])
     y = convert(Vector{Float64}, raw_csv[:, 2])
     x, y, ["X", "sin(X) + ɛ"]
@@ -47,8 +47,8 @@ The vector `y` contains `x ./ 2 + 1` plus some gaussian noise
 The optional vector `vars` contains descriptive names for `x` and `y`
 """
 function load_line()
-    path = joinpath(Pkg.dir("MLDataUtils"), "data", "line.csv")
-    raw_csv = readcsv(path)
+    path = joinpath(@__DIR__, "..", "data", "line.csv")
+    raw_csv = readdlm(path, ',')
     x = convert(Vector{Float64}, raw_csv[:, 1])
     y = convert(Vector{Float64}, raw_csv[:, 2])
     x, y, ["x", "0.5 x + 1 + ɛ"]
@@ -64,8 +64,8 @@ The vector `y` contains `2.6 * x^2 + .8 * x` plus some gaussian noise
 The optional vector `vars` contains descriptive names for `x` and `y`
 """
 function load_poly()
-    path = joinpath(Pkg.dir("MLDataUtils"), "data", "poly.csv")
-    raw_csv = readcsv(path)
+    path = joinpath(@__DIR__, "..", "data", "poly.csv")
+    raw_csv = readdlm(path, ',')
     x = convert(Vector{Float64}, raw_csv[:, 1])
     y = convert(Vector{Float64}, raw_csv[:, 2])
     x, y, ["x", "2.6 x² + .8 x + ɛ"]
@@ -82,8 +82,8 @@ The vector `y` contains the corresponding labels, i.e "ones" or "zeros".
 The optional vector `vars` contains descriptive names for `x` and `y`
 """
 function load_spiral(n::Int = 194)
-    path = joinpath(Pkg.dir("MLDataUtils"), "data", "spiral.csv")
-    raw_csv = readcsv(path)
+    path = joinpath(@__DIR__, "..", "data", "spiral.csv")
+    raw_csv = readdlm(path, ',')
     x = convert(Matrix{Float64}, raw_csv[1:n, 1:2])
     y = convert(Vector{Int}, raw_csv[1:n, 3])
     x, y, ["r*sin(θ)", "r*cos(θ)", "class"]

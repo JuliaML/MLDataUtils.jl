@@ -9,8 +9,6 @@ LearnBase.getobs(dt::AbstractDataFrame, idx) = dt[idx,:]
 # custom data subset in form of SubDataFrame
 LearnBase.datasubset(dt::AbstractDataFrame, idx, ::ObsDim.Undefined) =
     view(dt, idx)
-LearnBase.datasubset(dt::SubDataFrame, idx, ::ObsDim.Undefined) =
-    view(dt.parent, dt.rows[idx])
 
 # throw error if no target extraction function is supplied
 LearnBase.gettarget(::typeof(identity), dt::AbstractDataFrame) =

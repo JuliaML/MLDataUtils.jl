@@ -1,5 +1,3 @@
-using DataFrames
-
 @testset "DataFrames" begin
     df = DataFrame(x1 = rand(5), x2 = rand(5), y = [:a,:a,:b,:a,:b])
 
