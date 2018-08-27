@@ -6,8 +6,7 @@ by adding `noise .* f_randn(length(x))` to the result of `fun(x)`.
 """
 function noisy_function(fun::Function, x::AbstractVector{T}; noise::Real = 0.01, f_rand::Function = randn) where T<:Real
     x_vec = collect(x)
-    n = length(x_vec)
-    y = fun.(x_vec) + noise * f_rand(n)
+    y = fun.(x_vec) .+ noise .* f_rand.()
     x_vec, y
 end
 
@@ -18,7 +17,7 @@ Generates `n` noisy equally spaces samples of a sinus from `start` to `stop`
 by adding `noise .* f_randn(length(x))` to the result of `fun(x)`.
 """
 function noisy_sin(n::Int = 50, start::Real = 0, stop::Real = 2π; noise::Real = 0.3, f_rand::Function = randn)
-    noisy_function(sin, linspace(start, stop, n); noise = noise, f_rand = f_rand)
+    noisy_function(sin, range(start, stop=stop, length=n); noise = noise, f_rand = f_rand)
 end
 
 """
@@ -40,7 +39,7 @@ function noisy_poly(coef::AbstractVector{R}, x::AbstractVector{T}; noise::Real =
             y[i] += coef[k] * x_vec[i]^(m-k)
         end
     end
-    y .+= noise .* f_rand(n)
+    y .+= noise .* f_rand.()
     x_vec, y
 end
 
@@ -68,7 +67,7 @@ function noisy_spiral(n::Int = 97, a::Real = 6.5, theta::Real = 16.0, b::Real=10
         y[i] = 1
         y[n+i] = 0
     end
-    x[1, :] += noise * f_rand(2*n)
-    x[2, :] += noise * f_rand(2*n)
+    x[1, :] .+= noise .* f_rand.()
+    x[2, :] .+= noise .* f_rand.()
     x, y
 end

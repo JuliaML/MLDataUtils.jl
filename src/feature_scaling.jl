@@ -43,7 +43,7 @@ function center!(X::AbstractArray{T,N}, ::ObsDim.Last) where {T,N}
 end
 
 function center!(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}) where {T,N,M}
-    μ = vec(mean(X, M))
+    μ = vec(mean(X, dims=M))
     center!(X, μ, obsdim)
 end
 
@@ -107,13 +107,13 @@ function center!(D::AbstractDataFrame, colnames::AbstractVector{Symbol})
         if eltype(D[colname]) <: Real
             μ = mean(D[colname])
             if ismissing(μ)
-                warn("Column \"$colname\" contains missing values, skipping rescaling of this column!")
+                @warn("Column \"$colname\" contains missing values, skipping rescaling of this column!")
                 continue
             end
             center!(D, colname, μ)
             push!(μ_vec, μ)
         else
-            warn("Skipping \"$colname\", centering only valid for columns of type T <: Real.")
+            @warn("Skipping \"$colname\", centering only valid for columns of type T <: Real.")
         end
     end
     μ_vec
@@ -124,7 +124,7 @@ function center!(D::AbstractDataFrame, colnames::AbstractVector{Symbol}, μ::Abs
         if eltype(D[colname]) <: Real
             center!(D, colname, μ[icol])
         else
-            warn("Skipping \"$colname\", centering only valid for columns of type T <: Real.")
+            @warn("Skipping \"$colname\", centering only valid for columns of type T <: Real.")
         end
     end
     μ
@@ -132,7 +132,7 @@ end
 
 function center!(D::AbstractDataFrame, colname::Symbol, μ)
     if any(ismissing, D[colname])
-        warn("Column \"$colname\" contains missing values, skipping centering on this column!")
+        @warn("Column \"$colname\" contains missing values, skipping centering on this column!")
     else
         newcol::Vector{Float64} = convert(Vector{Float64}, D[colname])
         nobs = length(newcol)
@@ -189,8 +189,8 @@ function rescale!(X::AbstractArray{T,N}, ::ObsDim.Last) where {T,N}
 end
 
 function rescale!(X::AbstractArray{T,N}, obsdim::ObsDim.Constant{M}) where {T,N,M}
-    μ = vec(mean(X, M))
-    σ = vec(std(X, M))
+    μ = vec(mean(X, dims=M))
+    σ = vec(std(X, dims=M))
     rescale!(X, μ, σ, obsdim)
 end
 
@@ -204,7 +204,7 @@ function rescale!(X::AbstractVector, ::ObsDim.Constant{1})
 end
 
 function rescale!(X::AbstractMatrix, μ::AbstractVector, σ::AbstractVector, ::ObsDim.Constant{2})
-    σ[σ .== 0] = 1
+    σ[σ .== 0] .= 1
     nVars, nObs = size(X)
     for iObs in 1:nObs
         @inbounds for iVar in 1:nVars
@@ -215,7 +215,7 @@ function rescale!(X::AbstractMatrix, μ::AbstractVector, σ::AbstractVector, ::O
 end
 
 function rescale!(X::AbstractMatrix, μ::AbstractVector, σ::AbstractVector, ::ObsDim.Constant{1})
-    σ[σ .== 0] = 1
+    σ[σ .== 0] .= 1
     nObs, nVars = size(X)
     for iVar in 1:nVars
         @inbounds for iObs in 1:nObs
@@ -262,14 +262,14 @@ function rescale!(D::AbstractDataFrame, colnames::Vector{Symbol})
             μ = mean(D[colname])
             σ = std(D[colname])
             if ismissing(μ)
-                warn("Column \"$colname\" contains missing values, skipping rescaling of this column!")
+                @warn("Column \"$colname\" contains missing values, skipping rescaling of this column!")
                 continue
             end
             rescale!(D, colname, μ, σ)
             push!(μ_vec, μ)
             push!(σ_vec, σ)
         else
-            warn("Skipping \"$colname\", rescaling only valid for columns of type T <: Real.")
+            @warn("Skipping \"$colname\", rescaling only valid for columns of type T <: Real.")
         end
     end
     μ_vec, σ_vec
@@ -280,7 +280,7 @@ function rescale!(D::AbstractDataFrame, colnames::Vector{Symbol}, μ::AbstractVe
         if eltype(D[colname]) <: Real
             rescale!(D, colname, μ[icol], σ[icol])
         else
-            warn("Skipping \"$colname\", rescaling only valid for columns of type T <: Real.")
+            @warn("Skipping \"$colname\", rescaling only valid for columns of type T <: Real.")
         end
     end
     μ, σ
@@ -288,7 +288,7 @@ end
 
 function rescale!(D::AbstractDataFrame, colname::Symbol, μ, σ)
     if any(ismissing, D[colname])
-        warn("Column \"$colname\" contains missing values, skipping rescaling of this column!")
+        @warn("Column \"$colname\" contains missing values, skipping rescaling of this column!")
     else
         σ_div = σ == 0 ? one(σ) : σ
         newcol::Vector{Float64} = convert(Vector{Float64}, D[colname])
@@ -312,7 +312,7 @@ struct FeatureNormalizer
 end
 
 function FeatureNormalizer(X::AbstractMatrix{T}) where T<:Real
-    FeatureNormalizer(vec(mean(X, 2)), vec(std(X, 2)))
+    FeatureNormalizer(vec(mean(X, dims=2)), vec(std(X, dims=2)))
 end
 
 function StatsBase.fit(::Type{FeatureNormalizer}, X::AbstractMatrix{T}) where T<:Real
