@@ -6,16 +6,27 @@ import DataFrames: DataFrames, AbstractDataFrame, SubDataFrame
 LearnBase.nobs(dt::AbstractDataFrame) = DataFrames.nrow(dt)
 LearnBase.getobs(dt::AbstractDataFrame, idx) = dt[idx,:]
 
+LearnBase.nobs(dt::DataFrameRow) = 1  # it is a observation
+function LearnBase.getobs(dt::DataFrameRow, idx)
+    idx == 1:1 || throw(ArgumentError(
+         "Attempting to read multiple rows ($idx) with a single row"))
+
+    return dt
+end
+
 # custom data subset in form of SubDataFrame
 LearnBase.datasubset(dt::AbstractDataFrame, idx, ::ObsDim.Undefined) =
-    view(dt, idx)
+    @view dt[idx, :]
 
 # throw error if no target extraction function is supplied
 LearnBase.gettarget(::typeof(identity), dt::AbstractDataFrame) =
     _throw_table_error()
+LearnBase.gettarget(::typeof(identity), dt::DataFrameRow) =
+    _throw_table_error()
 
 # convenience syntax to allow column name
 LearnBase.gettarget(col::Symbol, dt::AbstractDataFrame) = dt[1, col]
+LearnBase.gettarget(col::Symbol, dt::DataFrameRow) = dt[col]
 LearnBase.gettarget(fun, dt::AbstractDataFrame) = fun(dt)
 
 # avoid copy when target extraction function is supplied
