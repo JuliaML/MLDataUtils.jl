@@ -1,7 +1,7 @@
 name = "MLDataUtils"
 uuid = "f7459390-6b31-45ef-9fed-0615b5a5ba7f"
 authors = ["Christof Stocker <stocker.christof@gmail.com>"]
-version = "0.5.0"
+version = "0.5.1"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
@@ -14,10 +14,10 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
 DataFrames = "0.17, 0.18, 0.19, 0.20"
-LearnBase = "0.2"
+LearnBase = "0.2, 0.3"
 MLDataPattern = "0.5"
 MLLabelUtils = "0.4, 0.5"
-StatsBase = "0.25, 0.26, 0.27, 0.28, 0.29, 0.30, 0.31, 0.32"
+StatsBase = "0.25, 0.26, 0.27, 0.28, 0.29, 0.30, 0.31, 0.32, 0.33"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
