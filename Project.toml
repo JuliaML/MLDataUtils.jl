@@ -14,7 +14,7 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
 DataFrames = "0.17, 0.18, 0.19, 0.20"
-LearnBase = "0.2, 0.3"
+LearnBase = "0.2, 0.3, 0.4"
 MLDataPattern = "0.5"
 MLLabelUtils = "0.4, 0.5"
 StatsBase = "0.25, 0.26, 0.27, 0.28, 0.29, 0.30, 0.31, 0.32, 0.33"
