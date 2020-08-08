@@ -1,7 +1,5 @@
 _throw_table_error() = throw(ArgumentError("Please specify the column that contains the targets explicitly, or provide a target-extraction-function as first parameter. see parameter 'f' in ?targets."))
 
-import DataFrames: DataFrames, AbstractDataFrame, SubDataFrame
-
 # required data container interface
 LearnBase.nobs(dt::AbstractDataFrame) = DataFrames.nrow(dt)
 LearnBase.getobs(dt::AbstractDataFrame, idx) = dt[idx,:]

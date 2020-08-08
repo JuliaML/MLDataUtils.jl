@@ -92,9 +92,9 @@ end
 function center!(D::AbstractDataFrame)
     μ_vec = Float64[]
 
-    flt = Bool[T <: Real for T in eltypes(D)]
-    for colname in names(D)[flt]
-        μ = mean(D[colname])
+    flt = Bool[T <: Real for T in eltype.(eachcol(D))]
+    for colname in propertynames(D)[flt]
+        μ = mean(D[!, colname])
         center!(D, colname, μ)
         push!(μ_vec, μ)
     end
@@ -104,8 +104,8 @@ end
 function center!(D::AbstractDataFrame, colnames::AbstractVector{Symbol})
     μ_vec = Float64[]
     for colname in colnames
-        if eltype(D[colname]) <: Real
-            μ = mean(D[colname])
+        if eltype(D[!, colname]) <: Real
+            μ = mean(D[!, colname])
             if ismissing(μ)
                 @warn("Column \"$colname\" contains missing values, skipping rescaling of this column!")
                 continue
@@ -121,7 +121,7 @@ end
 
 function center!(D::AbstractDataFrame, colnames::AbstractVector{Symbol}, μ::AbstractVector)
     for (icol, colname) in enumerate(colnames)
-        if eltype(D[colname]) <: Real
+        if eltype(D[!, colname]) <: Real
             center!(D, colname, μ[icol])
         else
             @warn("Skipping \"$colname\", centering only valid for columns of type T <: Real.")
@@ -131,15 +131,15 @@ function center!(D::AbstractDataFrame, colnames::AbstractVector{Symbol}, μ::Abs
 end
 
 function center!(D::AbstractDataFrame, colname::Symbol, μ)
-    if any(ismissing, D[colname])
+    if any(ismissing, D[!, colname])
         @warn("Column \"$colname\" contains missing values, skipping centering on this column!")
     else
-        newcol::Vector{Float64} = convert(Vector{Float64}, D[colname])
+        newcol::Vector{Float64} = convert(Vector{Float64}, D[!, colname])
         nobs = length(newcol)
         @inbounds for i in eachindex(newcol)
             newcol[i] -= μ
         end
-        D[colname] = newcol
+        D[!, colname] = newcol
     end
     μ
 end
@@ -243,10 +243,10 @@ function rescale!(D::AbstractDataFrame)
     μ_vec = Float64[]
     σ_vec = Float64[]
 
-    flt = Bool[T <: Real for T in eltypes(D)]
-    for colname in names(D)[flt]
-        μ = mean(D[colname])
-        σ = std(D[colname])
+    flt = Bool[T <: Real for T in eltype.(eachcol(D))]
+    for colname in propertynames(D)[flt]
+        μ = mean(D[!, colname])
+        σ = std(D[!, colname])
         rescale!(D, colname, μ, σ)
         push!(μ_vec, μ)
         push!(σ_vec, σ)
@@ -258,9 +258,9 @@ function rescale!(D::AbstractDataFrame, colnames::Vector{Symbol})
     μ_vec = Float64[]
     σ_vec = Float64[]
     for colname in colnames
-        if eltype(D[colname]) <: Real
-            μ = mean(D[colname])
-            σ = std(D[colname])
+        if eltype(D[!, colname]) <: Real
+            μ = mean(D[!, colname])
+            σ = std(D[!, colname])
             if ismissing(μ)
                 @warn("Column \"$colname\" contains missing values, skipping rescaling of this column!")
                 continue
@@ -277,7 +277,7 @@ end
 
 function rescale!(D::AbstractDataFrame, colnames::Vector{Symbol}, μ::AbstractVector, σ::AbstractVector)
     for (icol, colname) in enumerate(colnames)
-        if eltype(D[colname]) <: Real
+        if eltype(D[!, colname]) <: Real
             rescale!(D, colname, μ[icol], σ[icol])
         else
             @warn("Skipping \"$colname\", rescaling only valid for columns of type T <: Real.")
@@ -287,16 +287,16 @@ function rescale!(D::AbstractDataFrame, colnames::Vector{Symbol}, μ::AbstractVe
 end
 
 function rescale!(D::AbstractDataFrame, colname::Symbol, μ, σ)
-    if any(ismissing, D[colname])
+    if any(ismissing, D[!, colname])
         @warn("Column \"$colname\" contains missing values, skipping rescaling of this column!")
     else
         σ_div = σ == 0 ? one(σ) : σ
-        newcol::Vector{Float64} = convert(Vector{Float64}, D[colname])
+        newcol::Vector{Float64} = convert(Vector{Float64}, D[!, colname])
         nobs = length(newcol)
         @inbounds for i in eachindex(newcol)
             newcol[i] = (newcol[i] - μ) / σ_div
         end
-        D[colname] = newcol
+        D[!, colname] = newcol
     end
     μ, σ
 end
