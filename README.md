@@ -7,7 +7,7 @@ packages.*
 
 | **Package Status** | **Package Evaluator** | **Build Status**  |
 |:------------------:|:---------------------:|:-----------------:|
-| [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md) [![Documentation Status](https://img.shields.io/badge/docs-latest-blue.svg?style=flat)](http://mldatautilsjl.readthedocs.io/en/latest/?badge=latest) | [![PkgEval][pkgeval-img]][pkgeval-url] | [![Build Status](https://travis-ci.org/JuliaML/MLDataUtils.jl.svg?branch=master)](https://travis-ci.org/JuliaML/MLDataUtils.jl) [![Coverage Status](https://coveralls.io/repos/github/JuliaML/MLDataUtils.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaML/MLDataUtils.jl?branch=master) |
+| [![License][license-img]][license-url] [![Documentation Status][docs-dev-img]][docs-dev-url] | [![PkgEval][pkgeval-img]][pkgeval-url] | [![CI][github-action-img]][github-action-url] [![Coverage Status][coveralls-img]][coveralls-url] |
 
 ## Overview
 
@@ -290,3 +290,11 @@ This code is free to use under the terms of the MIT license
 
 [pkgeval-img]: https://juliaci.github.io/NanosoldierReports/pkgeval_badges/M/MLDataUtils.svg
 [pkgeval-url]: https://juliaci.github.io/NanosoldierReports/pkgeval_badges/report.html
+[license-img]: https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat
+[license-url]: LICENSE.md
+[github-action-img]: https://github.com/JuliaML/MLDataUtils.jl/actions/workflows/CI.yml/badge.svg
+[github-action-url]: https://github.com/JuliaML/MLDataUtils.jl/actions/workflows/CI.yml
+[coveralls-img]: https://coveralls.io/repos/JuliaML/MLDataUtils.jl/badge.svg?branch=master&service=github
+[coveralls-url]: https://coveralls.io/github/JuliaML/MLDataUtils.jl?branch=master
+[docs-dev-img]: https://img.shields.io/badge/docs-latest-blue.svg?style=flat
+[docs-dev-url]: https://mldatautilsjl.readthedocs.io/en/latest
