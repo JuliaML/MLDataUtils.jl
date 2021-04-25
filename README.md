@@ -23,7 +23,7 @@ package.
 - **Label Encodings** provided by
     [MLLabelUtils.jl](https://github.com/JuliaML/MLLabelUtils.jl)
 
-    [![Documentation Status](https://img.shields.io/badge/docs-latest-blue.svg?style=flat)](http://mllabelutilsjl.readthedocs.io/en/latest/?badge=latest) [![MLLabelUtils 0.5](http://pkg.julialang.org/badges/MLLabelUtils_0.5.svg)](http://pkg.julialang.org/?pkg=MLLabelUtils) [![MLLabelUtils 0.6](http://pkg.julialang.org/badges/MLLabelUtils_0.6.svg)](http://pkg.julialang.org/?pkg=MLLabelUtils)
+    [![Documentation Status](https://img.shields.io/badge/docs-latest-blue.svg?style=flat)](http://mllabelutilsjl.readthedocs.io/en/latest/?badge=latest)
 
     Various tools needed to deal with classification targets of
     arbitrary format. This includes asserting if the targets are
@@ -86,7 +86,7 @@ package.
 - **Data Access Pattern** provided by
     [MLDataPattern.jl](https://github.com/JuliaML/MLDataPattern.jl)
 
-    [![Documentation Status](https://img.shields.io/badge/docs-latest-blue.svg?style=flat)](http://mldatapatternjl.readthedocs.io/en/latest/?badge=latest) [![MLDataPattern 0.5](http://pkg.julialang.org/badges/MLDataPattern_0.5.svg)](http://pkg.julialang.org/?pkg=MLDataPattern) [![MLDataPattern 0.6](http://pkg.julialang.org/badges/MLDataPattern_0.6.svg)](http://pkg.julialang.org/?pkg=MLDataPattern)
+    [![Documentation Status](https://img.shields.io/badge/docs-latest-blue.svg?style=flat)](http://mldatapatternjl.readthedocs.io/en/latest/?badge=latest)
 
     Native and generic Julia implementation for commonly used
     data access pattern in Machine Learning. Most notably we
@@ -292,8 +292,8 @@ This code is free to use under the terms of the MIT license
 [pkgeval-url]: https://juliaci.github.io/NanosoldierReports/pkgeval_badges/report.html
 [license-img]: https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat
 [license-url]: LICENSE.md
-[github-action-img]: https://github.com/JuliaML/MLDataUtils.jl/actions/workflows/CI.yml/badge.svg
-[github-action-url]: https://github.com/JuliaML/MLDataUtils.jl/actions/workflows/CI.yml
+[github-action-img]: https://github.com/JuliaML/MLDataUtils.jl/actions/workflows/ci.yml/badge.svg
+[github-action-url]: https://github.com/JuliaML/MLDataUtils.jl/actions/workflows/ci.yml
 [coveralls-img]: https://coveralls.io/repos/JuliaML/MLDataUtils.jl/badge.svg?branch=master&service=github
 [coveralls-url]: https://coveralls.io/github/JuliaML/MLDataUtils.jl?branch=master
 [docs-dev-img]: https://img.shields.io/badge/docs-latest-blue.svg?style=flat
