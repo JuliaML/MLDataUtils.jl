@@ -6,7 +6,7 @@ LearnBase.getobs(dt::AbstractDataFrame, idx) = dt[idx,:]
 
 LearnBase.nobs(dt::DataFrameRow) = 1  # it is a observation
 function LearnBase.getobs(dt::DataFrameRow, idx)
-    idx == 1:1 || throw(ArgumentError(
+    only(idx) == 1 || throw(ArgumentError(
          "Attempting to read multiple rows ($idx) with a single row"))
 
     return dt
@@ -23,9 +23,12 @@ LearnBase.gettarget(::typeof(identity), dt::DataFrameRow) =
     _throw_table_error()
 
 # convenience syntax to allow column name
-LearnBase.gettarget(col::Symbol, dt::AbstractDataFrame) = dt[1, col]
+LearnBase.gettarget(col::Symbol, dt::AbstractDataFrame) =
+    LearnBase.gettarget(col, only(dt))
 LearnBase.gettarget(col::Symbol, dt::DataFrameRow) = dt[col]
-LearnBase.gettarget(fun, dt::AbstractDataFrame) = fun(dt)
+LearnBase.gettarget(fun, dt::AbstractDataFrame) =
+    LearnBase.gettarget(col, only(dt))
+LearnBase.gettarget(fun, dt::DataFrameRow) = fun(dt)
 
 # avoid copy when target extraction function is supplied
 MLDataPattern.getobs_targetfun(dt::AbstractDataFrame) = dt
