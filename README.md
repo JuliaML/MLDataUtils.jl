@@ -9,6 +9,10 @@ packages.*
 |:------------------:|:---------------------:|:-----------------:|
 | [![License][license-img]][license-url] [![Documentation Status][docs-dev-img]][docs-dev-url] | [![PkgEval][pkgeval-img]][pkgeval-url] | [![CI][github-action-img]][github-action-url] [![Coverage Status][coveralls-img]][coveralls-url] |
 
+## WARNING
+
+This package has been discontinued. Most functionalities have been moved [MLUtils.jl](https://github.com/JuliaML/MLUtils.jl).
+
 ## Overview
 
 This package is designed to be the end-user facing frond-end to
